@@ -1,0 +1,189 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static docente_filters %}
+
+{% block title %}Horarios de Clases - Sistema Docente{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="card-title mb-1">
+                                <i class="fas fa-calendar-alt text-primary me-2"></i>
+                                Horarios de Clases
+                            </h4>
+                            <p class="text-muted mb-0">Gestión de horarios académicos</p>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted d-block">Año: {{ año_lectivo_actual.anho|default:"Actual" }}</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Filtrar por día:</label>
+                            <select class="form-select" id="filtroDia">
+                                <option value="">Todos los días</option>
+                                <option value="LUN">Lunes</option>
+                                <option value="MAR">Martes</option>
+                                <option value="MIE">Miércoles</option>
+                                <option value="JUE">Jueves</option>
+                                <option value="VIE">Viernes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Filtrar por grado:</label>
+                            <select class="form-select" id="filtroGrado">
+                                <option value="">Todos los grados</option>
+                                {% for grado in grados %}
+                                <option value="{{ grado.id }}">{{ grado.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-outline-secondary" onclick="resetFiltros()">
+                                    <i class="fas fa-refresh me-1"></i>Limpiar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Horario Semanal -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" id="tablaHorarios">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th width="15%">Hora</th>
+                                    <th width="17%">Lunes</th>
+                                    <th width="17%">Martes</th>
+                                    <th width="17%">Miércoles</th>
+                                    <th width="17%">Jueves</th>
+                                    <th width="17%">Viernes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for hora in horarios_agrupados %}
+                                <tr>
+                                    <td class="fw-semibold bg-light">
+                                        {{ hora.hora_inicio|time:"H:i" }} - {{ hora.hora_fin|time:"H:i" }}
+                                    </td>
+                                    {% for dia in dias_semana %}
+                                    <td class="horario-cell" data-dia="{{ dia.0 }}" data-hora="{{ hora.hora_inicio|time:'H:i' }}">
+                                        {% for horario in hora.horarios %}
+                                            {% if horario.dia_semana == dia.0 %}
+                                            <div class="horario-item mb-2 p-2 border rounded bg-primary bg-opacity-10">
+                                                <div class="fw-semibold small">{{ horario.asignatura_grado.asignatura.nombre }}</div>
+                                                <div class="text-muted smaller">
+                                                    {{ horario.asignatura_grado.grado_año_lectivo.grado.nombre }}
+                                                </div>
+                                                <div class="text-muted smaller">
+                                                    <i class="fas fa-door-open me-1"></i>{{ horario.salon|default:"Aula" }}
+                                                </div>
+                                                {% if horario.asignatura_grado.sede %}
+                                                <div class="text-muted smaller">
+                                                    <i class="fas fa-school me-1"></i>{{ horario.asignatura_grado.sede.nombre }}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if not horarios %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-calendar-times display-4 d-block mb-3"></i>
+                        <h5>No hay horarios asignados</h5>
+                        <p class="mb-0">No tienes horarios de clases configurados para este período</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filtrarHorarios() {
+        const diaSeleccionado = document.getElementById('filtroDia').value;
+        const gradoSeleccionado = document.getElementById('filtroGrado').value;
+        
+        document.querySelectorAll('.horario-cell').forEach(cell => {
+            let mostrar = true;
+            
+            if (diaSeleccionado && cell.dataset.dia !== diaSeleccionado) {
+                mostrar = false;
+            }
+            
+            if (mostrar && gradoSeleccionado) {
+                const tieneGrado = Array.from(cell.querySelectorAll('.horario-item')).some(item => {
+                    return item.textContent.includes(gradoSeleccionado);
+                });
+                if (!tieneGrado) {
+                    mostrar = false;
+                }
+            }
+            
+            cell.style.display = mostrar ? 'table-cell' : 'none';
+        });
+    }
+    
+    function resetFiltros() {
+        document.getElementById('filtroDia').value = '';
+        document.getElementById('filtroGrado').value = '';
+        document.querySelectorAll('.horario-cell').forEach(cell => {
+            cell.style.display = 'table-cell';
+        });
+    }
+    
+    document.getElementById('filtroDia').addEventListener('change', filtrarHorarios);
+    document.getElementById('filtroGrado').addEventListener('change', filtrarHorarios);
+    
+    // Resaltar el día actual
+    const diasMap = { 'MON': 'LUN', 'TUE': 'MAR', 'WED': 'MIE', 'THU': 'JUE', 'FRI': 'VIE' };
+    const hoy = new Date().toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+    const diaHoy = diasMap[hoy];
+    
+    if (diaHoy) {
+        document.querySelectorAll(`[data-dia="${diaHoy}"]`).forEach(cell => {
+            cell.classList.add('bg-warning', 'bg-opacity-10');
+        });
+    }
+</script>
+
+<style>
+    .horario-item {
+        transition: all 0.3s ease;
+        border-left: 3px solid #007bff !important;
+    }
+    
+    .horario-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .horario-cell {
+        vertical-align: top;
+        min-height: 100px;
+    }
+    
+    .smaller {
+        font-size: 0.75rem;
+    }
+</style>
+{% endblock %}

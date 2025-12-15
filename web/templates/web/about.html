@@ -1,0 +1,110 @@
+{% extends "web/base.html" %}
+{% load static %}
+{% load web_extras %}
+
+{% block title %}Acerca de | Colegio Cristiano El Shadai{% endblock %}
+
+{% block content %}
+
+<!-- SECCIÓN: Reseña Histórica -->
+<section class="about-main-section py-5">
+    <div class="container">
+        {% if historia %}
+        <div class="row align-items-center mb-5">
+            <div class="col-lg-8">
+                <div class="about-content">
+                    <h2 class="mb-4 text-primary fw-bold">{{ historia.title }}</h2>
+                    <div class="about-description fs-5 text-secondary">
+                        {{ historia.description|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 text-center">
+                {% if historia.image %}
+                    <img src="{{ historia.image.url }}" 
+                         alt="{{ historia.title }}" 
+                         class="img-fluid rounded shadow">
+                {% else %}
+                    <img src="{% static 'web/images/historia-default.jpg' %}" 
+                         alt="Historia Colegio El Shadai" 
+                         class="img-fluid rounded shadow">
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- SECCIÓN: Misión y Visión -->
+        <div class="row g-4">
+            <!-- Misión -->
+            <div class="col-lg-6">
+                <div class="info-card">
+                    <div class="card-header gradient-primary">
+                        <i class="fas fa-bullseye me-2"></i>
+                        <h3 class="mb-0">
+                            {{ mision.title|default:"Misión Institucional" }}
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        {{ mision.description|default:"Formar estudiantes integrales con excelencia académica, fundamentados en valores cristianos, capaces de transformar positivamente su entorno mediante una educación de calidad que combine el conocimiento con principios bíblicos."|linebreaks }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visión -->
+            <div class="col-lg-6">
+                <div class="info-card">
+                    <div class="card-header gradient-accent">
+                        <i class="fas fa-eye me-2"></i>
+                        <h3 class="mb-0">
+                            {{ vision.title|default:"Visión Institucional" }}
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        {{ vision.description|default:"Ser la institución educativa cristiana líder en formación integral, reconocida por su excelencia académica y compromiso con los valores del Reino de Dios, formando generaciones que impacten positivamente la sociedad."|linebreaks }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN: Valores Institucionales -->
+        <div class="mt-5">
+            <h2 class="text-center fw-bold text-primary mb-5">Nuestros Valores</h2>
+            <div class="row g-4">
+                {% for valor in valores_list %}
+                <div class="col-md-3 col-6">
+                    <div class="value-card text-center">
+                        <div class="value-icon">
+                            <i class="fas {{ valor.icon }}"></i>
+                        </div>
+                        <h5>{{ valor.title }}</h5>
+                        <p>{{ valor.text }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECCIÓN: Llamado a la acción -->
+<section class="cta-section py-5 text-white text-center">
+    <div class="container">
+        <h2 class="mb-4 fw-bold">¿Listo para ser parte de nuestra familia?</h2>
+        <p class="lead mb-4">
+            Descubre cómo podemos ayudar a formar el futuro de tus hijos con valores cristianos y excelencia académica.
+        </p>
+        <div class="d-flex justify-content-center flex-wrap gap-3">
+            <a href="{% url 'web:admision' %}" class="btn btn-light btn-lg">
+                <i class="fas fa-file-alt me-2"></i> Proceso de Admisión
+            </a>
+            <a href="{% url 'web:contact' %}" class="btn btn-outline-light btn-lg">
+                <i class="fas fa-phone me-2"></i> Contáctanos
+            </a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_css %}
+{% endblock %}

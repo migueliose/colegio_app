@@ -1,0 +1,134 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Reportes - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-chart-bar me-2"></i>Reportes del Sistema
+    </h1>
+</div>
+
+<div class="row">
+    <!-- Tarjeta de Resumen General -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>Resumen General
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="border rounded p-3">
+                            <i class="fas fa-user-graduate fa-2x text-primary mb-2"></i>
+                            <h4>{{ total_estudiantes|default:0 }}</h4>
+                            <small class="text-muted">Estudiantes Activos</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="border rounded p-3">
+                            <i class="fas fa-chalkboard-teacher fa-2x text-success mb-2"></i>
+                            <h4>{{ total_docentes|default:0 }}</h4>
+                            <small class="text-muted">Docentes Activos</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-3">
+                            <i class="fas fa-clipboard-list fa-2x text-info mb-2"></i>
+                            <h4>{{ matricula_ano_actual|default:0 }}</h4>
+                            <small class="text-muted">Matrículas {{ año_actual.anho|default:"Actual" }}</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-3">
+                            <i class="fas fa-school fa-2x text-warning mb-2"></i>
+                            <h4>1</h4>
+                            <small class="text-muted">Colegio</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reportes Rápidos -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-download me-2"></i>Reportes Rápidos
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-file-pdf text-danger me-2"></i>
+                        Listado de Estudiantes
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-file-excel text-success me-2"></i>
+                        Planilla de Notas
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-file-pdf text-danger me-2"></i>
+                        Reporte de Matrículas
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-file-excel text-success me-2"></i>
+                        Asistencia por Grado
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reportes Avanzados -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Reportes Avanzados
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-user-check fa-3x text-primary mb-3"></i>
+                                <h5>Rendimiento Académico</h5>
+                                <p class="text-muted">Reporte detallado del rendimiento por estudiante y asignatura</p>
+                                <a href="#" class="btn btn-outline-primary btn-sm">Generar</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-calendar-check fa-3x text-success mb-3"></i>
+                                <h5>Asistencia</h5>
+                                <p class="text-muted">Control de asistencia y porcentajes por periodo</p>
+                                <a href="#" class="btn btn-outline-success btn-sm">Generar</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-money-bill-wave fa-3x text-warning mb-3"></i>
+                                <h5>Pagos y Finanzas</h5>
+                                <p class="text-muted">Estado de pagos y reportes financieros</p>
+                                <a href="#" class="btn btn-outline-warning btn-sm">Generar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,273 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Reportes de Matrículas{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">
+        <i class="fas fa-chart-bar me-2"></i>Reportes de Matrículas
+    </h1>
+    
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'administrador:matricula_list' %}">Matrículas</a></li>
+        <li class="breadcrumb-item active">Reportes</li>
+    </ol>
+
+    <div class="row">
+        <!-- Filtros de Reporte -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-filter me-1"></i>Filtros del Reporte
+                </div>
+                <div class="card-body">
+                    <form id="reporteForm">
+                        <div class="mb-3">
+                            <label for="año_lectivo" class="form-label">Año Lectivo</label>
+                            <select class="form-select" id="año_lectivo" name="año_lectivo">
+                                <option value="">Todos los años</option>
+                                {% for año in años_lectivos %}
+                                <option value="{{ año.id }}" 
+                                        {% if año.id == año_actual.id %}selected{% endif %}>
+                                    {{ año.anho }} - {{ año.sede.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="formato" class="form-label">Formato</label>
+                            <select class="form-select" id="formato" name="formato">
+                                <option value="excel">Excel (.xlsx)</option>
+                                <option value="pdf">PDF (.pdf)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="button" id="generarReporte" class="btn btn-success">
+                                <i class="fas fa-file-excel me-1"></i>Generar Reporte
+                            </button>
+                            <button type="button" id="exportarPDF" class="btn btn-danger">
+                                <i class="fas fa-file-pdf me-1"></i>Exportar a PDF
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Estadísticas Rápidas -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-chart-pie me-1"></i>Estadísticas Rápidas
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            Año Lectivo Actual
+                            <span class="badge bg-primary rounded-pill">
+                                {% if año_actual %}{{ año_actual.anho }}{% else %}N/A{% endif %}
+                            </span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            Total de Años
+                            <span class="badge bg-info rounded-pill">{{ años_lectivos.count }}</span>
+                        </div>
+                        <div class="list-group-item">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Selecciona un año lectivo para generar reportes específicos.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tipos de Reporte -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <i class="fas fa-file-alt me-1"></i>Tipos de Reportes Disponibles
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Reporte 1 -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body">
+                                    <div class="text-center mb-3">
+                                        <i class="fas fa-users fa-3x text-primary"></i>
+                                    </div>
+                                    <h5 class="card-title text-center">Matrículas por Grado</h5>
+                                    <p class="card-text">
+                                        Reporte detallado de matrículas organizado por grado y nivel escolar.
+                                    </p>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-check text-success me-2"></i>Total por grado</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Distribución por sexo</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Edad promedio</li>
+                                    </ul>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <button class="btn btn-primary w-100" 
+                                            onclick="generarReporte('grado')">
+                                        <i class="fas fa-download me-1"></i>Generar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reporte 2 -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-success">
+                                <div class="card-body">
+                                    <div class="text-center mb-3">
+                                        <i class="fas fa-chart-line fa-3x text-success"></i>
+                                    </div>
+                                    <h5 class="card-title text-center">Evolución Anual</h5>
+                                    <p class="card-text">
+                                        Comparativo de matrículas a través de los años lectivos.
+                                    </p>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-check text-success me-2"></i>Crecimiento anual</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Tendencias por nivel</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Retención estudiantil</li>
+                                    </ul>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <button class="btn btn-success w-100" 
+                                            onclick="generarReporte('evolucion')">
+                                        <i class="fas fa-download me-1"></i>Generar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reporte 3 -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-warning">
+                                <div class="card-body">
+                                    <div class="text-center mb-3">
+                                        <i class="fas fa-user-check fa-3x text-warning"></i>
+                                    </div>
+                                    <h5 class="card-title text-center">Estados de Matrícula</h5>
+                                    <p class="card-text">
+                                        Distribución de matrículas por estado (Activa, Pendiente, Retirada, etc.)
+                                    </p>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-check text-success me-2"></i>Porcentajes por estado</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Tasas de retención</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Pre-matrículas vs Activas</li>
+                                    </ul>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <button class="btn btn-warning w-100" 
+                                            onclick="generarReporte('estados')">
+                                        <i class="fas fa-download me-1"></i>Generar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reporte 4 -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-info">
+                                <div class="card-body">
+                                    <div class="text-center mb-3">
+                                        <i class="fas fa-school fa-3x text-info"></i>
+                                    </div>
+                                    <h5 class="card-title text-center">Matrículas por Sede</h5>
+                                    <p class="card-text">
+                                        Distribución de estudiantes entre las diferentes sedes del colegio.
+                                    </p>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-check text-success me-2"></i>Capacidad por sede</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Distribución geográfica</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Densidad estudiantil</li>
+                                    </ul>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <button class="btn btn-info w-100" 
+                                            onclick="generarReporte('sede')">
+                                        <i class="fas fa-download me-1"></i>Generar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vista Previa -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <i class="fas fa-eye me-1"></i>Vista Previa del Reporte
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-5" id="vistaPrevia">
+                        <i class="fas fa-chart-bar fa-4x text-muted mb-3"></i>
+                        <p class="text-muted">
+                            Selecciona un tipo de reporte para ver una vista previa.
+                        </p>
+                    </div>
+                    <div id="contenidoPrevia" class="d-none">
+                        <!-- Contenido dinámico se cargará aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function generarReporte(tipo) {
+    var añoLectivo = $('#año_lectivo').val();
+    var formato = $('#formato').val();
+    
+    if (!añoLectivo) {
+        alert('Por favor selecciona un año lectivo');
+        return;
+    }
+    
+    var url = '{% url "administrador:matricula_export" "excel" %}'.replace('excel', formato);
+    url += '?año_lectivo=' + añoLectivo + '&tipo=' + tipo;
+    
+    window.location.href = url;
+}
+
+$(document).ready(function() {
+    $('#generarReporte').click(function() {
+        var añoLectivo = $('#año_lectivo').val();
+        var formato = $('#formato').val();
+        
+        if (!añoLectivo) {
+            alert('Por favor selecciona un año lectivo');
+            return;
+        }
+        
+        var url = '{% url "administrador:matricula_export" "excel" %}'.replace('excel', formato);
+        url += '?año_lectivo=' + añoLectivo;
+        
+        window.location.href = url;
+    });
+    
+    $('#exportarPDF').click(function() {
+        var añoLectivo = $('#año_lectivo').val();
+        
+        if (!añoLectivo) {
+            alert('Por favor selecciona un año lectivo');
+            return;
+        }
+        
+        var url = '{% url "administrador:matricula_export" "pdf" %}';
+        url += '?año_lectivo=' + añoLectivo;
+        
+        window.location.href = url;
+    });
+});
+</script>
+{% endblock %}

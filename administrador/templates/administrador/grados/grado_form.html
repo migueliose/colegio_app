@@ -1,0 +1,259 @@
+<!-- administrador/templates/administrador/grados/grado_form.html -->
+{% extends 'gestioncolegio/base2.html' %}
+
+{% block title %}{{ title }} - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'administrador:grado_list' %}">Grados</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+            </ol>
+        </nav>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'administrador:grado_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Volver a Lista
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header {% if object %}bg-warning{% else %}bg-primary{% endif %} text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas {% if object %}fa-edit{% else %}fa-plus-circle{% endif %} me-2"></i>
+                        {{ title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Errores generales del formulario -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Campo Nombre -->
+                        <div class="mb-4">
+                            <label for="{{ form.nombre.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-signature me-1"></i> Nombre del Grado
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nombre }}
+                            {% if form.nombre.help_text %}
+                            <div class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i> {{ form.nombre.help_text }}
+                            </div>
+                            {% endif %}
+                            {% if form.nombre.errors %}
+                            <div class="invalid-feedback d-block">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {% for error in form.nombre.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Campo Nivel Escolar -->
+                        <div class="mb-4">
+                            <label for="{{ form.nivel_escolar.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-layer-group me-1"></i> Nivel Escolar
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nivel_escolar }}
+                            {% if form.nivel_escolar.help_text %}
+                            <div class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i> {{ form.nivel_escolar.help_text }}
+                            </div>
+                            {% endif %}
+                            {% if form.nivel_escolar.errors %}
+                            <div class="invalid-feedback d-block">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {% for error in form.nivel_escolar.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Información adicional si estamos editando -->
+                        {% if object %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-history me-2"></i>
+                            <strong>Información del registro:</strong><br>
+                            <small>
+                                Creado: {{ object.created_at|date:"d/m/Y H:i" }}<br>
+                                Última actualización: {{ object.updated_at|date:"d/m/Y H:i" }}
+                            </small>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Botones de acción -->
+                        <div class="d-flex justify-content-between mt-5 pt-4 border-top">
+                            <div>
+                                <a href="{% url 'administrador:grado_list' %}" class="btn btn-lg btn-outline-secondary">
+                                    <i class="fas fa-times me-2"></i> Cancelar
+                                </a>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-lg {% if object %}btn-warning{% else %}btn-primary{% endif %}">
+                                    <i class="fas {% if object %}fa-save{% else %}fa-check-circle{% endif %} me-2"></i>
+                                    {{ submit_text }}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Información adicional en el pie -->
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        Los campos marcados con <span class="text-danger">*</span> son obligatorios.
+                    </small>
+                </div>
+            </div>
+            
+            <!-- Información sobre grados disponibles -->
+            <div class="card shadow mt-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-graduation-cap me-2"></i>Grados Disponibles por Nivel
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">
+                                <i class="fas fa-school me-1"></i> Preescolar
+                            </h6>
+                            <ul class="list-unstyled ms-3">
+                                <li><i class="fas fa-child me-2 text-success"></i> Prejardín</li>
+                                <li><i class="fas fa-child me-2 text-success"></i> Jardín</li>
+                                <li><i class="fas fa-child me-2 text-success"></i> Transición</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">
+                                <i class="fas fa-university me-1"></i> Primaria
+                            </h6>
+                            <ul class="list-unstyled ms-3">
+                                <li><i class="fas fa-user-graduate me-2 text-success"></i> Primero</li>
+                                <li><i class="fas fa-user-graduate me-2 text-success"></i> Segundo</li>
+                                <li><i class="fas fa-user-graduate me-2 text-success"></i> Tercero</li>
+                                <li><i class="fas fa-user-graduate me-2 text-success"></i> Cuarto</li>
+                                <li><i class="fas fa-user-graduate me-2 text-success"></i> Quinto</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos personalizados */
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+}
+
+.alert-info {
+    background-color: #e7f3ff;
+    border-color: #b6d4fe;
+    color: #084298;
+}
+</style>
+
+<script>
+// Inicializar los selects de Bootstrap
+document.addEventListener('DOMContentLoaded', function() {
+    // Agregar clases de Bootstrap a los campos del formulario
+    const selects = document.querySelectorAll('select');
+    selects.forEach(select => {
+        select.classList.add('form-select');
+        select.classList.add('form-select-lg');
+    });
+    
+    // Validación del formulario
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(event) {
+        let isValid = true;
+        const requiredFields = form.querySelectorAll('[required]');
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                isValid = false;
+                field.classList.add('is-invalid');
+                
+                // Crear mensaje de error si no existe
+                if (!field.nextElementSibling || !field.nextElementSibling.classList.contains('invalid-feedback')) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'invalid-feedback d-block';
+                    errorDiv.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i> Este campo es obligatorio.';
+                    field.parentNode.appendChild(errorDiv);
+                }
+            } else {
+                field.classList.remove('is-invalid');
+                // Remover mensaje de error si existe
+                const errorDiv = field.parentNode.querySelector('.invalid-feedback');
+                if (errorDiv) {
+                    errorDiv.remove();
+                }
+            }
+        });
+        
+        if (!isValid) {
+            event.preventDefault();
+            // Mostrar alerta de error
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Error:</strong> Por favor complete todos los campos obligatorios.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            form.prepend(alertDiv);
+        }
+    });
+    
+    // Limpiar errores al cambiar los campos
+    form.querySelectorAll('input, select').forEach(field => {
+        field.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+            const errorDiv = this.parentNode.querySelector('.invalid-feedback');
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

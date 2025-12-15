@@ -1,0 +1,92 @@
+<!-- administrador/templates/administrador/gestion_academica/asignatura_grado_copy_success.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Copia de Asignaturas Completada{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="fas fa-check-circle fa-5x text-success"></i>
+        </div>
+        
+        <h1 class="mb-4">¡Copia Completada Exitosamente!</h1>
+        
+        <div class="card mx-auto" style="max-width: 600px;">
+            <div class="card-body">
+                <h4 class="card-title mb-4">Resumen de la Copia</h4>
+                
+                <div class="row text-center mb-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="bg-success-subtle p-3 rounded">
+                            <h2 class="text-success">{{ asignaturas_copiadas }}</h2>
+                            <p class="mb-0">Asignaturas Copiadas</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="bg-warning-subtle p-3 rounded">
+                            <h2 class="text-warning">{{ asignaturas_sobrescritas }}</h2>
+                            <p class="mb-0">Sobrescritas</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h5>Detalles:</h5>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        <strong>Origen:</strong> {{ año_origen.anho }}
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        <strong>Destino:</strong> {{ año_destino.anho }}
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-graduation-cap me-2"></i>
+                        <strong>Grados copiados:</strong> {{ grados_copiados|length }}
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-building me-2"></i>
+                        <strong>Sedes:</strong> {{ sedes_copiadas|length }}
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-user-tie me-2"></i>
+                        <strong>Incluyendo docentes:</strong> 
+                        {% if incluir_docentes %}Sí{% else %}No{% endif %}
+                    </li>
+                </ul>
+                
+                {% if errores %}
+                <div class="alert alert-warning mt-4">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Advertencias:</h6>
+                    <p>Se encontraron {{ errores|length }} errores durante la copia.</p>
+                    <button class="btn btn-sm btn-outline-warning" type="button" 
+                            data-bs-toggle="collapse" data-bs-target="#erroresCollapse">
+                        Ver detalles
+                    </button>
+                    <div class="collapse mt-3" id="erroresCollapse">
+                        <div class="card card-body small">
+                            {% for error in errores %}
+                            <p class="mb-1">• {{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="mt-5">
+            <a href="{% url 'administrador:asignatura_grado_list' %}" class="btn btn-primary me-3">
+                <i class="fas fa-list me-2"></i>Ver Asignaturas
+            </a>
+            <a href="{% url 'administrador:asignatura_grado_copy' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-copy me-2"></i>Nueva Copia
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

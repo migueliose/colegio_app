@@ -1,0 +1,35 @@
+<!-- scripts.html-->
+{% load static %}
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Scripts personalizados -->
+<script src="{% static 'gestioncolegio/js/app.js' %}"></script>
+<script src="{% static 'gestioncolegio/js/navbar.js' %}"></script>
+<script>
+    // Mejoras de UX
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tooltips automáticos
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Efectos de hover en tarjetas
+        const cards = document.querySelectorAll('.card');
+        cards.forEach(card => {
+            card.classList.add('card-hover');
+        });
+        
+        // Auto-dismiss alerts después de 5 segundos
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                if (alert.classList.contains('show')) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        });
+    });
+</script>

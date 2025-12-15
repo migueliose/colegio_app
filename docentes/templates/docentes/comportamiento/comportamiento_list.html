@@ -1,0 +1,237 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Comportamiento - Docentes{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4"><i class="fas fa-user-check me-2"></i>Registro de Comportamiento</h1>
+        <a href="{% url 'docentes:crear_comportamiento' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Nuevo Registro
+        </a>
+    </div>
+
+    <!-- Tarjetas de estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Registros</h5>
+                    <h2 class="card-text">{{ total_registros }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Positivos</h5>
+                    <h2 class="card-text">{{ total_positivos }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Negativos</h5>
+                    <h2 class="card-text">{{ total_negativos }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Balance</h5>
+                    <h2 class="card-text">{{ total_positivos|add:"-"|add:total_negativos }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-filter me-2"></i>Filtros
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="periodo" class="form-label">Periodo</label>
+                    <select name="periodo" id="periodo" class="form-select">
+                        <option value="">Todos los periodos</option>
+                        {% for periodo in periodos %}
+                        <option value="{{ periodo.id }}" 
+                            {% if filtro_periodo == periodo.id|stringformat:"s" %}selected{% endif %}>
+                            {{ periodo.periodo.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="estudiante" class="form-label">Estudiante</label>
+                    <select name="estudiante" id="estudiante" class="form-select">
+                        <option value="">Todos los estudiantes</option>
+                        {% for estudiante in estudiantes %}
+                        <option value="{{ estudiante.id }}"
+                            {% if filtro_estudiante == estudiante.id|stringformat:"s" %}selected{% endif %}>
+                            {{ estudiante.usuario.get_full_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="tipo" class="form-label">Tipo</label>
+                    <select name="tipo" id="tipo" class="form-select">
+                        <option value="todos">Todos</option>
+                        {% for valor, nombre in tipos %}
+                        <option value="{{ valor }}"
+                            {% if filtro_tipo == valor %}selected{% endif %}>
+                            {{ nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="categoria" class="form-label">Categoría</label>
+                    <select name="categoria" id="categoria" class="form-select">
+                        <option value="todas">Todas</option>
+                        {% for valor, nombre in categorias %}
+                        <option value="{{ valor }}"
+                            {% if filtro_categoria == valor %}selected{% endif %}>
+                            {{ nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="fecha_inicio" class="form-label">Desde</label>
+                    <input type="date" name="fecha_inicio" id="fecha_inicio" 
+                           class="form-control" value="{{ filtro_fecha_inicio }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="fecha_fin" class="form-label">Hasta</label>
+                    <input type="date" name="fecha_fin" id="fecha_fin" 
+                           class="form-control" value="{{ filtro_fecha_fin }}">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>Filtrar
+                    </button>
+                    <a href="{% url 'docentes:lista_comportamientos' %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Comportamientos -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-list me-2"></i>Registros de Comportamiento
+            <span class="badge bg-primary ms-2">{{ page_obj.paginator.count }}</span>
+        </div>
+        <div class="card-body">
+            {% if comportamientos %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Estudiante</th>
+                            <th>Tipo</th>
+                            <th>Categoría</th>
+                            <th>Descripción</th>
+                            <th>Periodo</th>
+                            <th>Registrado por</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for comportamiento in comportamientos %}
+                        <tr class="{% if comportamiento.tipo == 'Positivo' %}table-success{% else %}table-danger{% endif %}">
+                            <td>{{ comportamiento.fecha|date:"d/m/Y" }}</td>
+                            <td>{{ comportamiento.estudiante.usuario.get_full_name }}</td>
+                            <td>
+                                <span class="badge {% if comportamiento.tipo == 'Positivo' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ comportamiento.tipo }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ comportamiento.categoria }}</span>
+                            </td>
+                            <td>{{ comportamiento.descripcion|truncatechars:60 }}</td>
+                            <td>{{ comportamiento.periodo_academico.periodo.nombre }}</td>
+                            <td>{{ comportamiento.docente.usuario.get_full_name|default:"-" }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'docentes:detalle_comportamiento' comportamiento.id %}" 
+                                       class="btn btn-info" title="Ver">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'docentes:editar_comportamiento' comportamiento.id %}" 
+                                       class="btn btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'docentes:eliminar_comportamiento' comportamiento.id %}" 
+                                       class="btn btn-danger" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            {% if is_paginated %}
+            <nav aria-label="Paginación">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Primera</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Siguiente</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Última</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle me-2"></i>
+                No hay registros de comportamiento con los filtros actuales.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

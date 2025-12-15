@@ -1,0 +1,1099 @@
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Estilos específicos para calificaciones */
+.docente-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.docente-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.docente-card.selected {
+    border-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.estadistica-box {
+    background: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+}
+
+.logros-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.calificacion-input {
+    width: 100px;
+    text-align: center;
+}
+
+.observaciones-input {
+    font-size: 0.9rem;
+}
+
+.badge-estadistica {
+    font-size: 0.85rem;
+    padding: 0.4em 0.8em;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Barra de progreso personalizada */
+.progress-thin {
+    height: 6px;
+}
+
+/* Animaciones */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .btn-group-responsive {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .calificacion-input {
+        width: 80px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid fade-in">
+    <!-- Encabezado -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-graduation-cap text-primary me-2"></i>{{ title }}
+        </h1>
+        
+        <!-- Estadísticas rápidas -->
+        <div class="d-none d-md-flex">
+            <span class="badge bg-primary me-2">
+                <i class="fas fa-users me-1"></i>{{ total_estudiantes }} Estudiantes
+            </span>
+            <span class="badge bg-success me-2">
+                <i class="fas fa-chalkboard-teacher me-1"></i>{{ total_docentes }} Docentes
+            </span>
+            <span class="badge bg-info">
+                <i class="fas fa-school me-1"></i>{{ total_grados }} Grados
+            </span>
+        </div>
+    </div>
+
+    <!-- Panel principal -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-sliders-h me-2"></i>Panel de Gestión de Calificaciones
+                    </h5>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Paso 1: Año Lectivo -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="selectAnoLectivo" class="form-label fw-bold">
+                                    <i class="fas fa-calendar-alt me-2 text-primary"></i>Año Lectivo *
+                                </label>
+                                <select id="selectAnoLectivo" class="form-select form-select-lg">
+                                    <option value="">Seleccionar año lectivo...</option>
+                                    {% for año in años_lectivos %}
+                                        <option value="{{ año.id }}">
+                                            {{ año.anho }} - {{ año.sede.nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    Seleccione el año lectivo para ver los docentes disponibles.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Estadísticas del año -->
+                        <div class="col-md-6">
+                            <div id="estadisticasAno" class="estadistica-box" style="display: none;">
+                                <h6 class="fw-bold mb-2">
+                                    <i class="fas fa-chart-bar me-2 text-success"></i>Estadísticas del Año
+                                </h6>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Docentes Activos</small>
+                                        <span id="totalDocentes" class="fw-bold fs-5">0</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Asignaturas Asignadas</small>
+                                        <span id="totalAsignaturas" class="fw-bold fs-5">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paso 2: Docentes -->
+                    <div id="panelDocentes" class="mb-4" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold text-gray-700 mb-0">
+                                <i class="fas fa-chalkboard-teacher me-2 text-primary"></i>
+                                Docentes Disponibles
+                            </h6>
+                            <small class="text-muted" id="contadorDocentes">0 docentes</small>
+                        </div>
+                        
+                        <!-- Top docentes -->
+                        <div id="topDocentes" class="row mb-3" style="display: none;"></div>
+                        
+                        <!-- Lista de docentes -->
+                        <div id="listaDocentes" class="row">
+                            <!-- Cargado por AJAX -->
+                        </div>
+                    </div>
+
+                    <!-- Paso 3: Grados, Asignaturas y Periodos -->
+                    <div id="panelGradosAsignaturas" class="mb-4" style="display: none;">
+                        <h6 class="fw-bold text-gray-700 mb-3">
+                            <i class="fas fa-layer-group me-2 text-primary"></i>
+                            Seleccionar Grado, Asignatura y Período
+                        </h6>
+                        
+                        <!-- Información del docente -->
+                        <div class="alert alert-info mb-3" id="infoDocente" style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user-circle fa-2x me-3"></i>
+                                <div>
+                                    <h6 class="mb-1" id="docenteNombre"></h6>
+                                    <small id="docenteInfo" class="text-muted"></small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Filtros -->
+                        <div class="row g-3">
+                            <!-- Grado -->
+                            <div class="col-md-4">
+                                <label for="selectGrado" class="form-label">Grado *</label>
+                                <select id="selectGrado" class="form-select" disabled>
+                                    <option value="">Seleccionar grado...</option>
+                                </select>
+                                <small class="text-muted" id="infoEstudiantesGrado"></small>
+                            </div>
+                            
+                            <!-- Asignatura -->
+                            <div class="col-md-4">
+                                <label for="selectAsignatura" class="form-label">Asignatura *</label>
+                                <select id="selectAsignatura" class="form-select" disabled>
+                                    <option value="">Seleccionar asignatura...</option>
+                                </select>
+                                <small class="text-muted" id="infoAsignatura"></small>
+                            </div>
+                            
+                            <!-- Período -->
+                            <div class="col-md-4">
+                                <label for="selectPeriodo" class="form-label">Período Académico *</label>
+                                <select id="selectPeriodo" class="form-select" disabled>
+                                    <option value="">Seleccionar período...</option>
+                                </select>
+                                <small class="text-muted" id="infoPeriodo"></small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón de acción -->
+                    <div class="row mt-4">
+                        <div class="col-md-12 text-center">
+                            <button id="btnCargarEstudiantes" class="btn btn-primary btn-lg px-5" disabled>
+                                <i class="fas fa-users me-2"></i>Cargar Estudiantes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de calificaciones (cargado por AJAX) -->
+    <div id="panelCalificaciones" class="mt-4" style="display: none;">
+        <div class="card shadow border-0">
+            <!-- Cabecera del panel -->
+            <div class="card-header bg-success text-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0" id="tituloCalificaciones">
+                        <i class="fas fa-edit me-2"></i>Registro de Calificaciones
+                    </h5>
+                    <div class="btn-group btn-group-responsive">
+                        <button id="btnGuardarCalificaciones" class="btn btn-light btn-sm">
+                            <i class="fas fa-save me-1"></i>Guardar Todo
+                        </button>
+                        <button id="btnExportarExcel" class="btn btn-light btn-sm">
+                            <i class="fas fa-file-excel me-1"></i>Exportar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estadísticas -->
+            <div class="card-body border-bottom">
+                <div class="row" id="estadisticasCalificaciones">
+                    <!-- Cargado por AJAX -->
+                </div>
+            </div>
+            
+            <!-- Tabla de calificaciones -->
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped" id="tablaCalificaciones">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="5%">#</th>
+                                <th width="10%">Matrícula</th>
+                                <th width="25%">Estudiante</th>
+                                <th width="10%">Documento</th>
+                                <th width="15%">Calificación (0-100)</th>
+                                <th width="20%">Observaciones</th>
+                                <th width="15%">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaCalificaciones">
+                            <!-- Cargado por AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- js-xlsx para exportación -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+{% endblock %}
+
+{% block inline_js %}
+<script>
+// Variables globales
+let añoLectivoId = null;
+let docenteSeleccionado = null;
+let docenteData = null;
+let gradoSeleccionado = null;
+let asignaturaSeleccionada = null;
+let sedeSeleccionada = null;
+let periodoSeleccionado = null;
+let periodosDisponibles = [];
+let estudiantesCargados = [];
+let asignaturaGradoId = null;
+
+// CSRF Token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Mostrar/ocultar loading
+function mostrarLoading(mensaje = 'Cargando...') {
+    Swal.fire({
+        title: mensaje,
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+}
+
+function ocultarLoading() {
+    Swal.close();
+}
+
+// Mostrar error
+function mostrarError(mensaje) {
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: mensaje,
+        confirmButtonColor: '#0d6efd'
+    });
+}
+
+// Mostrar éxito
+function mostrarExito(mensaje) {
+    Swal.fire({
+        icon: 'success',
+        title: '¡Éxito!',
+        text: mensaje,
+        timer: 3000,
+        showConfirmButton: false
+    });
+}
+
+// 1. Selección de año lectivo
+$('#selectAnoLectivo').change(function() {
+    añoLectivoId = $(this).val();
+    
+    if (!añoLectivoId) {
+        $('#panelDocentes').hide();
+        $('#panelGradosAsignaturas').hide();
+        $('#estadisticasAno').hide();
+        return;
+    }
+    
+    mostrarLoading('Cargando docentes...');
+    
+    // Cargar docentes del año lectivo
+    $.ajax({
+        url: "{% url 'administrador:obtener_docentes_por_año' %}",
+        data: { 
+            año_lectivo_id: añoLectivoId
+        },
+        success: function(response) {
+            if (response.success) {
+                // Actualizar estadísticas del año
+                $('#estadisticasAno').show();
+                $('#totalDocentes').text(response.estadisticas.total_docentes);
+                $('#totalAsignaturas').text(response.estadisticas.total_asignaturas);
+                
+                // Limpiar lista de docentes
+                $('#listaDocentes').html('');
+                $('#contadorDocentes').text(`${response.docentes.length} docentes`);
+                
+                // Mostrar top docentes
+                if (response.docentes_top && response.docentes_top.length > 0) {
+                    let topHtml = '';
+                    response.docentes_top.forEach((docente, index) => {
+                        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+                        topHtml += `
+                            <div class="col-md-4">
+                                <div class="card border-success">
+                                    <div class="card-body p-2">
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-2 fs-5">${medal}</span>
+                                            <div class="flex-grow-1">
+                                                <small class="d-block fw-bold">${docente.nombre}</small>
+                                                <small class="text-muted">${docente.total_asignaturas} asignaturas</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    $('#topDocentes').html(topHtml).show();
+                }
+                
+                // Mostrar lista completa de docentes
+                if (response.docentes.length === 0) {
+                    $('#listaDocentes').html(`
+                        <div class="col-12">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                No hay docentes asignados para este año lectivo.
+                            </div>
+                        </div>
+                    `);
+                } else {
+                    response.docentes.forEach(function(docente) {
+                        const docenteCard = `
+                            <div class="col-md-4 mb-3">
+                                <div class="card docente-card h-100" data-docente-id="${docente.id}">
+                                    <div class="card-body">
+                                        <h6 class="card-title fw-bold">${docente.nombre}</h6>
+                                        <p class="card-text text-muted small mb-2">
+                                            <i class="fas fa-id-card me-1"></i>${docente.identificacion}
+                                        </p>
+                                        <p class="card-text text-muted small mb-2">
+                                            <i class="fas fa-school me-1"></i>${docente.sede}
+                                        </p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="badge bg-primary badge-estadistica">
+                                                    <i class="fas fa-book me-1"></i>${docente.total_asignaturas}
+                                                </span>
+                                                <span class="badge bg-info badge-estadistica ms-1">
+                                                    <i class="fas fa-layer-group me-1"></i>${docente.total_grados}
+                                                </span>
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-primary btn-seleccionar-docente">
+                                                Seleccionar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        $('#listaDocentes').append(docenteCard);
+                    });
+                }
+                
+                // Mostrar panel y ocultar loading
+                $('#panelDocentes').show();
+                ocultarLoading();
+                
+            } else {
+                ocultarLoading();
+                mostrarError(response.error || 'Error al cargar los docentes');
+            }
+        },
+        error: function(xhr, status, error) {
+            ocultarLoading();
+            mostrarError('Error de conexión al cargar los docentes');
+        }
+    });
+});
+
+// 2. Selección de docente
+$(document).on('click', '.btn-seleccionar-docente', function() {
+    // Remover selección anterior
+    $('.docente-card').removeClass('selected border-primary');
+    $('.docente-card').addClass('border-light');
+    
+    // Marcar como seleccionado
+    $(this).closest('.docente-card')
+        .addClass('selected border-primary')
+        .removeClass('border-light');
+    
+    docenteSeleccionado = $(this).closest('.docente-card').data('docente-id');
+    
+    mostrarLoading('Cargando información del docente...');
+    
+    // Cargar grados y asignaturas del docente
+    $.ajax({
+        url: "{% url 'administrador:obtener_grados_asignaturas_docente' %}",
+        data: { 
+            docente_id: docenteSeleccionado,
+            año_lectivo_id: añoLectivoId 
+        },
+        success: function(response) {
+            if (response.success) {
+                // Guardar datos del docente
+                docenteData = response.docente;
+                
+                // Mostrar información del docente
+                $('#infoDocente').show();
+                $('#docenteNombre').text(docenteData.nombre);
+                $('#docenteInfo').html(`
+                    ${docenteData.email ? docenteData.email + ' • ' : ''}
+                    ${docenteData.telefono ? docenteData.telefono : ''}
+                `);
+                
+                // Cargar opciones de grados
+                $('#selectGrado').html('<option value="">Seleccionar grado...</option>');
+                response.grados.forEach(function(grado) {
+                    $('#selectGrado').append(`
+                        <option value="${grado.grado_id}" 
+                                data-sede-id="${grado.sede_id}"
+                                data-estudiantes="${grado.total_estudiantes}">
+                            ${grado.grado_nombre} - ${grado.sede_nombre}
+                        </option>
+                    `);
+                });
+                
+                // Cargar opciones de períodos
+                $('#selectPeriodo').html('<option value="">Seleccionar período...</option>');
+                periodosDisponibles = response.periodos;
+                response.periodos.forEach(function(periodo) {
+                    $('#selectPeriodo').append(`
+                        <option value="${periodo.id}" 
+                                data-fecha-inicio="${periodo.fecha_inicio}"
+                                data-fecha-fin="${periodo.fecha_fin}">
+                            ${periodo.nombre} (${periodo.fecha_inicio} - ${periodo.fecha_fin})
+                        </option>
+                    `);
+                });
+                
+                // Mostrar panel y habilitar controles
+                $('#panelGradosAsignaturas').show();
+                $('#selectGrado').prop('disabled', false);
+                $('#selectPeriodo').prop('disabled', false);
+                
+                ocultarLoading();
+                
+            } else {
+                ocultarLoading();
+                mostrarError(response.error || 'Error al cargar la información del docente');
+            }
+        },
+        error: function(xhr, status, error) {
+            ocultarLoading();
+            mostrarError('Error de conexión al cargar la información del docente');
+        }
+    });
+});
+
+// 3. Selección de grado
+$('#selectGrado').change(function() {
+    gradoSeleccionado = $(this).val();
+    sedeSeleccionada = $(this).find('option:selected').data('sede-id');
+    const totalEstudiantes = $(this).find('option:selected').data('estudiantes') || 0;
+    
+    $('#infoEstudiantesGrado').html(`
+        <i class="fas fa-user-graduate me-1"></i>
+        ${totalEstudiantes} estudiantes matriculados
+    `);
+    
+    if (!gradoSeleccionado) {
+        $('#selectAsignatura').prop('disabled', true).html('<option value="">Seleccionar asignatura...</option>');
+        return;
+    }
+    
+    // Volver a cargar las asignaturas del docente para este grado específico
+    $.ajax({
+        url: "{% url 'administrador:obtener_grados_asignaturas_docente' %}",
+        data: { 
+            docente_id: docenteSeleccionado,
+            año_lectivo_id: añoLectivoId 
+        },
+        success: function(response) {
+            if (response.success) {
+                // Filtrar asignaturas para este grado específico
+                const gradoEncontrado = response.grados.find(function(grado) {
+                    return grado.grado_id == gradoSeleccionado && grado.sede_id == sedeSeleccionada;
+                });
+                
+                if (gradoEncontrado) {
+                    $('#selectAsignatura').html('<option value="">Seleccionar asignatura...</option>');
+                    gradoEncontrado.asignaturas.forEach(function(asignatura) {
+                        $('#selectAsignatura').append(`
+                            <option value="${asignatura.id}" 
+                                    data-asignatura-nombre="${asignatura.nombre}"
+                                    data-ih="${asignatura.ih}"
+                                    data-calificaciones="${asignatura.total_calificaciones}">
+                                ${asignatura.nombre} (${asignatura.area})
+                            </option>
+                        `);
+                    });
+                    
+                    $('#selectAsignatura').prop('disabled', false);
+                } else {
+                    $('#selectAsignatura').prop('disabled', true).html('<option value="">No hay asignaturas disponibles</option>');
+                    mostrarError('No se encontraron asignaturas para este grado y sede');
+                }
+            }
+        }
+    });
+});
+
+// 4. Selección de asignatura
+$('#selectAsignatura').change(function() {
+    asignaturaSeleccionada = $(this).val();
+    asignaturaGradoId = asignaturaSeleccionada;
+    
+    const asignaturaNombre = $(this).find('option:selected').data('asignatura-nombre') || '';
+    const asignaturaIH = $(this).find('option:selected').data('ih') || '';
+    const totalCalificaciones = $(this).find('option:selected').data('calificaciones') || 0;
+    
+    $('#infoAsignatura').html(`
+        <i class="fas fa-clock me-1"></i>${asignaturaIH} horas
+        <span class="ms-2">
+            <i class="fas fa-check-circle me-1"></i>${totalCalificaciones} calificaciones registradas
+        </span>
+    `);
+    
+    // Habilitar botón de cargar estudiantes si todo está seleccionado
+    verificarEstadoBoton();
+});
+
+// 5. Selección de período
+$('#selectPeriodo').change(function() {
+    periodoSeleccionado = $(this).val();
+    
+    const fechaInicio = $(this).find('option:selected').data('fecha-inicio') || '';
+    const fechaFin = $(this).find('option:selected').data('fecha-fin') || '';
+    
+    $('#infoPeriodo').html(`
+        <i class="fas fa-calendar me-1"></i>${fechaInicio} al ${fechaFin}
+    `);
+    
+    // Habilitar botón de cargar estudiantes si todo está seleccionado
+    verificarEstadoBoton();
+});
+
+// Verificar si se puede habilitar el botón de cargar estudiantes
+function verificarEstadoBoton() {
+    if (añoLectivoId && docenteSeleccionado && gradoSeleccionado && 
+        asignaturaSeleccionada && periodoSeleccionado) {
+        $('#btnCargarEstudiantes').prop('disabled', false)
+            .removeClass('btn-secondary')
+            .addClass('btn-primary');
+    } else {
+        $('#btnCargarEstudiantes').prop('disabled', true)
+            .removeClass('btn-primary')
+            .addClass('btn-secondary');
+    }
+}
+
+// 6. Cargar estudiantes
+$('#btnCargarEstudiantes').click(function() {
+    mostrarLoading('Cargando estudiantes y calificaciones...');
+    
+    $.ajax({
+        url: "{% url 'administrador:cargar_estudiantes_calificaciones' %}",
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        data: JSON.stringify({
+            asignatura_id: asignaturaSeleccionada,
+            grado_id: gradoSeleccionado,
+            sede_id: sedeSeleccionada,
+            periodo_id: periodoSeleccionado
+        }),
+        success: function(response) {
+            if (response.success) {
+                estudiantesCargados = response.estudiantes;
+                asignaturaGradoId = response.asignatura.id;
+                
+                // Actualizar título
+                $('#tituloCalificaciones').html(`
+                    <i class="fas fa-edit me-2"></i>
+                    ${response.asignatura.nombre} - ${response.grado.nombre} - 
+                    ${response.sede.nombre} - ${response.periodo.nombre}
+                `);
+                
+                // Mostrar estadísticas
+                mostrarEstadisticasCalificaciones(response);
+                
+                // Limpiar y llenar tabla
+                $('#cuerpoTablaCalificaciones').html('');
+                
+                response.estudiantes.forEach(function(estudiante, index) {
+                    const calificacionColor = obtenerColorCalificacion(estudiante.calificacion);
+                    const fila = `
+                        <tr data-estudiante-id="${estudiante.id}">
+                            <td class="text-center fw-bold">${index + 1}</td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    ${estudiante.codigo_matricula}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-bold">${estudiante.nombre_completo}</div>
+                                <small class="text-muted">${estudiante.numero_documento}</small>
+                            </td>
+                            <td>
+                                <small class="text-muted">${estudiante.promedio_historico} (histórico)</small>
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" 
+                                           class="form-control calificacion-input border-${calificacionColor}" 
+                                           min="0" max="100" step="0.1"
+                                           value="${estudiante.calificacion.toFixed(1)}"
+                                           data-nota-id="${estudiante.nota_id || ''}"
+                                           style="border-left: 4px solid var(--bs-${calificacionColor})">
+                                    <span class="input-group-text">/5</span>
+                                </div>
+                                <div class="progress progress-thin mt-1">
+                                    <div class="progress-bar bg-${calificacionColor}" 
+                                         role="progressbar" 
+                                         style="width: ${estudiante.calificacion}%">
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <textarea class="form-control observaciones-input" 
+                                          rows="2"
+                                          placeholder="Observaciones..."
+                                          data-estudiante-id="${estudiante.id}">${estudiante.observaciones}</textarea>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-info btn-ver-logros" 
+                                            data-estudiante-id="${estudiante.id}"
+                                            title="Ver logros">
+                                        <i class="fas fa-list"></i>
+                                    </button>
+                                    <button class="btn btn-outline-warning btn-historial" 
+                                            data-estudiante-id="${estudiante.id}"
+                                            title="Historial">
+                                        <i class="fas fa-history"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    $('#cuerpoTablaCalificaciones').append(fila);
+                });
+                
+                // Mostrar panel de calificaciones
+                $('#panelCalificaciones').show();
+                ocultarLoading();
+                
+                // Desplazar hacia el panel de calificaciones
+                $('html, body').animate({
+                    scrollTop: $('#panelCalificaciones').offset().top - 100
+                }, 1000);
+                
+            } else {
+                ocultarLoading();
+                mostrarError(response.error || 'Error al cargar los estudiantes');
+            }
+        },
+        error: function(xhr, status, error) {
+            ocultarLoading();
+            mostrarError('Error de conexión al cargar los estudiantes');
+        }
+    });
+});
+
+// Función para mostrar estadísticas
+function mostrarEstadisticasCalificaciones(data) {
+    const estadisticasHtml = `
+        <div class="col-md-3 text-center">
+            <div class="card border-0 bg-light">
+                <div class="card-body py-2">
+                    <h6 class="mb-1 text-muted">Total Estudiantes</h6>
+                    <h3 class="mb-0 fw-bold">${data.estadisticas.total_estudiantes}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="card border-0 bg-light">
+                <div class="card-body py-2">
+                    <h6 class="mb-1 text-muted">Calificados</h6>
+                    <h3 class="mb-0 fw-bold text-success">${data.estadisticas.estudiantes_con_nota}</h3>
+                    <small class="text-muted">${data.estadisticas.porcentaje_calificados}%</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="card border-0 bg-light">
+                <div class="card-body py-2">
+                    <h6 class="mb-1 text-muted">Promedio</h6>
+                    <h3 class="mb-0 fw-bold text-primary">${data.calificaciones.promedio}</h3>
+                    <small class="text-muted">/5</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="card border-0 bg-light">
+                <div class="card-body py-2">
+                    <h6 class="mb-1 text-muted">Rango</h6>
+                    <h6 class="mb-0 fw-bold">
+                        <span class="text-success">${data.calificaciones.maxima}</span> 
+                        / 
+                        <span class="text-danger">${data.calificaciones.minima}</span>
+                    </h6>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#estadisticasCalificaciones').html(estadisticasHtml);
+}
+
+// Función para obtener color según calificación
+function obtenerColorCalificacion(calificacion) {
+    if (calificacion >= 90) return 'success';
+    if (calificacion >= 70) return 'info';
+    if (calificacion >= 60) return 'warning';
+    return 'danger';
+}
+
+// 7. Guardar calificaciones
+$('#btnGuardarCalificaciones').click(function() {
+    const calificaciones = [];
+    let hayErrores = false;
+    
+    // Recolectar datos de la tabla
+    $('#tablaCalificaciones tbody tr').each(function() {
+        const estudianteId = $(this).data('estudiante-id');
+        const inputCalificacion = $(this).find('.calificacion-input');
+        const inputObservaciones = $(this).find('.observaciones-input');
+        
+        // Validar calificación
+        const calificacionValor = parseFloat(inputCalificacion.val());
+        if (isNaN(calificacionValor) || calificacionValor < 0 || calificacionValor > 100) {
+            inputCalificacion.addClass('is-invalid');
+            hayErrores = true;
+            return;
+        } else {
+            inputCalificacion.removeClass('is-invalid');
+        }
+        
+        calificaciones.push({
+            estudiante_id: estudianteId,
+            asignatura_grado_id: asignaturaGradoId,
+            periodo_id: periodoSeleccionado,
+            calificacion: calificacionValor,
+            observaciones: inputObservaciones.val().trim(),
+            nota_id: inputCalificacion.data('nota-id') || null
+        });
+    });
+    
+    if (hayErrores) {
+        mostrarError('Hay calificaciones inválidas. Por favor revise los valores.');
+        return;
+    }
+    
+    mostrarLoading('Guardando calificaciones...');
+    
+    // Enviar datos al servidor
+    $.ajax({
+        url: "{% url 'administrador:guardar_calificaciones' %}",
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        data: JSON.stringify({ 
+            calificaciones: calificaciones,
+            asignatura_grado_id: asignaturaGradoId,
+            periodo_id: periodoSeleccionado
+        }),
+        success: function(response) {
+            ocultarLoading();
+            
+            if (response.success) {
+                // CORRECCIÓN: response.resultados.guardadas es un número, no un array
+                // Actualizar los data-nota-id en los inputs si es necesario
+                // El backend puede devolver un array de IDs de notas creadas
+                
+                // Actualizar visualmente las calificaciones que fueron guardadas
+                if (calificaciones.length > 0) {
+                    // Puedes recorrer las calificaciones procesadas para actualizar UI
+                    // Por ejemplo, cambiar el color de las filas guardadas
+                    $('#tablaCalificaciones tbody tr').each(function(index) {
+                        if (index < calificaciones.length) {
+                            $(this).find('.calificacion-input').addClass('border-success');
+                            
+                            // Si el backend devolviera IDs de notas, aquí los actualizarías
+                            // Ejemplo: $(this).find('.calificacion-input').data('nota-id', nuevaNotaId);
+                        }
+                    });
+                }
+                
+                // Mostrar resumen
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Calificaciones guardadas!',
+                    html: `
+                        <div class="text-start">
+                            <p><i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>${response.mensaje}</strong></p>
+                            <hr>
+                            <p><strong>Resumen:</strong></p>
+                            <ul class="text-start">
+                                <li>Nuevas: ${response.resultados.guardadas}</li>
+                                <li>Actualizadas: ${response.resultados.actualizadas}</li>
+                                <li>Errores: ${response.resultados.errores.length}</li>
+                            </ul>
+                            ${response.resultados.errores.length > 0 ? 
+                                `<div class="mt-2 text-danger small">
+                                    <strong>Errores encontrados:</strong>
+                                    <div class="text-start mt-1">
+                                        ${response.resultados.errores.map(error => 
+                                            `<div>• ${error.estudiante_id ? 'Estudiante ID: ' + error.estudiante_id + ' - ' : ''}${error.error}</div>`
+                                        ).join('')}
+                                    </div>
+                                </div>` : ''
+                            }
+                        </div>
+                    `,
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#0d6efd',
+                    width: '600px'
+                });
+                
+            } else {
+                mostrarError(response.error || 'Error al guardar las calificaciones');
+            }
+        },
+        error: function(xhr, status, error) {
+            ocultarLoading();
+            mostrarError('Error de conexión al guardar las calificaciones: ' + error);
+        }
+    });
+});
+
+// 8. Ver logros (modal)
+$(document).on('click', '.btn-ver-logros', function() {
+    const estudianteId = $(this).data('estudiante-id');
+    const estudiante = estudiantesCargados.find(e => e.id == estudianteId);
+    
+    if (!estudiante) return;
+    
+    let contenidoLogros = '<div class="logros-container">';
+    contenidoLogros += `<h6 class="fw-bold mb-3">Logros - ${estudiante.nombre_completo}</h6>`;
+    
+    if (estudiante.logros.length === 0) {
+        contenidoLogros += `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                No hay logros definidos para esta asignatura y período.
+            </div>
+        `;
+    } else {
+        estudiante.logros.forEach(function(logro, index) {
+            contenidoLogros += `
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <span class="badge bg-primary me-2">${index + 1}</span>
+                            ${logro.tema}
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <small class="fw-bold text-success d-block">Superior</small>
+                                    <small>${logro.descripciones.superior || 'No definido'}</small>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="fw-bold text-info d-block">Alto</small>
+                                    <small>${logro.descripciones.alto || 'No definido'}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <small class="fw-bold text-warning d-block">Básico</small>
+                                    <small>${logro.descripciones.basico || 'No definido'}</small>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="fw-bold text-danger d-block">Bajo</small>
+                                    <small>${logro.descripciones.bajo || 'No definido'}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    contenidoLogros += '</div>';
+    
+    Swal.fire({
+        title: `Logros Académicos`,
+        html: contenidoLogros,
+        width: '900px',
+        confirmButtonText: 'Cerrar',
+        confirmButtonColor: '#0d6efd'
+    });
+});
+
+// 9. Ver historial (modal)
+$(document).on('click', '.btn-historial', function() {
+    const estudianteId = $(this).data('estudiante-id');
+    const estudiante = estudiantesCargados.find(e => e.id == estudianteId);
+    
+    if (!estudiante) return;
+    
+    Swal.fire({
+        title: `Historial - ${estudiante.nombre_completo}`,
+        html: `
+            <div class="text-start">
+                <p><strong>Promedio histórico:</strong> ${estudiante.promedio_historico}</p>
+                <p><strong>Total calificaciones anteriores:</strong> ${estudiante.total_notas_anteriores}</p>
+                <p class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Esta funcionalidad mostrará el historial completo en una futura versión.
+                </p>
+            </div>
+        `,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#0d6efd'
+    });
+});
+
+// 10. Exportar a Excel
+$('#btnExportarExcel').click(function() {
+    if (estudiantesCargados.length === 0) {
+        mostrarError('No hay datos para exportar');
+        return;
+    }
+    
+    // Crear datos para Excel
+    const datos = [
+        ['Matrícula', 'Estudiante', 'Documento', 'Calificación', 'Observaciones', 'Promedio Histórico']
+    ];
+    
+    estudiantesCargados.forEach(estudiante => {
+        datos.push([
+            estudiante.codigo_matricula,
+            estudiante.nombre_completo,
+            estudiante.numero_documento,
+            estudiante.calificacion,
+            estudiante.observaciones,
+            estudiante.promedio_historico
+        ]);
+    });
+    
+    // Crear libro de Excel
+    const ws = XLSX.utils.aoa_to_sheet(datos);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Calificaciones");
+    
+    // Generar nombre del archivo
+    const fecha = new Date().toISOString().slice(0,10);
+    const nombreArchivo = `calificaciones_${fecha}.xlsx`;
+    
+    // Descargar
+    XLSX.writeFile(wb, nombreArchivo);
+    
+    mostrarExito('Datos exportados exitosamente');
+});
+
+// Validación en tiempo real de calificaciones
+$(document).on('input', '.calificacion-input', function() {
+    const valor = parseFloat($(this).val());
+    const input = $(this);
+    
+    if (isNaN(valor) || valor < 0 || valor > 100) {
+        input.addClass('is-invalid');
+        input.removeClass('border-success border-info border-warning border-danger');
+    } else {
+        input.removeClass('is-invalid');
+        const color = obtenerColorCalificacion(valor);
+        input.removeClass('border-success border-info border-warning border-danger')
+             .addClass(`border-${color}`)
+             .css('border-left', `4px solid var(--bs-${color})`);
+        
+        // Actualizar barra de progreso
+        const progressBar = input.closest('td').find('.progress-bar');
+        progressBar.css('width', `${valor}%`)
+                   .removeClass('bg-success bg-info bg-warning bg-danger')
+                   .addClass(`bg-${color}`);
+    }
+});
+</script>
+{% endblock %}

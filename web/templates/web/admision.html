@@ -1,0 +1,116 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block title %}Admisiones | Colegio Cristiano El Shadai{% endblock %}
+
+{% block content %}
+<!-- Hero Section - CLASES CORREGIDAS -->
+<section class="page-header py-2 text-force-white">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1 class="display-5 fw-bold mb-2 text-force-white">Proceso de Admisión</h1>
+                <p class="lead text-force-white">Todo lo que necesitas saber para formar parte de nuestra familia educativa</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Procesos de Admisión -->
+<section class="admission-process-section py-5">
+    <div class="container">
+        <div class="row">
+            {% for item in admision_items %}
+                {% if item %}
+                <div class="col-lg-6 mb-4">
+                    <div class="admission-card h-100">
+                        <div class="card-header">
+                            <h4 class="text-force-white mb-0 center">{{ item.title }}</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="admission-description">
+                                {% if item.get_description_as_list %}
+                                    <ul class="requirements-list">
+                                        {% for line in item.get_description_as_list %}
+                                            <li class="text-color">{{ line }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="text-muted">No hay información disponible en este momento.</p>
+                                {% endif %}
+                            </div>
+                            
+                            {% if item.link %}
+                            <div class="mt-3">
+                                <a href="{{ item.link }}" class="btn btn-primary" target="_blank">
+                                    <i class="fas fa-external-link-alt me-2"></i>Más Información
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer bg-transparent text-center my-4">
+                            <a href="{% static 'web/docs/formulario-matricula.pdf' %}" class="btn btn-primary btn-lg" download>
+                                <i class="fas fa-download me-2"></i>Descargar Formulario de Matrícula PDF
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% empty %}
+                <!-- Mensaje si no hay admisiones configuradas -->
+                <div class="col-12 text-center">
+                    <div class="alert alert-info">
+                        <h4>Información de Admisiones</h4>
+                        <p>Próximamente estará disponible toda la información sobre nuestros procesos de admisión.</p>
+                        <p>Para más información, contáctenos directamente.</p>
+                        <a href="{% url 'web:contact' %}" class="btn btn-primary mt-2">
+                            <i class="fas fa-envelope me-2"></i>Contactar Admisiones
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="cta-section py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto text-center">
+                <h2 class="mb-4">¿Listo para empezar?</h2>
+                <p class="lead mb-4 text-color">No dudes en contactarnos si tienes alguna pregunta sobre nuestros procesos de admisión.</p>
+                <div class="cta-buttons">
+                    <a href="{% url 'web:contact' %}" class="btn btn-primary btn-lg me-3">
+                        <i class="fas fa-paper-plane me-2"></i>Solicitar Información
+                    </a>
+                    <a href="tel:+573188868070" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-phone me-2"></i>Llamar Ahora
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Correcciones adicionales */
+    .admission-card .card-body {
+        color: var(--text-color) !important;
+    }
+    
+    .admission-card .requirements-list li {
+        color: var(--text-color) !important;
+    }
+    
+    .text-color {
+        color: var(--text-color) !important;
+    }
+    
+    .cta-section .lead {
+        color: var(--text-color) !important;
+    }
+</style>
+{% endblock %}

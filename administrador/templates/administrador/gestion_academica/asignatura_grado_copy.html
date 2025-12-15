@@ -1,0 +1,418 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Copiar Asignaturas entre Años/Grados{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4">
+            <i class="fas fa-copy me-2"></i>Copiar Asignaturas
+        </h1>
+        <div>
+            <a href="{% url 'administrador:asignatura_grado_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-exchange-alt me-2"></i>Configurar Copia de Asignaturas
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate id="copyForm">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            <p class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row g-3">
+                            <!-- Origen y Destino -->
+                            <div class="col-md-6">
+                                <div class="card bg-light mb-3">
+                                    <div class="card-header">
+                                        <i class="fas fa-download me-2"></i>Origen
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group mb-3">
+                                            <label for="{{ form.año_origen.id_for_label }}" class="form-label">
+                                                Año Lectivo Origen *
+                                            </label>
+                                            {{ form.año_origen }}
+                                            {% if form.año_origen.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.año_origen.errors|join:", " }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="{{ form.grados_origen.id_for_label }}" class="form-label">
+                                                Grados Origen *
+                                            </label>
+                                            {{ form.grados_origen }}
+                                            {% if form.grados_origen.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.grados_origen.errors|join:", " }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card bg-light mb-3">
+                                    <div class="card-header">
+                                        <i class="fas fa-upload me-2"></i>Destino
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group mb-3">
+                                            <label for="{{ form.año_destino.id_for_label }}" class="form-label">
+                                                Año Lectivo Destino *
+                                            </label>
+                                            {{ form.año_destino }}
+                                            {% if form.año_destino.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.año_destino.errors|join:", " }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="{{ form.grados_destino.id_for_label }}" class="form-label">
+                                                Grados Destino *
+                                            </label>
+                                            {{ form.grados_destino }}
+                                            {% if form.grados_destino.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.grados_destino.errors|join:", " }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Sedes -->
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="{{ form.sedes.id_for_label }}" class="form-label">
+                                        Sedes *
+                                    </label>
+                                    {{ form.sedes }}
+                                    {% if form.sedes.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.sedes.errors|join:", " }}
+                                    </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Las asignaturas se copiarán para las mismas sedes
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Opciones -->
+                            <div class="col-12">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="fas fa-sliders-h me-2"></i>Opciones de Copia
+                                        </h6>
+                                        
+                                        <div class="form-check mb-3">
+                                            {{ form.incluir_docentes }}
+                                            <label class="form-check-label" for="{{ form.incluir_docentes.id_for_label }}">
+                                                {{ form.incluir_docentes.label }}
+                                            </label>
+                                            <small class="form-text text-muted d-block">
+                                                Copia también la asignación de docentes a las asignaturas
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="form-check">
+                                            {{ form.sobrescribir_existentes }}
+                                            <label class="form-check-label" for="{{ form.sobrescribir_existentes.id_for_label }}">
+                                                {{ form.sobrescribir_existentes.label }}
+                                            </label>
+                                            <small class="form-text text-muted d-block">
+                                                Elimina asignaturas existentes en el destino antes de copiar
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Vista previa del mapeo -->
+                            <div class="col-12 mt-3">
+                                <div class="card bg-info text-white">
+                                    <div class="card-header">
+                                        <i class="fas fa-eye me-2"></i>Vista Previa del Mapeo
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="mapeoPreview" class="text-center">
+                                            <p class="mb-0">Seleccione años y grados para ver el mapeo</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Resumen de la copia -->
+                            <div class="col-12 mt-3">
+                                <div class="card bg-success text-white">
+                                    <div class="card-header">
+                                        <i class="fas fa-calculator me-2"></i>Resumen de la Copia
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="copySummary" class="text-center">
+                                            <p class="mb-0">No hay datos suficientes para calcular</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-copy me-1"></i>Ejecutar Copia
+                            </button>
+                            <a href="{% url 'administrador:asignatura_grado_list' %}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Información -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-info-circle me-2"></i>Información Importante
+                </div>
+                <div class="card-body">
+                    <h6>¿Qué hace esta herramienta?</h6>
+                    <p class="small">
+                        Copia la estructura completa de asignaturas de un año/grado a otro.
+                        Útil para replicar configuraciones entre años académicos.
+                    </p>
+                    
+                    <hr>
+                    
+                    <h6>Ejemplo de uso:</h6>
+                    <p class="small">
+                        <strong>Caso común:</strong><br>
+                        Copiar todas las asignaturas de "Primaria - 2023" a "Primaria - 2024"
+                    </p>
+                    
+                    <p class="small">
+                        <strong>Caso avanzado:</strong><br>
+                        Copiar de "Preescolar 2023" (Prejardín, Jardín, Transición) a 
+                        "Preescolar 2024" con los mismos grados
+                    </p>
+                    
+                    <hr>
+                    
+                    <h6>Consideraciones:</h6>
+                    <ul class="small mb-0">
+                        <li>El mapeo de grados es 1 a 1 (Primero→Primero, Segundo→Segundo)</li>
+                        <li>Las sedes deben existir en ambos años</li>
+                        <li>Los docentes solo se copian si están activos en el sistema</li>
+                        <li>Revise el resumen antes de ejecutar</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Estadísticas rápidas -->
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <i class="fas fa-chart-bar me-2"></i>Estadísticas Rápidas
+                </div>
+                <div class="card-body">
+                    <div id="quickStats">
+                        <div class="text-center py-3">
+                            <i class="fas fa-sync fa-spin"></i>
+                            <p class="small mb-0 mt-2">Cargando estadísticas...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Variables para almacenar datos
+    var asignaturasOrigen = {};
+    var asignaturasDestino = {};
+    
+    // Cargar estadísticas
+    function cargarEstadisticas() {
+        var añoOrigen = $('#id_año_origen').val();
+        var añoDestino = $('#id_año_destino').val();
+        
+        if (añoOrigen) {
+            $.ajax({
+                url: '{% url "administrador:asignatura_grado_ajax_stats" %}',
+                data: {año_lectivo_id: añoOrigen},
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success) {
+                        $('#quickStats').html(`
+                            <h6>Origen (${data.anho}):</h6>
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h4 class="text-primary">${data.total_asignaturas}</h4>
+                                    <small>Asignaturas</small>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-success">${data.grados_con_asignaturas}</h4>
+                                    <small>Grados</small>
+                                </div>
+                            </div>
+                        `);
+                        asignaturasOrigen = data;
+                    }
+                }
+            });
+        }
+        
+        if (añoDestino) {
+            $.ajax({
+                url: '{% url "administrador:asignatura_grado_ajax_stats" %}',
+                data: {año_lectivo_id: añoDestino},
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success && añoOrigen) {
+                        var html = $('#quickStats').html();
+                        $('#quickStats').html(html + `
+                            <hr>
+                            <h6>Destino (${data.anho}):</h6>
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h4 class="text-primary">${data.total_asignaturas}</h4>
+                                    <small>Asignaturas</small>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-success">${data.grados_con_asignaturas}</h4>
+                                    <small>Grados</small>
+                                </div>
+                            </div>
+                        `);
+                        asignaturasDestino = data;
+                        actualizarResumen();
+                    }
+                }
+            });
+        }
+    }
+    
+    // Actualizar vista previa del mapeo
+    function actualizarMapeo() {
+        var gradosOrigen = $('#id_grados_origen').val() || [];
+        var gradosDestino = $('#id_grados_destino').val() || [];
+        var sedes = $('#id_sedes').val() || [];
+        
+        if (gradosOrigen.length === 0 || gradosDestino.length === 0) {
+            $('#mapeoPreview').html('<p class="mb-0">Seleccione grados en origen y destino</p>');
+            return;
+        }
+        
+        if (gradosOrigen.length !== gradosDestino.length) {
+            $('#mapeoPreview').html(`
+                <div class="alert alert-warning mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    El número de grados origen y destino debe ser igual para un mapeo correcto
+                </div>
+            `);
+            return;
+        }
+        
+        var html = '<div class="table-responsive"><table class="table table-sm text-white mb-0"><thead><tr><th>Origen</th><th>→</th><th>Destino</th></tr></thead><tbody>';
+        
+        for (var i = 0; i < gradosOrigen.length; i++) {
+            var gradoOrigen = $('#id_grados_origen option[value="' + gradosOrigen[i] + '"]').text();
+            var gradoDestino = $('#id_grados_destino option[value="' + gradosDestino[i] + '"]').text();
+            html += `<tr><td>${gradoOrigen}</td><td><i class="fas fa-arrow-right"></i></td><td>${gradoDestino}</td></tr>`;
+        }
+        
+        html += '</tbody></table></div>';
+        $('#mapeoPreview').html(html);
+    }
+    
+    // Actualizar resumen
+    function actualizarResumen() {
+        var gradosOrigen = $('#id_grados_origen').val() || [];
+        var gradosDestino = $('#id_grados_destino').val() || [];
+        var sedes = $('#id_sedes').val() || [];
+        var incluirDocentes = $('#id_incluir_docentes').is(':checked');
+        
+        if (gradosOrigen.length === 0 || gradosDestino.length === 0 || sedes.length === 0) {
+            $('#copySummary').html('<p class="mb-0">Complete todos los campos para ver el resumen</p>');
+            return;
+        }
+        
+        var totalAsignaturas = gradosOrigen.length * (asignaturasOrigen.promedio_asignaturas_por_grado || 5) * sedes.length;
+        var totalCopias = gradosOrigen.length * sedes.length;
+        
+        $('#copySummary').html(`
+            <h4>${totalAsignaturas} asignaturas</h4>
+            <p class="mb-1">Se copiarán en ${totalCopias} combinaciones</p>
+            <small>(${gradosOrigen.length} grados × ${sedes.length} sedes)</small>
+            
+            ${incluirDocentes ? 
+                '<hr><p class="mb-0"><i class="fas fa-user-tie me-2"></i>Incluyendo asignación de docentes</p>' : 
+                '<hr><p class="mb-0"><i class="fas fa-info-circle me-2"></i>Sin asignación de docentes</p>'
+            }
+        `);
+    }
+    
+    // Event listeners
+    $('#id_año_origen, #id_año_destino').change(function() {
+        cargarEstadisticas();
+        actualizarResumen();
+    });
+    
+    $('#id_grados_origen, #id_grados_destino').change(function() {
+        actualizarMapeo();
+        actualizarResumen();
+    });
+    
+    $('#id_sedes, #id_incluir_docentes, #id_sobrescribir_existentes').change(function() {
+        actualizarResumen();
+    });
+    
+    // Validación del formulario
+    $('#copyForm').submit(function(e) {
+        var gradosOrigen = $('#id_grados_origen').val() || [];
+        var gradosDestino = $('#id_grados_destino').val() || [];
+        var sobrescribir = $('#id_sobrescribir_existentes').is(':checked');
+        
+        if (gradosOrigen.length !== gradosDestino.length) {
+            alert('El número de grados en origen y destino debe ser igual.');
+            e.preventDefault();
+            return false;
+        }
+        
+        if (sobrescribir) {
+            return confirm('⚠️ ATENCIÓN: Esta acción sobrescribirá asignaturas existentes en el destino.\n\n¿Está seguro de continuar?');
+        }
+    });
+    
+    // Inicializar
+    cargarEstadisticas();
+});
+</script>
+{% endblock %}

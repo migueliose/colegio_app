@@ -1,0 +1,318 @@
+<!-- acudiente/templates/acudiente/comportamiento_estudiante.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static estudiante_filters %}
+
+{% block title %}Comportamiento de {{ estudiante.usuario.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'gestioncolegio:dashboard_acudiente' %}">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'acudiente:detalle_estudiante' estudiante.id %}">
+                            {{ estudiante.usuario.nombres }}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Comportamiento</li>
+                </ol>
+            </nav>
+            
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="h3 mb-1">
+                                <i class="fas fa-user-check me-2"></i>Comportamiento y Observaciones
+                            </h1>
+                            <p class="text-muted mb-0">
+                                {{ estudiante.usuario.get_full_name }}
+                                {% if estudiante.matricula_actual %}
+                                • {{ estudiante.matricula_actual.grado_año_lectivo.grado.nombre }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary dropdown-toggle" 
+                                    type="button" 
+                                    data-bs-toggle="dropdown" 
+                                    aria-expanded="false">
+                                <i class="fas fa-filter me-1"></i>Filtrar
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 300px;">
+                                <form method="get" action="{% url 'acudiente:comportamiento_estudiante' estudiante.id %}">
+                                    <div class="mb-3">
+                                        <label for="tipo" class="form-label small">Tipo</label>
+                                        <select class="form-select form-select-sm" id="tipo" name="tipo">
+                                            <option value="">Todos los tipos</option>
+                                            <option value="Positivo" {% if tipo_seleccionado == 'Positivo' %}selected{% endif %}>Positivo</option>
+                                            <option value="Negativo" {% if tipo_seleccionado == 'Negativo' %}selected{% endif %}>Negativo</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="categoria" class="form-label small">Categoría</label>
+                                        <select class="form-select form-select-sm" id="categoria" name="categoria">
+                                            <option value="">Todas las categorías</option>
+                                            <option value="Respeto" {% if categoria_seleccionada == 'Respeto' %}selected{% endif %}>Respeto</option>
+                                            <option value="Responsabilidad" {% if categoria_seleccionada == 'Responsabilidad' %}selected{% endif %}>Responsabilidad</option>
+                                            <option value="Disciplina" {% if categoria_seleccionada == 'Disciplina' %}selected{% endif %}>Disciplina</option>
+                                            <option value="Solidaridad" {% if categoria_seleccionada == 'Solidaridad' %}selected{% endif %}>Solidaridad</option>
+                                            <option value="Academico" {% if categoria_seleccionada == 'Academico' %}selected{% endif %}>Académico</option>
+                                        </select>
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label for="desde" class="form-label small">Desde</label>
+                                            <input type="date" class="form-control form-control-sm" id="desde" name="desde" value="{{ desde }}">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="hasta" class="form-label small">Hasta</label>
+                                            <input type="date" class="form-control form-control-sm" id="hasta" name="hasta" value="{{ hasta }}">
+                                        </div>
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-check me-1"></i>Aplicar Filtros
+                                        </button>
+                                        <a href="{% url 'acudiente:comportamiento_estudiante' estudiante.id %}" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-times me-1"></i>Limpiar
+                                        </a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    {% if estadisticas.total > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Estadísticas de Comportamiento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Resumen General -->
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <div class="display-4 text-primary mb-2">
+                                        {{ estadisticas.total }}
+                                    </div>
+                                    <h6 class="text-muted mb-1">Total Observaciones</h6>
+                                    <small class="text-muted">Registros encontrados</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Positivos vs Negativos -->
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-3">Distribución por Tipo</h6>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <div>
+                                            <span class="badge bg-success me-2">✓</span>
+                                            <span>Positivos</span>
+                                        </div>
+                                        <strong>{{ estadisticas.positivos }}</strong>
+                                    </div>
+                                    <div class="progress mb-3" style="height: 10px;">
+                                        <div class="progress-bar bg-success" 
+                                             style="width: {% widthratio estadisticas.positivos estadisticas.total 100 %}%">
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <div>
+                                            <span class="badge bg-warning me-2">!</span>
+                                            <span>Negativos</span>
+                                        </div>
+                                        <strong>{{ estadisticas.negativos }}</strong>
+                                    </div>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar bg-warning" 
+                                             style="width: {% widthratio estadisticas.negativos estadisticas.total 100 %}%">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Porcentaje Positivos -->
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-{% if estadisticas.porcentaje_positivos >= 70 %}success{% elif estadisticas.porcentaje_positivos >= 50 %}warning{% else %}danger{% endif %}">
+                                <div class="card-body text-center">
+                                    <div class="display-4 text-{% if estadisticas.porcentaje_positivos >= 70 %}success{% elif estadisticas.porcentaje_positivos >= 50 %}warning{% else %}danger{% endif %} mb-2">
+                                        {{ estadisticas.porcentaje_positivos }}%
+                                    </div>
+                                    <h6 class="text-muted mb-1">Observaciones Positivas</h6>
+                                    <small class="text-muted">Porcentaje del total</small>
+                                    <div class="progress mt-2" style="height: 8px;">
+                                        <div class="progress-bar bg-{% if estadisticas.porcentaje_positivos >= 70 %}success{% elif estadisticas.porcentaje_positivos >= 50 %}warning{% else %}danger{% endif %}" 
+                                             style="width: {{ estadisticas.porcentaje_positivos }}%">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Lista de Comportamientos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Registro de Comportamiento
+                    </h5>
+                    <div>
+                        <span class="badge bg-primary">
+                            {{ comportamientos|length }} registros
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if comportamientos %}
+                    <div class="list-group list-group-flush">
+                        {% for comportamiento in comportamientos %}
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-start">
+                                <!-- Icono según tipo -->
+                                <div class="me-3 flex-shrink-0">
+                                    {% if comportamiento.tipo == 'Positivo' %}
+                                    <div class="bg-success bg-opacity-10 p-3 rounded-circle">
+                                        <i class="fas fa-check text-success fa-lg"></i>
+                                    </div>
+                                    {% else %}
+                                    <div class="bg-warning bg-opacity-10 p-3 rounded-circle">
+                                        <i class="fas fa-exclamation text-warning fa-lg"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Contenido -->
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h6 class="mb-1">{{ comportamiento.get_categoria_display }}</h6>
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar-alt me-1"></i>
+                                                {{ comportamiento.fecha|date:"d/m/Y" }}
+                                                {% if comportamiento.docente %}
+                                                <span class="ms-3">
+                                                    <i class="fas fa-user me-1"></i>
+                                                    {{ comportamiento.docente.usuario.get_full_name }}
+                                                </span>
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        <div>
+                                            <span class="badge {% if comportamiento.tipo == 'Positivo' %}bg-success{% else %}bg-warning{% endif %}">
+                                                {{ comportamiento.get_tipo_display }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <p class="mb-2">{{ comportamiento.descripcion }}</p>
+                                    
+                                    {% if comportamiento.periodo_academico %}
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        {{ comportamiento.periodo_academico.periodo.nombre }} • 
+                                        {{ comportamiento.periodo_academico.año_lectivo.anho }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Paginación -->
+                    {% if is_paginated %}
+                    <nav aria-label="Paginación" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay registros de comportamiento</h5>
+                        <p class="text-muted">
+                            No se encontraron observaciones con los filtros aplicados
+                        </p>
+                        <a href="{% url 'acudiente:comportamiento_estudiante' estudiante.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-redo me-1"></i>Ver todos los registros
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+.list-group-item:first-child {
+    border-top: none;
+}
+.list-group-item:last-child {
+    border-bottom: none;
+}
+.bg-opacity-10 {
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+}
+</style>
+{% endblock %}

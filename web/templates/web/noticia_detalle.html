@@ -1,0 +1,73 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block title %}{{ noticia.title }} | Noticias{% endblock %}
+
+{% block content %}
+
+<section class="news-detail-section py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="fw-bold text-primary">{{ noticia.title }}</h2>
+                <p class="text-muted">{{ noticia.created|date:"d M Y" }}</p>
+            </div>
+        </div>
+
+        <!-- Imagen principal -->
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                {% if noticia.image %}
+                    <img src="{{ noticia.image.url }}" alt="{{ noticia.title }}" class="img-fluid rounded shadow" style="max-height: 400px; object-fit: cover;">
+                {% else %}
+                    <img src="{% static 'web/images/default-news.jpg' %}" alt="Imagen predeterminada" class="img-fluid rounded shadow" style="max-height: 400px; object-fit: cover;">
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Descripción -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="news-description">
+                    {{ noticia.description|linebreaks }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Galería de imágenes -->
+        {% if noticia.imagenes.all %}
+        <div class="row">
+            <div class="col-12 mb-4">
+                <h4 class="text-primary mb-3">Galería</h4>
+            </div>
+            {% for img in noticia.imagenes.all %}
+            <div class="col-md-4 col-6 mb-4">
+                <div class="gallery-card shadow-sm rounded">
+                    <img src="{{ img.image.url }}" alt="{{ img.caption|default:noticia.title }}" class="img-fluid rounded" style="height: 200px; object-fit: cover;">
+                    {% if img.caption %}
+                    <p class="text-center mt-2 small text-secondary">{{ img.caption }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Enlace externo -->
+        {% if noticia.link %}
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <a href="{{ noticia.link }}" target="_blank" class="btn btn-primary">
+                    Ver más información
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_css %}
+
+{% endblock %}

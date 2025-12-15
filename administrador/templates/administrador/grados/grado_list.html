@@ -1,0 +1,115 @@
+<!-- administrador/templates/administrador/grados/grado_list.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static estudiante_filters %}
+
+{% block title %}Grados - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="fas fa-graduation-cap me-2"></i>Grados Académicos
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'administrador:grado_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Nuevo Grado
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-filter me-2"></i>Filtrar Grados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="nivel" class="form-label">Nivel Escolar</label>
+                            <select name="nivel" id="nivel" class="form-select">
+                                <option value="">Todos los niveles</option>
+                                {% for nivel in niveles_escolares %}
+                                <option value="{{ nivel.id }}" {% if request.GET.nivel == nivel.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ nivel.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-1"></i> Filtrar
+                            </button>
+                            <a href="{% url 'administrador:grado_list' %}" class="btn btn-secondary ms-2">
+                                <i class="fas fa-redo me-1"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de grados -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>Lista de Grados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if grados %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Nivel Escolar</th>
+                                    <th>Creado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grado in grados %}
+                                <tr>
+                                    <td>{{ grado.id }}</td>
+                                    <td>{{ grado.get_nombre_display }}</td>
+                                    <td>{{ grado.nivel_escolar.nombre }}</td>
+                                    <td>{{ grado.created_at|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'administrador:grado_update' grado.pk %}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'administrador:grado_delete' grado.pk %}" 
+                                               class="btn btn-sm btn-outline-danger" 
+                                               title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No hay grados registrados en el sistema.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,504 @@
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block title %}Asignaturas por Grado y Año - Colegio App{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Cabecera -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <h1 class="h3 mb-1">
+                <i class="fas fa-book me-2"></i>Asignaturas por Grado y Año
+            </h1>
+            <p class="text-muted mb-0">Gestión de asignaturas asignadas a grados por año lectivo</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'administrador:asignatura_grado_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Nueva Asignatura
+            </a>
+            <a href="{% url 'administrador:asignatura_grado_bulk' %}" class="btn btn-success">
+                <i class="fas fa-layer-group me-1"></i>Asignación Masiva
+            </a>
+            <a href="{% url 'administrador:asignatura_grado_copy' %}" class="btn btn-info">
+                <i class="fas fa-copy me-1"></i>Copiar Asignaturas
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-filter me-2"></i>Filtros de Búsqueda
+                </h5>
+                <button class="btn btn-link text-decoration-none p-0" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#filtersCollapse">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+        <div class="collapse show" id="filtersCollapse">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium">Año Lectivo</label>
+                        <select name="año_lectivo" class="form-select" id="id_año_lectivo">
+                            <option value="">Todos</option>
+                            {% for año in años_lectivos %}
+                            <option value="{{ año.id }}" 
+                                    {% if request.GET.año_lectivo == año.id|stringformat:"s" %}selected{% endif %}>
+                                {{ año.anho }} - {{ año.sede.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium">Grado</label>
+                        <select name="grado" class="form-select" id="id_grado">
+                            <option value="">Todos</option>
+                            {% for grado in grados %}
+                            <option value="{{ grado.id }}" 
+                                    {% if request.GET.grado == grado.id|stringformat:"s" %}selected{% endif %}>
+                                {{ grado.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium">Sede</label>
+                        <select name="sede" class="form-select">
+                            <option value="">Todas</option>
+                            {% for sede in sedes %}
+                            <option value="{{ sede.id }}" 
+                                    {% if request.GET.sede == sede.id|stringformat:"s" %}selected{% endif %}>
+                                {{ sede.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium">Docente</label>
+                        <select name="docente" class="form-select">
+                            <option value="">Todos</option>
+                            {% for docente in docentes %}
+                            <option value="{{ docente.id }}" 
+                                    {% if request.GET.docente == docente.id|stringformat:"s" %}selected{% endif %}>
+                                {{ docente.usuario.get_full_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium">Asignación</label>
+                        <select name="asignada_docente" class="form-select">
+                            <option value="">Todas</option>
+                            <option value="con_docente" {% if request.GET.asignada_docente == "con_docente" %}selected{% endif %}>
+                                Con Docente
+                            </option>
+                            <option value="sin_docente" {% if request.GET.asignada_docente == "sin_docente" %}selected{% endif %}>
+                                Sin Docente
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-1"></i>Buscar
+                            </button>
+                            <a href="{% url 'administrador:asignatura_grado_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-redo me-1"></i>Limpiar Filtros
+                            </a>
+                            <button type="button" class="btn btn-outline-info" id="exportBtn">
+                                <i class="fas fa-file-export me-1"></i>Exportar
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                                <i class="fas fa-print me-1"></i>Imprimir
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-start border-primary border-4 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Total Asignaturas</p>
+                            <h3 class="mb-0">{{ total_con_docente|add:total_sin_docente }}</h3>
+                        </div>
+                        <div class="bg-primary-subtle p-3 rounded">
+                            <i class="fas fa-book text-primary fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-start border-success border-4 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Con Docente</p>
+                            <h3 class="mb-0">{{ total_con_docente }}</h3>
+                        </div>
+                        <div class="bg-success-subtle p-3 rounded">
+                            <i class="fas fa-chalkboard-teacher text-success fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-start border-warning border-4 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Sin Docente</p>
+                            <h3 class="mb-0">{{ total_sin_docente }}</h3>
+                        </div>
+                        <div class="bg-warning-subtle p-3 rounded">
+                            <i class="fas fa-exclamation-circle text-warning fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-start border-info border-4 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Grados con Asign.</p>
+                            <h3 class="mb-0">{{ total_grados }}</h3>
+                        </div>
+                        <div class="bg-info-subtle p-3 rounded">
+                            <i class="fas fa-graduation-cap text-info fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Asignaturas -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+                <div>
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2 text-primary"></i>Lista de Asignaturas por Grado y Año
+                    </h5>
+                    <p class="text-muted mb-0 small mt-1">
+                        Mostrando {{ page_obj.start_index|default:1 }}-{{ page_obj.end_index|default:asignaturas_grado.count }} 
+                        de {{ page_obj.paginator.count|default:asignaturas_grado.count }} registros
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="dropdown">
+                            <i class="fas fa-cog me-1"></i>Acciones
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" id="asignarDocentesBtn">
+                                <i class="fas fa-user-plus me-2"></i>Asignar Docentes Masivamente
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" id="generarHorariosBtn">
+                                <i class="fas fa-clock me-2"></i>Generar Horarios
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="exportarExcelBtn">
+                                <i class="fas fa-file-excel me-2"></i>Exportar a Excel
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if asignaturas_grado %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="asignaturasTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="25%">Asignatura</th>
+                            <th width="15%">Grado</th>
+                            <th width="10%">Año</th>
+                            <th width="15%">Sede</th>
+                            <th width="25%">Docente</th>
+                            <th width="10%" class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asignatura in asignaturas_grado %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-start">
+                                    <div class="bg-primary-subtle p-2 rounded me-3">
+                                        <i class="fas fa-book text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <strong class="d-block">{{ asignatura.asignatura.nombre }}</strong>
+                                        <small class="text-muted">
+                                            <i class="fas fa-layer-group me-1"></i>
+                                            {{ asignatura.asignatura.area.nombre }}
+                                            {% if asignatura.asignatura.ih %}
+                                            <span class="badge bg-secondary ms-2">IH: {{ asignatura.asignatura.ih }}</span>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-info rounded-pill px-3 py-2">
+                                    <i class="fas fa-graduation-cap me-1"></i>
+                                    {{ asignatura.grado_año_lectivo.grado.nombre }}
+                                </span>
+                                <div class="mt-1">
+                                    <small class="text-muted">
+                                        <i class="fas fa-{% if asignatura.grado_año_lectivo.grado.nivel_escolar.nombre == 'Preescolar' %}child{% else %}school{% endif %} me-1"></i>
+                                        {{ asignatura.grado_año_lectivo.grado.nivel_escolar.nombre }}
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-calendar-alt text-muted me-2"></i>
+                                    <span>{{ asignatura.grado_año_lectivo.año_lectivo.anho }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-building text-muted me-2"></i>
+                                    <span>{{ asignatura.sede.nombre }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if asignatura.docente %}
+                                <div class="d-flex align-items-center">
+                                    {% if asignatura.docente.usuario.foto %}
+                                    <img src="{{ asignatura.docente.usuario.foto.url }}" 
+                                         alt="{{ asignatura.docente.usuario.get_full_name }}"
+                                         class="rounded-circle me-2" width="32" height="32">
+                                    {% else %}
+                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2" 
+                                         style="width: 32px; height: 32px;">
+                                        <i class="fas fa-user text-white small"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong class="d-block">{{ asignatura.docente.usuario.get_full_name }}</strong>
+                                        <small class="text-muted">
+                                            <i class="fas fa-id-card me-1"></i>
+                                            {{ asignatura.docente.usuario.numero_documento }}
+                                        </small>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-warning-subtle p-2 rounded me-3">
+                                        <i class="fas fa-user-times text-warning"></i>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-warning rounded-pill mb-1">Sin asignar</span>
+                                        <div>
+                                            <a href="{% url 'administrador:asignatura_grado_update' asignatura.pk %}" 
+                                               class="text-decoration-none small">
+                                                <i class="fas fa-user-plus me-1"></i>Asignar docente
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="#" 
+                                       class="btn btn-outline-primary btn-sm" 
+                                       title="Ver horarios"
+                                       data-bs-toggle="tooltip">
+                                        <i class="fas fa-clock"></i>
+                                    </a>
+                                    <a href="{% url 'administrador:asignatura_grado_update' asignatura.pk %}" 
+                                       class="btn btn-outline-warning btn-sm" 
+                                       title="Editar"
+                                       data-bs-toggle="tooltip">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'administrador:asignatura_grado_delete' asignatura.pk %}" 
+                                       class="btn btn-outline-danger btn-sm" 
+                                       title="Eliminar"
+                                       data-bs-toggle="tooltip">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            {% if is_paginated %}
+            <div class="card-footer bg-white border-top">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                    <div class="mb-3 mb-md-0">
+                        <p class="mb-0 text-muted">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} - 
+                            {{ page_obj.paginator.count }} registros
+                        </p>
+                    </div>
+                    <nav aria-label="Paginación">
+                        <ul class="pagination mb-0">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Primera">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Anterior">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-angle-left"></i></span>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if num == page_obj.number %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Siguiente">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Última">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-angle-right"></i></span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-book fa-4x text-muted opacity-50"></i>
+                </div>
+                <h4 class="text-muted mb-3">No se encontraron asignaturas</h4>
+                <p class="text-muted mb-4">No hay asignaturas asignadas a grados y años lectivos con los filtros aplicados.</p>
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    <a href="{% url 'administrador:asignatura_grado_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Crear Asignatura
+                    </a>
+                    <a href="{% url 'administrador:asignatura_grado_bulk' %}" class="btn btn-success">
+                        <i class="fas fa-layer-group me-2"></i>Asignación Masiva
+                    </a>
+                    <a href="{% url 'administrador:asignatura_grado_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-redo me-2"></i>Limpiar Filtros
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+    
+    // Exportar a Excel
+    $('#exportBtn').click(function() {
+        if(confirm('¿Desea exportar la lista de asignaturas a Excel?')) {
+            window.location.href = '{% url "administrador:asignatura_grado_list" %}?export=excel';
+        }
+    });
+    
+    $('#exportarExcelBtn').click(function() {
+        $('#exportBtn').click();
+    });
+    
+    // Asignar docentes masivamente
+    $('#asignarDocentesBtn').click(function() {
+        alert('Funcionalidad de asignación masiva de docentes en desarrollo.');
+    });
+    
+    // Generar horarios
+    $('#generarHorariosBtn').click(function() {
+        alert('Funcionalidad de generación de horarios en desarrollo.');
+    });
+    
+    // Auto-habilitar filtro de grado cuando se selecciona año
+    $('#id_año_lectivo').change(function() {
+        var añoId = $(this).val();
+        if (añoId) {
+            $('#id_grado').prop('disabled', false);
+            // Aquí podrías cargar solo los grados del año seleccionado via AJAX
+        } else {
+            $('#id_grado').prop('disabled', true).val('');
+        }
+    });
+    
+    // Inicializar estado del filtro de grado
+    if (!$('#id_año_lectivo').val()) {
+        $('#id_grado').prop('disabled', true);
+    }
+    
+    // Alternar filtros en móviles
+    $('[data-bs-toggle="collapse"]').click(function() {
+        $(this).find('i').toggleClass('fa-chevron-down fa-chevron-up');
+    });
+    
+    // Confirmación antes de eliminar (opcional - ya está en la página separada)
+    $('a[href*="asignatura_grado_delete"]').click(function(e) {
+        // Esta confirmación es opcional, ya que hay una página completa de confirmación
+        // Si quieres mantenerla para doble confirmación:
+        if (!confirm('¿Está seguro de que desea eliminar esta asignatura?\n\nSerá redirigido a la página de confirmación.')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

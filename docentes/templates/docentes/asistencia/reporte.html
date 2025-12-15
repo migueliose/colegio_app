@@ -1,0 +1,402 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static asistencia_filters  %}
+
+{% block title %}Reporte de Asistencia - {{ grado_año_lectivo.grado.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="bi bi-file-earmark-text me-2"></i>
+                            Reporte de Asistencia: {{ grado_año_lectivo.grado.nombre }}
+                        </h4>
+                        <div>
+                            <a href="{% url 'docentes:asistencia_principal' %}" class="btn btn-light btn-sm">
+                                <i class="bi bi-arrow-left me-1"></i>Volver
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información del reporte -->
+                <div class="card-body border-bottom">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5>Información del Reporte</h5>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th width="30%">Curso:</th>
+                                    <td>{{ grado_año_lectivo.grado.nombre }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Sede:</th>
+                                    <td>{{ grado_año_lectivo.año_lectivo.sede.nombre }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Periodo:</th>
+                                    <td>{{ periodo_academico.periodo.nombre }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Fecha Inicio:</th>
+                                    <td>{{ fecha_inicio|date:"d/m/Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Fecha Fin:</th>
+                                    <td>{{ fecha_fin|date:"d/m/Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Días Hábitos:</th>
+                                    <td>{{ total_dias_habiles }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-4">
+                            <h5>Estadísticas Generales</h5>
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <div class="card bg-success text-white text-center">
+                                        <div class="card-body py-2">
+                                            <h6 class="card-title mb-1">Asistencia</h6>
+                                            <h4 class="mb-0">{{ total_asistencias_general }}</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <div class="card bg-danger text-white text-center">
+                                        <div class="card-body py-2">
+                                            <h6 class="card-title mb-1">Faltas</h6>
+                                            <h4 class="mb-0">{{ total_faltas_general }}</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card bg-warning text-white text-center">
+                                        <div class="card-body py-2">
+                                            <h6 class="card-title mb-1">Justificadas</h6>
+                                            <h4 class="mb-0">{{ total_justificadas_general }}</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card bg-info text-white text-center">
+                                        <div class="card-body py-2">
+                                            <h6 class="card-title mb-1">% Asistencia</h6>
+                                            <h4 class="mb-0">{{ porcentaje_asistencias_general|floatformat:1 }}%</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controles del reporte -->
+                <div class="card-body bg-light">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="d-flex flex-wrap gap-2">
+                                <button class="btn btn-success" onclick="exportarExcel()">
+                                    <i class="bi bi-file-excel me-2"></i>Exportar a Excel
+                                </button>
+                                <button class="btn btn-danger" onclick="exportarPDF()">
+                                    <i class="bi bi-file-pdf me-2"></i>Exportar a PDF
+                                </button>
+                                <button class="btn btn-secondary" onclick="imprimirReporte()">
+                                    <i class="bi bi-printer me-2"></i>Imprimir
+                                </button>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-outline-primary dropdown-toggle" 
+                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-filter me-2"></i>Filtrar por
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="filtrarPorcentaje('alto')">Asistencia Alta (>80%)</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="filtrarPorcentaje('medio')">Asistencia Media (60-80%)</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="filtrarPorcentaje('bajo')">Asistencia Baja (<60%)</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="#" onclick="quitarFiltros()">Mostrar Todos</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reporte detallado -->
+                <div class="card-body">
+                    <h5 class="mb-3">Reporte Detallado por Estudiante</h5>
+                    
+                    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                        <table class="table table-hover table-striped" id="tabla-reporte">
+                            <thead class="table-light sticky-top" style="top: 0;">
+                                <tr>
+                                    <th rowspan="2" class="align-middle">Estudiante</th>
+                                    <th rowspan="2" class="text-center align-middle">Asist.</th>
+                                    <th rowspan="2" class="text-center align-middle">Faltas</th>
+                                    <th rowspan="2" class="text-center align-middle">Justif.</th>
+                                    <th rowspan="2" class="text-center align-middle">Total</th>
+                                    <th rowspan="2" class="text-center align-middle">%</th>
+                                    <th colspan="{{ total_dias_habiles }}" class="text-center border-left">Días del Periodo</th>
+                                </tr>
+                                <tr>
+                                    {% for dia in dias_habiles %}
+                                    <th class="text-center border-left" style="min-width: 30px;">
+                                        <small>{{ dia|date:"d" }}/{{ dia|date:"m" }}</small>
+                                    </th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in reporte_data %}
+                                <tr class="fila-estudiante" data-porcentaje="{{ item.porcentaje }}">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if item.estudiante.foto %}
+                                                <img src="{{ item.estudiante.foto.url }}" class="rounded-circle me-2" width="32" height="32">
+                                            {% else %}
+                                                <div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center" style="width:32px;height:32px;">
+                                                    <i class="bi bi-person text-white"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <div>{{ item.estudiante.usuario.get_full_name }}</div>
+                                                <small class="text-muted">{{ item.estudiante.usuario.numero_documento }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">{{ item.asistencias }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-danger">{{ item.faltas }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-warning">{{ item.justificadas }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">{{ item.total }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="progress" style="height: 20px; width: 100px; margin: 0 auto;">
+                                            <div class="progress-bar 
+                                                {% if item.porcentaje >= 80 %}bg-success
+                                                {% elif item.porcentaje >= 60 %}bg-warning
+                                                {% else %}bg-danger{% endif %}" 
+                                                style="width: {{ item.porcentaje }}%">
+                                                {{ item.porcentaje|floatformat:1 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    {% for dia in dias_habiles %}
+                                        {% with estado=item.detalle_dias|get_item:dia %}
+                                        <td class="text-center border-left p-1">
+                                            {% if estado == 'A' %}
+                                                <span class="badge bg-success" style="font-size: 0.7rem;">A</span>
+                                            {% elif estado == 'F' %}
+                                                <span class="badge bg-danger" style="font-size: 0.7rem;">F</span>
+                                            {% elif estado == 'J' %}
+                                                <span class="badge bg-warning" style="font-size: 0.7rem;">J</span>
+                                            {% else %}
+                                                <span class="text-muted" style="font-size: 0.7rem;">-</span>
+                                            {% endif %}
+                                        </td>
+                                        {% endwith %}
+                                    {% endfor %}
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="{{ total_dias_habiles|add:6 }}" class="text-center text-muted py-4">
+                                        No hay datos de asistencia para mostrar.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-secondary">
+                                <tr>
+                                    <th>Total</th>
+                                    <th class="text-center">{{ total_asistencias_general }}</th>
+                                    <th class="text-center">{{ total_faltas_general }}</th>
+                                    <th class="text-center">{{ total_justificadas_general }}</th>
+                                    <th class="text-center">{{ total_asistencias_general|add:total_faltas_general|add:total_justificadas_general }}</th>
+                                    <th class="text-center">{{ porcentaje_asistencias_general|floatformat:1 }}%</th>
+                                    {% for dia in dias_habiles %}
+                                    <th class="text-center">
+                                        {% comment %} Aquí podrías agregar totales por día si lo necesitas {% endcomment %}
+                                    </th>
+                                    {% endfor %}
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Resumen por rangos de porcentaje -->
+                <div class="card-body">
+                    <h5 class="mb-3">Resumen por Nivel de Asistencia</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title text-success">Alta Asistencia</h6>
+                                    <h3 id="contador-alta">0</h3>
+                                    <small>> 80% de asistencia</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-warning">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title text-warning">Media Asistencia</h6>
+                                    <h3 id="contador-media">0</h3>
+                                    <small>60% - 80% de asistencia</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-danger">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title text-danger">Baja Asistencia</h6>
+                                    <h3 id="contador-baja">0</h3>
+                                    <small>< 60% de asistencia</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Contar estudiantes por nivel de asistencia
+function contarPorNiveles() {
+    let alta = 0, media = 0, baja = 0;
+    
+    document.querySelectorAll('.fila-estudiante').forEach(fila => {
+        const porcentaje = parseFloat(fila.dataset.porcentaje);
+        if (porcentaje >= 80) {
+            alta++;
+        } else if (porcentaje >= 60) {
+            media++;
+        } else {
+            baja++;
+        }
+    });
+    
+    document.getElementById('contador-alta').textContent = alta;
+    document.getElementById('contador-media').textContent = media;
+    document.getElementById('contador-baja').textContent = baja;
+}
+
+// Funciones de filtrado
+function filtrarPorcentaje(nivel) {
+    const filas = document.querySelectorAll('.fila-estudiante');
+    
+    filas.forEach(fila => {
+        const porcentaje = parseFloat(fila.dataset.porcentaje);
+        let mostrar = false;
+        
+        switch(nivel) {
+            case 'alto':
+                mostrar = porcentaje >= 80;
+                break;
+            case 'medio':
+                mostrar = porcentaje >= 60 && porcentaje < 80;
+                break;
+            case 'bajo':
+                mostrar = porcentaje < 60;
+                break;
+        }
+        
+        fila.style.display = mostrar ? '' : 'none';
+    });
+    
+    // Actualizar contadores
+    contarPorNiveles();
+}
+
+function quitarFiltros() {
+    document.querySelectorAll('.fila-estudiante').forEach(fila => {
+        fila.style.display = '';
+    });
+    contarPorNiveles();
+}
+
+// Funciones de exportación (simuladas - puedes implementar la lógica real)
+function exportarExcel() {
+    alert('Funcionalidad de exportación a Excel en desarrollo.\nSe generará un archivo con todos los datos del reporte.');
+    // Aquí iría la lógica real usando libraries como SheetJS
+}
+
+function exportarPDF() {
+    alert('Funcionalidad de exportación a PDF en desarrollo.\nSe generará un documento PDF con el reporte.');
+    // Aquí iría la lógica real usando libraries como jsPDF
+}
+
+function imprimirReporte() {
+    window.print();
+}
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    contarPorNiveles();
+    
+    // Agregar eventos a los filtros del dropdown
+    document.querySelectorAll('[onclick^="filtrarPorcentaje"]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const nivel = this.onclick.toString().match(/filtrarPorcentaje\('(\w+)'\)/)[1];
+            filtrarPorcentaje(nivel);
+        });
+    });
+    
+    document.querySelector('[onclick="quitarFiltros()"]')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        quitarFiltros();
+    });
+});
+</script>
+
+<style>
+@media print {
+    .card-header .btn, 
+    .card-body.bg-light,
+    .btn {
+        display: none !important;
+    }
+    
+    .table-responsive {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    
+    .sticky-top {
+        position: static !important;
+    }
+    
+    .card {
+        border: 1px solid #dee2e6 !important;
+    }
+}
+
+.border-left {
+    border-left: 2px solid #dee2e6 !important;
+}
+
+.table th {
+    white-space: nowrap;
+}
+
+#tabla-reporte thead th {
+    background-color: #f8f9fa;
+    z-index: 10;
+}
+</style>
+{% endblock %}

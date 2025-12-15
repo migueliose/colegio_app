@@ -1,0 +1,259 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Configuración General - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="fas fa-cogs me-2"></i>Configuración General del Sistema
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'gestioncolegio:dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-sliders-h me-2"></i>Parámetros del Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <!-- Año Lectivo Actual -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.año_lectivo_actual.id_for_label }}" class="form-label">
+                                    <strong>Año Lectivo Actual *</strong>
+                                </label>
+                                {{ form.año_lectivo_actual }}
+                                {% if form.año_lectivo_actual.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.año_lectivo_actual.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Año lectivo que se usará por defecto en el sistema.
+                                </div>
+                            </div>
+
+                            <!-- Máximo Estudiantes por Grupo -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.max_estudiantes_por_grupo.id_for_label }}" class="form-label">
+                                    <strong>Máximo Estudiantes por Grupo *</strong>
+                                </label>
+                                {{ form.max_estudiantes_por_grupo }}
+                                {% if form.max_estudiantes_por_grupo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.max_estudiantes_por_grupo.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Límite de estudiantes por grupo/clase.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Porcentaje de Aprobación -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.porcentaje_aprobacion.id_for_label }}" class="form-label">
+                                    <strong>Porcentaje de Aprobación *</strong>
+                                </label>
+                                <div class="input-group">
+                                    {{ form.porcentaje_aprobacion }}
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                {% if form.porcentaje_aprobacion.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.porcentaje_aprobacion.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Porcentaje mínimo para aprobar una asignatura.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Configuraciones de Funcionalidades -->
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <h6 class="border-bottom pb-2">Funcionalidades del Sistema</h6>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check form-switch">
+                                            {{ form.habilitar_matricula }}
+                                            <label class="form-check-label" for="{{ form.habilitar_matricula.id_for_label }}">
+                                                <strong>Habilitar Matrículas</strong>
+                                            </label>
+                                        </div>
+                                        <div class="form-text">
+                                            Permitir el registro de nuevas matrículas en el sistema.
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check form-switch">
+                                            {{ form.habilitar_calificaciones }}
+                                            <label class="form-check-label" for="{{ form.habilitar_calificaciones.id_for_label }}">
+                                                <strong>Habilitar Calificaciones</strong>
+                                            </label>
+                                        </div>
+                                        <div class="form-text">
+                                            Permitir el registro y modificación de calificaciones.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'gestioncolegio:dashboard' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-1"></i>Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i>Guardar Configuración
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Información -->
+        <div class="col-lg-4">
+            <!-- Resumen de Configuración -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Configuración Actual
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if object %}
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item px-0">
+                            <strong>Año Lectivo:</strong><br>
+                            {% if object.año_lectivo_actual %}
+                            <span class="badge bg-primary">{{ object.año_lectivo_actual.anho }}</span>
+                            {% else %}
+                            <span class="badge bg-warning">No configurado</span>
+                            {% endif %}
+                        </div>
+                        <div class="list-group-item px-0">
+                            <strong>Máx. Estudiantes/Grupo:</strong><br>
+                            {{ object.max_estudiantes_por_grupo }}
+                        </div>
+                        <div class="list-group-item px-0">
+                            <strong>% Aprobación:</strong><br>
+                            <span class="badge bg-success">{{ object.porcentaje_aprobacion }}%</span>
+                        </div>
+                        <div class="list-group-item px-0">
+                            <strong>Matrículas:</strong><br>
+                            {% if object.habilitar_matricula %}
+                            <span class="badge bg-success">Habilitadas</span>
+                            {% else %}
+                            <span class="badge bg-danger">Deshabilitadas</span>
+                            {% endif %}
+                        </div>
+                        <div class="list-group-item px-0">
+                            <strong>Calificaciones:</strong><br>
+                            {% if object.habilitar_calificaciones %}
+                            <span class="badge bg-success">Habilitadas</span>
+                            {% else %}
+                            <span class="badge bg-danger">Deshabilitadas</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-cogs fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No hay configuración guardada.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'gestioncolegio:configuracion_colegio' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-school me-1"></i>Información del Colegio
+                        </a>
+                        <a href="{% url 'admin:index' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-cogs me-1"></i>Administración Django
+                        </a>
+                        <a href="#" class="btn btn-outline-info">
+                            <i class="fas fa-database me-1"></i>Respaldo de Datos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus, .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .form-check-input:checked {
+        background-color: #198754;
+        border-color: #198754;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Agregar clases de Bootstrap a los campos
+        const inputs = document.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            if (!input.classList.contains('btn') && input.type !== 'checkbox') {
+                input.classList.add('form-control');
+            }
+        });
+
+        const selectFields = document.querySelectorAll('select');
+        selectFields.forEach(select => {
+            select.classList.add('form-select');
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,253 @@
+<!-- administrador/configuracion/configuracion_form.html -->
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Configuración{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-header {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+    .setting-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid #e3e6f0;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        transition: all 0.3s ease;
+    }
+    .setting-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 2rem 0 rgba(58, 59, 69, 0.2);
+    }
+    .setting-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-size: 1.5rem;
+    }
+    .icon-students { background-color: #4e73df; color: white; }
+    .icon-percentage { background-color: #1cc88a; color: white; }
+    .icon-year { background-color: #36b9cc; color: white; }
+    .icon-matricula { background-color: #f6c23e; color: white; }
+    .icon-calificaciones { background-color: #e74a3b; color: white; }
+    .form-check-lg .form-check-input {
+        width: 2.5rem;
+        height: 1.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0 text-white">
+                            <i class="fas fa-cogs me-2"></i>{{ title }}
+                        </h4>
+                        <a href="{% url 'gestioncolegio:dashboard_administrador' %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i> Volver al Dashboard
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Año Lectivo Actual -->
+                        <div class="setting-card">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="setting-icon icon-year">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Año Lectivo Actual</h5>
+                                    <p class="text-muted mb-0">Seleccione el año lectivo que estará activo en el sistema</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    {{ form.año_lectivo_actual }}
+                                    {% if form.año_lectivo_actual.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.año_lectivo_actual.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Este año se utilizará para todas las operaciones académicas
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Configuración de Grupos -->
+                        <div class="setting-card">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="setting-icon icon-students">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Configuración de Grupos</h5>
+                                    <p class="text-muted mb-0">Límite máximo de estudiantes por grupo</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="{{ form.max_estudiantes_por_grupo.id_for_label }}" class="form-label">
+                                        Máximo de Estudiantes por Grupo
+                                    </label>
+                                    {{ form.max_estudiantes_por_grupo }}
+                                    {% if form.max_estudiantes_por_grupo.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.max_estudiantes_por_grupo.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Número máximo de estudiantes permitidos en un grupo (1-100)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Configuración Académica -->
+                        <div class="setting-card">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="setting-icon icon-percentage">
+                                    <i class="fas fa-percentage"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Configuración Académica</h5>
+                                    <p class="text-muted mb-0">Parámetros de evaluación y aprobación</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="{{ form.porcentaje_aprobacion.id_for_label }}" class="form-label">
+                                        Porcentaje de Aprobación (%)
+                                    </label>
+                                    {{ form.porcentaje_aprobacion }}
+                                    {% if form.porcentaje_aprobacion.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.porcentaje_aprobacion.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Porcentaje mínimo para aprobar una asignatura (0-100)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Habilitar/Deshabilitar Funcionalidades -->
+                        <div class="setting-card">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="setting-icon icon-matricula">
+                                    <i class="fas fa-clipboard-check"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Control de Funcionalidades</h5>
+                                    <p class="text-muted mb-0">Activar o desactivar procesos del sistema</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-check form-switch form-check-lg">
+                                        {{ form.habilitar_matricula }}
+                                        <label class="form-check-label fw-semibold" for="{{ form.habilitar_matricula.id_for_label }}">
+                                            Habilitar Proceso de Matrícula
+                                        </label>
+                                    </div>
+                                    {% if form.habilitar_matricula.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.habilitar_matricula.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Permite realizar matrículas en el sistema
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-check form-switch form-check-lg">
+                                        {{ form.habilitar_calificaciones }}
+                                        <label class="form-check-label fw-semibold" for="{{ form.habilitar_calificaciones.id_for_label }}">
+                                            Habilitar Registro de Calificaciones
+                                        </label>
+                                    </div>
+                                    {% if form.habilitar_calificaciones.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.habilitar_calificaciones.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Permite registrar calificaciones de estudiantes
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'gestioncolegio:dashboard_administrador' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block inline_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Añadir clases Bootstrap
+        const selects = document.querySelectorAll('select');
+        const inputs = document.querySelectorAll('input[type="number"]');
+        
+        selects.forEach(select => select.classList.add('form-control'));
+        inputs.forEach(input => input.classList.add('form-control'));
+        
+        // Switches
+        const switches = document.querySelectorAll('input[type="checkbox"]');
+        switches.forEach(sw => {
+            sw.classList.add('form-check-input');
+            sw.parentElement.classList.add('form-check');
+            sw.parentElement.classList.add('form-switch');
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Docente</title>
+</head>
+<body>
+    <h1>Información del Usuario</h1>
+    <p>ID: {{ user_id }}</p>
+    <p>Username: {{ username }}</p>
+    <p>Tiene docente_profile: {{ has_docente_profile }}</p>
+    
+    {% if has_docente_profile %}
+    <h2>Información de docente_profile</h2>
+    <p>Tipo: {{ docente_profile_type }}</p>
+    <p>Es RelatedManager: {{ is_related_manager }}</p>
+    
+    {% if docente_via_filter %}
+    <p>Docente obtenido via filter: {{ docente_via_filter }} (ID: {{ docente_via_filter_id }})</p>
+    {% else %}
+    <p>No se encontró docente via filter</p>
+    {% endif %}
+    
+    {% if is_related_manager %}
+    <p>Docente via profile.first(): {{ docente_via_profile_first }}</p>
+    <p>Profile existe: {{ docente_via_profile_exists }}</p>
+    {% else %}
+    <p>Docente via profile directo: {{ docente_via_profile_direct }}</p>
+    {% endif %}
+    {% endif %}
+    
+    {% if error %}
+    <h2>Error:</h2>
+    <p>{{ error }}</p>
+    {% endif %}
+</body>
+</html>

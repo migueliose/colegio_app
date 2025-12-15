@@ -1,0 +1,1384 @@
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Estilos específicos para logros */
+.grado-card, .asignatura-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.grado-card:hover, .asignatura-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.grado-card.selected, .asignatura-card.selected {
+    border-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.logro-card {
+    border-left: 4px solid #0d6efd;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.logro-card:hover {
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+}
+
+.nivel-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.superior-badge { background-color: #198754; color: white; }
+.alto-badge { background-color: #0dcaf0; color: white; }
+.basico-badge { background-color: #ffc107; color: black; }
+.bajo-badge { background-color: #dc3545; color: white; }
+
+.descripcion-nivel {
+    min-height: 100px;
+    max-height: 150px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+}
+
+.acciones-logro {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.logro-card:hover .acciones-logro {
+    opacity: 1;
+}
+
+/* Estilos para formulario de logro */
+.form-logro {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+/* Prevenir problemas con modales */
+.modal {
+    overflow-y: auto;
+}
+
+.modal-open {
+    overflow: auto !important;
+    padding-right: 0 !important;
+}
+
+/* Asegurar que el backdrop se remueva correctamente */
+.modal-backdrop {
+    z-index: 1040;
+}
+
+.modal {
+    z-index: 1050;
+}
+
+/* Si persiste el problema, fuerza la remoción */
+body.modal-open {
+    overflow: auto !important;
+    padding-right: 0 !important;
+}
+
+/* Asegurar que los botones de cerrar funcionen */
+.modal .btn-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 1060;
+}
+
+/* Animaciones */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .btn-group-responsive {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .logro-card {
+        margin-bottom: 1.5rem;
+    }
+}
+
+.badge-estadistica {
+    font-size: 0.85rem;
+    padding: 0.4em 0.8em;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid fade-in">
+    <!-- Encabezado -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-trophy text-primary me-2"></i>{{ title }}
+        </h1>
+        
+        <!-- Estadísticas rápidas -->
+        <div class="d-none d-md-flex">
+            <span class="badge bg-primary me-2">
+                <i class="fas fa-trophy me-1"></i>{{ total_logros }} Logros
+            </span>
+            <span class="badge bg-success me-2">
+                <i class="fas fa-book me-1"></i>{{ total_asignaturas }} Asignaturas
+            </span>
+            <span class="badge bg-info">
+                <i class="fas fa-layer-group me-1"></i>{{ total_grados }} Grados
+            </span>
+        </div>
+    </div>
+
+    <!-- Panel principal -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-sliders-h me-2"></i>Panel de Gestión de Logros Académicos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Paso 1: Año Lectivo -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="selectAnoLectivo" class="form-label fw-bold">
+                                    <i class="fas fa-calendar-alt me-2 text-primary"></i>Año Lectivo *
+                                </label>
+                                <select id="selectAnoLectivo" class="form-select">
+                                    <option value="">Seleccionar año lectivo...</option>
+                                    {% for año in años_lectivos %}
+                                        <option value="{{ año.id }}">
+                                            {{ año.anho }} - {{ año.sede.nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    Seleccione el año lectivo para ver los grados disponibles.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Estadísticas del año -->
+                        <div class="col-md-6">
+                            <div id="estadisticasAno" class="alert alert-info" style="display: none;">
+                                <h6 class="fw-bold mb-2">
+                                    <i class="fas fa-chart-bar me-2"></i>Estadísticas del Año
+                                </h6>
+                                <div class="row small">
+                                    <div class="col-6">
+                                        <div>Grados Activos</div>
+                                        <span id="totalGrados" class="fw-bold">0</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <div>Prom. Logros por Grado</div>
+                                        <span id="promedioLogros" class="fw-bold">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paso 2: Grados -->
+                    <div id="panelGrados" class="mb-4" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold text-gray-700 mb-0">
+                                <i class="fas fa-layer-group me-2 text-primary"></i>
+                                Grados Disponibles
+                            </h6>
+                            <small class="text-muted" id="contadorGrados">0 grados</small>
+                        </div>
+                        
+                        <!-- Lista de grados -->
+                        <div id="listaGrados" class="row">
+                            <!-- Cargado por AJAX -->
+                        </div>
+                    </div>
+
+                    <!-- Paso 3: Asignaturas y Periodos -->
+                    <div id="panelAsignaturas" class="mb-4" style="display: none;">
+                        <h6 class="fw-bold text-gray-700 mb-3">
+                            <i class="fas fa-book me-2 text-primary"></i>
+                            Seleccionar Asignatura y Período
+                        </h6>
+                        
+                        <!-- Información del grado -->
+                        <div class="alert alert-info mb-3" id="infoGrado" style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-graduation-cap fa-2x me-3"></i>
+                                <div>
+                                    <h6 class="mb-1" id="gradoNombre"></h6>
+                                    <small id="gradoInfo" class="text-muted"></small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Filtros -->
+                        <div class="row g-3">
+                            <!-- Asignatura -->
+                            <div class="col-md-6">
+                                <label for="selectAsignatura" class="form-label">Asignatura *</label>
+                                <select id="selectAsignatura" class="form-select" disabled>
+                                    <option value="">Seleccionar asignatura...</option>
+                                </select>
+                                <small class="text-muted" id="infoAsignatura"></small>
+                            </div>
+                            
+                            <!-- Período -->
+                            <div class="col-md-6">
+                                <label for="selectPeriodo" class="form-label">Período Académico *</label>
+                                <select id="selectPeriodo" class="form-select" disabled>
+                                    <option value="">Seleccionar período...</option>
+                                </select>
+                                <small class="text-muted" id="infoPeriodo"></small>
+                            </div>
+                        </div>
+                        
+                        <!-- Botón para cargar logros -->
+                        <div class="row mt-3">
+                            <div class="col-md-12 text-center">
+                                <button id="btnCargarLogros" class="btn btn-primary px-4" disabled>
+                                    <i class="fas fa-search me-2"></i>Cargar Logros
+                                </button>
+                                <button id="btnCopiarLogros" class="btn btn-outline-info px-4 ms-2" style="display: none;">
+                                    <i class="fas fa-copy me-2"></i>Copiar a Otro Período
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de logros (cargado por AJAX) -->
+    <div id="panelLogros" class="mt-4" style="display: none;">
+        <div class="card shadow border-0">
+            <!-- Cabecera del panel -->
+            <div class="card-header bg-success text-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0" id="tituloLogros">
+                        <i class="fas fa-trophy me-2"></i>Logros Académicos
+                    </h5>
+                    <div class="btn-group btn-group-responsive">
+                        <button id="btnNuevoLogro" class="btn btn-light btn-sm">
+                            <i class="fas fa-plus me-1"></i>Nuevo Logro
+                        </button>
+                        <button id="btnExportarLogros" class="btn btn-light btn-sm">
+                            <i class="fas fa-file-export me-1"></i>Exportar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estadísticas -->
+            <div class="card-body border-bottom">
+                <div class="row" id="estadisticasLogros">
+                    <!-- Cargado por AJAX -->
+                </div>
+            </div>
+            
+            <!-- Lista de logros -->
+            <div class="card-body">
+                <div id="listaLogros" class="row">
+                    <!-- Cargado por AJAX -->
+                </div>
+                
+                <!-- Mensaje cuando no hay logros -->
+                <div id="mensajeSinLogros" class="text-center py-5" style="display: none;">
+                    <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No hay logros definidos</h5>
+                    <p class="text-muted">Comience creando un nuevo logro para esta asignatura y período.</p>
+                    <button id="btnCrearPrimerLogro" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Crear Primer Logro
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para crear/editar logro -->
+    <div class="modal fade" id="modalLogro" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalLogroTitle">
+                        <i class="fas fa-trophy me-2"></i>Nuevo Logro
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formLogro">
+                        <input type="hidden" id="logroId">
+                        <input type="hidden" id="asignaturaId">
+                        <input type="hidden" id="gradoId">
+                        <input type="hidden" id="periodoId">
+                        
+                        <div class="mb-3">
+                            <label for="tema" class="form-label fw-bold">Tema del Logro *</label>
+                            <textarea id="tema" class="form-control" rows="2" 
+                                      placeholder="Describa el tema o competencia a evaluar..." 
+                                      required></textarea>
+                            <div class="form-text">
+                                Ej: "Resolución de problemas matemáticos básicos", "Comprensión lectora", etc.
+                            </div>
+                        </div>
+                        
+                        <h6 class="fw-bold mt-4 mb-3">Descripciones por Nivel de Desempeño</h6>
+                        
+                        <div class="row g-3">
+                            <!-- Superior -->
+                            <div class="col-md-6">
+                                <div class="card border-success h-100">
+                                    <div class="card-header bg-success text-white py-2">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-star me-1"></i>Superior
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <textarea id="descripcionSuperior" class="form-control descripcion-nivel" 
+                                                  rows="3" placeholder="Describa el desempeño superior..."></textarea>
+                                        <small class="text-muted">Ej: El estudiante supera ampliamente los objetivos.</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Alto -->
+                            <div class="col-md-6">
+                                <div class="card border-info h-100">
+                                    <div class="card-header bg-info text-white py-2">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-thumbs-up me-1"></i>Alto
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <textarea id="descripcionAlto" class="form-control descripcion-nivel" 
+                                                  rows="3" placeholder="Describa el desempeño alto..."></textarea>
+                                        <small class="text-muted">Ej: El estudiante cumple completamente los objetivos.</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Básico -->
+                            <div class="col-md-6">
+                                <div class="card border-warning h-100">
+                                    <div class="card-header bg-warning text-white py-2">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-check me-1"></i>Básico
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <textarea id="descripcionBasico" class="form-control descripcion-nivel" 
+                                                  rows="3" placeholder="Describa el desempeño básico..."></textarea>
+                                        <small class="text-muted">Ej: El estudiante cumple parcialmente los objetivos.</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Bajo -->
+                            <div class="col-md-6">
+                                <div class="card border-danger h-100">
+                                    <div class="card-header bg-danger text-white py-2">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>Bajo
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <textarea id="descripcionBajo" class="form-control descripcion-nivel" 
+                                                  rows="3" placeholder="Describa el desempeño bajo..."></textarea>
+                                        <small class="text-muted">Ej: El estudiante no cumple los objetivos.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btnGuardarLogro" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar Logro
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para copiar logros -->
+    <div class="modal fade" id="modalCopiarLogros" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-copy me-2"></i>Copiar Logros
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Copiar logros del período actual a otro período.</p>
+                    
+                    <div class="mb-3">
+                        <label for="selectPeriodoDestino" class="form-label">Período Destino *</label>
+                        <select id="selectPeriodoDestino" class="form-select">
+                            <option value="">Seleccionar período destino...</option>
+                        </select>
+                        <div class="form-text">
+                            Seleccione el período al que desea copiar los logros.
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Se copiarán todos los logros del período actual. 
+                        Los logros con temas duplicados serán omitidos.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btnConfirmarCopiar" class="btn btn-primary">
+                        <i class="fas fa-copy me-2"></i>Copiar Logros
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}
+
+{% block inline_js %}
+<script>
+// Variables globales
+let añoLectivoId = null;
+let gradoSeleccionado = null;
+let asignaturaSeleccionada = null;
+let periodoSeleccionado = null;
+let periodoDestinoId = null;
+let logrosCargados = [];
+let periodosDisponibles = [];
+
+// Función getCookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Mostrar/ocultar loading
+function mostrarLoading(mensaje = 'Cargando...') {
+    Swal.fire({
+        title: mensaje,
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+}
+
+function ocultarLoading() {
+    Swal.close();
+}
+
+// Mostrar error
+function mostrarError(mensaje) {
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: mensaje,
+        confirmButtonColor: '#0d6efd'
+    });
+}
+
+// Mostrar éxito
+function mostrarExito(mensaje) {
+    Swal.fire({
+        icon: 'success',
+        title: '¡Éxito!',
+        text: mensaje,
+        timer: 3000,
+        showConfirmButton: false
+    });
+}
+
+// Función para cerrar modales correctamente
+function cerrarModal(modalId) {
+    const modalElement = document.getElementById(modalId);
+    
+    if (!modalElement) return;
+    
+    // Obtener instancia del modal
+    const modalInstance = bootstrap.Modal.getInstance(modalElement);
+    
+    if (modalInstance) {
+        modalInstance.hide();
+    } else {
+        // Usar jQuery si no hay instancia
+        $(`#${modalId}`).modal('hide');
+    }
+    
+    // Limpiar backdrop y restaurar estado del body
+    setTimeout(() => {
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+        
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = 'auto';
+        document.body.style.paddingRight = '0';
+    }, 150);
+}
+
+// Función para abrir modal de forma segura
+function abrirModal(modalId) {
+    // Primero cerrar cualquier modal abierto
+    cerrarModal('modalLogro');
+    cerrarModal('modalCopiarLogros');
+    
+    // Abrir nuevo modal
+    const modalElement = document.getElementById(modalId);
+    if (modalElement) {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+    }
+}
+
+// 1. Selección de año lectivo
+$('#selectAnoLectivo').change(function() {
+    añoLectivoId = $(this).val();
+    
+    if (!añoLectivoId) {
+        $('#panelGrados').hide();
+        $('#panelAsignaturas').hide();
+        $('#estadisticasAno').hide();
+        return;
+    }
+    
+    mostrarLoading('Cargando grados...');
+    
+    // Cargar grados del año lectivo
+    $.ajax({
+        url: "{% url 'administrador:obtener_grados_por_año' %}",
+        data: { 
+            año_lectivo_id: añoLectivoId
+        },
+        success: function(response) {
+            if (response.success) {
+                // Actualizar estadísticas del año
+                $('#estadisticasAno').show();
+                $('#totalGrados').text(response.estadisticas.total_grados);
+                $('#promedioLogros').text(response.estadisticas.promedio_logros);
+                
+                // Limpiar lista de grados
+                $('#listaGrados').html('');
+                $('#contadorGrados').text(`${response.grados.length} grados`);
+                
+                // Mostrar lista de grados
+                if (response.grados.length === 0) {
+                    $('#listaGrados').html(`
+                        <div class="col-12">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                No hay grados activos para este año lectivo.
+                            </div>
+                        </div>
+                    `);
+                } else {
+                    response.grados.forEach(function(grado) {
+                        const gradoCard = `
+                            <div class="col-md-4 mb-3">
+                                <div class="card grado-card h-100" data-grado-id="${grado.id}">
+                                    <div class="card-body">
+                                        <h6 class="card-title fw-bold">${grado.nombre}</h6>
+                                        <p class="card-text text-muted small mb-2">
+                                            <i class="fas fa-school me-1"></i>${grado.nivel_escolar}
+                                        </p>
+                                        <p class="card-text text-muted small mb-2">
+                                            <i class="fas fa-map-marker-alt me-1"></i>${grado.sede}
+                                        </p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="badge bg-primary badge-estadistica">
+                                                    <i class="fas fa-book me-1"></i>${grado.total_asignaturas}
+                                                </span>
+                                                <span class="badge bg-info badge-estadistica ms-1">
+                                                    <i class="fas fa-trophy me-1"></i>${grado.total_logros}
+                                                </span>
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-primary btn-seleccionar-grado">
+                                                Seleccionar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        $('#listaGrados').append(gradoCard);
+                    });
+                }
+                
+                // Mostrar panel y ocultar loading
+                $('#panelGrados').show();
+                ocultarLoading();
+                
+            } else {
+                ocultarLoading();
+                mostrarError(response.error || 'Error al cargar los grados');
+            }
+        },
+        error: function(xhr, status, error) {
+            ocultarLoading();
+            mostrarError('Error de conexión al cargar los grados');
+        }
+    });
+});
+
+// 2. Selección de grado
+$(document).on('click', '.btn-seleccionar-grado', function() {
+    // Remover selección anterior
+    $('.grado-card').removeClass('selected border-primary');
+    $('.grado-card').addClass('border-light');
+    
+    // Marcar como seleccionado
+    $(this).closest('.grado-card')
+        .addClass('selected border-primary')
+        .removeClass('border-light');
+    
+    gradoSeleccionado = $(this).closest('.grado-card').data('grado-id');
+    
+    mostrarLoading('Cargando asignaturas...');
+    
+    // Cargar asignaturas del grado
+    $.ajax({
+        url: "{% url 'administrador:obtener_asignaturas_por_grado' %}",
+        data: { 
+            grado_id: gradoSeleccionado,
+            año_lectivo_id: añoLectivoId
+        },
+        success: function(response) {
+            if (response.success) {
+                // Guardar datos del grado
+                $('#infoGrado').show();
+                $('#gradoNombre').text(response.grado.nombre);
+                
+                // Verificar que response.año_lectivo existe
+                const añoInfo = response.año_lectivo ? response.año_lectivo.anho : 'N/A';
+                const nivelInfo = response.grado.nivel || '';
+                
+                $('#gradoInfo').html(`
+                    ${nivelInfo} • Año: ${añoInfo}
+                `);
+                
+                // Cargar opciones de asignaturas
+                $('#selectAsignatura').html('<option value="">Seleccionar asignatura...</option>');
+                if (response.asignaturas && response.asignaturas.length > 0) {
+                    response.asignaturas.forEach(function(asignatura) {
+                        $('#selectAsignatura').append(`
+                            <option value="${asignatura.id}" 
+                                    data-total-logros="${asignatura.total_logros || 0}"
+                                    data-area="${asignatura.area || ''}"
+                                    data-sedes="${(asignatura.sedes || []).join(', ')}">
+                                ${asignatura.nombre} (${asignatura.area || 'Sin área'})
+                            </option>
+                        `);
+                    });
+                } else {
+                    $('#selectAsignatura').append('<option value="">No hay asignaturas disponibles</option>');
+                }
+                
+                // Guardar periodos disponibles
+                periodosDisponibles = response.periodos || [];
+                
+                // Cargar opciones de períodos
+                $('#selectPeriodo').html('<option value="">Seleccionar período...</option>');
+                if (response.periodos && response.periodos.length > 0) {
+                    response.periodos.forEach(function(periodo) {
+                        $('#selectPeriodo').append(`
+                            <option value="${periodo.id}" 
+                                    data-fecha-inicio="${periodo.fecha_inicio || ''}"
+                                    data-fecha-fin="${periodo.fecha_fin || ''}">
+                                ${periodo.nombre} (${periodo.fecha_inicio || ''} - ${periodo.fecha_fin || ''})
+                            </option>
+                        `);
+                    });
+                } else {
+                    $('#selectPeriodo').append('<option value="">No hay períodos disponibles</option>');
+                }
+                
+                // Mostrar panel y habilitar controles
+                $('#panelAsignaturas').show();
+                $('#selectAsignatura').prop('disabled', false);
+                $('#selectPeriodo').prop('disabled', false);
+                
+                ocultarLoading();
+                
+            } else {
+                ocultarLoading();
+                mostrarError(response.error || 'Error al cargar las asignaturas');
+            }
+        },
+        error: function(xhr, status, error) {
+            ocultarLoading();
+            mostrarError('Error de conexión al cargar las asignaturas');
+        }
+    });
+});
+
+// 3. Selección de asignatura
+$('#selectAsignatura').change(function() {
+    asignaturaSeleccionada = $(this).val();
+    
+    const totalLogros = $(this).find('option:selected').data('total-logros') || 0;
+    const area = $(this).find('option:selected').data('area') || '';
+    const sedes = $(this).find('option:selected').data('sedes') || '';
+    
+    $('#infoAsignatura').html(`
+        <i class="fas fa-trophy me-1"></i>${totalLogros} logros definidos
+        <span class="ms-2"><i class="fas fa-map-marker-alt me-1"></i>${sedes}</span>
+    `);
+    
+    // Habilitar botón de cargar logros si todo está seleccionado
+    verificarEstadoBoton();
+});
+
+// 4. Selección de período
+$('#selectPeriodo').change(function() {
+    periodoSeleccionado = $(this).val();
+    
+    const fechaInicio = $(this).find('option:selected').data('fecha-inicio') || '';
+    const fechaFin = $(this).find('option:selected').data('fecha-fin') || '';
+    
+    $('#infoPeriodo').html(`
+        <i class="fas fa-calendar me-1"></i>${fechaInicio} al ${fechaFin}
+    `);
+    
+    // Mostrar botón de copiar logros
+    $('#btnCopiarLogros').show();
+    
+    // Habilitar botón de cargar logros si todo está seleccionado
+    verificarEstadoBoton();
+});
+
+// Verificar si se puede habilitar el botón de cargar logros
+function verificarEstadoBoton() {
+    if (añoLectivoId && gradoSeleccionado && asignaturaSeleccionada && periodoSeleccionado) {
+        $('#btnCargarLogros').prop('disabled', false)
+            .removeClass('btn-secondary')
+            .addClass('btn-primary');
+    } else {
+        $('#btnCargarLogros').prop('disabled', true)
+            .removeClass('btn-primary')
+            .addClass('btn-secondary');
+    }
+}
+
+// 5. Cargar logros
+$('#btnCargarLogros').click(function() {
+    cargarLogros();
+});
+
+function cargarLogros() {
+    mostrarLoading('Cargando logros...');
+    
+    $.ajax({
+        url: "{% url 'administrador:cargar_logros' %}",
+        method: 'GET',
+        data: {
+            asignatura_id: asignaturaSeleccionada,
+            grado_id: gradoSeleccionado,
+            periodo_id: periodoSeleccionado
+        },
+        success: function(response) {
+            if (response.success) {
+                logrosCargados = response.logros;
+                
+                // Actualizar título
+                $('#tituloLogros').html(`
+                    <i class="fas fa-trophy me-2"></i>
+                    ${response.asignatura.nombre} - ${response.grado.nombre} - 
+                    ${response.periodo.nombre} (${response.total} logros)
+                `);
+                
+                // Mostrar estadísticas
+                mostrarEstadisticasLogros(response);
+                
+                // Limpiar y mostrar lista de logros
+                $('#listaLogros').html('');
+                
+                if (response.total === 0) {
+                    $('#mensajeSinLogros').show();
+                    $('#listaLogros').hide();
+                } else {
+                    $('#mensajeSinLogros').hide();
+                    $('#listaLogros').show();
+                    
+                    response.logros.forEach(function(logro, index) {
+                        const logroCard = crearCardLogro(logro, index + 1);
+                        $('#listaLogros').append(logroCard);
+                    });
+                }
+                
+                // Mostrar panel de logros
+                $('#panelLogros').show();
+                ocultarLoading();
+                
+                // Desplazar hacia el panel de logros
+                $('html, body').animate({
+                    scrollTop: $('#panelLogros').offset().top - 100
+                }, 1000);
+                
+            } else {
+                ocultarLoading();
+                mostrarError(response.error || 'Error al cargar los logros');
+            }
+        },
+        error: function(xhr, status, error) {
+            ocultarLoading();
+            mostrarError('Error de conexión al cargar los logros');
+        }
+    });
+}
+
+// Función para crear card de logro
+function crearCardLogro(logro, numero) {
+    // Validar y sanear datos
+    const tema = logro.tema || 'Sin tema';
+    const descripcionSuperior = logro.descripcion_superior || '';
+    const descripcionAlto = logro.descripcion_alto || '';
+    const descripcionBasico = logro.descripcion_basico || '';
+    const descripcionBajo = logro.descripcion_bajo || '';
+    const fecha = logro.updated_at || logro.created_at || '';
+    
+    // Función auxiliar para truncar texto
+    function truncarTexto(texto, maxLength) {
+        if (!texto) return '';
+        if (texto.length <= maxLength) return texto;
+        return texto.substring(0, maxLength) + '...';
+    }
+    
+    return `
+        <div class="col-md-6 col-lg-4">
+            <div class="card logro-card h-100" data-logro-id="${logro.id}">
+                <div class="card-body">
+                    <div class="position-relative">
+                        <span class="badge bg-primary nivel-badge">#${numero}</span>
+                        <h6 class="card-title fw-bold mb-3">${tema}</h6>
+                    </div>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <small class="text-muted d-block">Superior</small>
+                            <div class="small superior-badge rounded p-1" title="${descripcionSuperior}">
+                                ${truncarTexto(descripcionSuperior, 30)}
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Alto</small>
+                            <div class="small alto-badge rounded p-1" title="${descripcionAlto}">
+                                ${truncarTexto(descripcionAlto, 30)}
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Básico</small>
+                            <div class="small basico-badge rounded p-1" title="${descripcionBasico}">
+                                ${truncarTexto(descripcionBasico, 30)}
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Bajo</small>
+                            <div class="small bajo-badge rounded p-1" title="${descripcionBajo}">
+                                ${truncarTexto(descripcionBajo, 30)}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-auto">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            ${fecha}
+                        </small>
+                        <div class="acciones-logro">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary btn-editar-logro" 
+                                        data-logro-id="${logro.id}"
+                                        title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-eliminar-logro" 
+                                        data-logro-id="${logro.id}"
+                                        title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Función para mostrar estadísticas
+function mostrarEstadisticasLogros(data) {
+    // Validar datos
+    const total = data.total || 0;
+    const asignaturaNombre = data.asignatura ? data.asignatura.nombre || 'Sin asignatura' : 'Sin asignatura';
+    const asignaturaArea = data.asignatura ? data.asignatura.area || 'Sin área' : 'Sin área';
+    const gradoNombre = data.grado ? data.grado.nombre || 'Sin grado' : 'Sin grado';
+    const periodoNombre = data.periodo ? data.periodo.nombre || 'Sin período' : 'Sin período';
+    
+    const estadisticasHtml = `
+        <div class="col-md-3 text-center">
+            <div class="card border-0 bg-light">
+                <div class="card-body py-2">
+                    <h6 class="mb-1 text-muted">Total Logros</h6>
+                    <h3 class="mb-0 fw-bold">${total}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="card border-0 bg-light">
+                <div class="card-body py-2">
+                    <h6 class="mb-1 text-muted">Asignatura</h6>
+                    <h6 class="mb-0 fw-bold text-success" title="${asignaturaNombre}">
+                        ${asignaturaNombre.length > 15 ? asignaturaNombre.substring(0, 15) + '...' : asignaturaNombre}
+                    </h6>
+                    <small class="text-muted">${asignaturaArea}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="card border-0 bg-light">
+                <div class="card-body py-2">
+                    <h6 class="mb-1 text-muted">Grado</h6>
+                    <h6 class="mb-0 fw-bold text-primary">${gradoNombre}</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="card border-0 bg-light">
+                <div class="card-body py-2">
+                    <h6 class="mb-1 text-muted">Período</h6>
+                    <h6 class="mb-0 fw-bold text-info">${periodoNombre}</h6>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#estadisticasLogros').html(estadisticasHtml);
+}
+
+// 6. Crear nuevo logro
+$('#btnNuevoLogro, #btnCrearPrimerLogro').click(function() {
+    abrirModalLogro();
+});
+
+function abrirModalLogro(logroId = null) {
+    // Validar que tenemos los datos necesarios
+    if (!asignaturaSeleccionada || !gradoSeleccionado || !periodoSeleccionado) {
+        mostrarError('Debe seleccionar una asignatura, grado y período primero');
+        return;
+    }
+    
+    // Limpiar formulario
+    $('#formLogro')[0].reset();
+    $('#logroId').val('');
+    
+    // Configurar datos del contexto
+    $('#asignaturaId').val(asignaturaSeleccionada);
+    $('#gradoId').val(gradoSeleccionado);
+    $('#periodoId').val(periodoSeleccionado);
+    
+    if (logroId) {
+        // Modo edición - cargar datos del logro
+        const logro = logrosCargados.find(l => l.id == logroId);
+        if (logro) {
+            $('#modalLogroTitle').html('<i class="fas fa-edit me-2"></i>Editar Logro');
+            $('#logroId').val(logro.id);
+            $('#tema').val(logro.tema || '');
+            $('#descripcionSuperior').val(logro.descripcion_superior || '');
+            $('#descripcionAlto').val(logro.descripcion_alto || '');
+            $('#descripcionBasico').val(logro.descripcion_basico || '');
+            $('#descripcionBajo').val(logro.descripcion_bajo || '');
+        } else {
+            mostrarError('No se encontró el logro a editar');
+            return;
+        }
+    } else {
+        // Modo creación
+        $('#modalLogroTitle').html('<i class="fas fa-trophy me-2"></i>Nuevo Logro');
+    }
+    
+    // Usar la nueva función para abrir modal
+    abrirModal('modalLogro');
+}
+
+// 7. Guardar logro (crear o actualizar)
+$('#btnGuardarLogro').click(function() {
+    guardarLogro();
+});
+
+function guardarLogro() {
+    const logroId = $('#logroId').val();
+    const asignaturaId = $('#asignaturaId').val();
+    const gradoId = $('#gradoId').val();
+    const periodoId = $('#periodoId').val();
+    const tema = $('#tema').val().trim();
+    
+    // Validaciones básicas
+    if (!tema) {
+        mostrarError('El tema del logro es requerido');
+        $('#tema').focus();
+        return;
+    }
+    
+    const datos = {
+        logro_id: logroId || null,
+        asignatura_id: asignaturaId,
+        grado_id: gradoId,
+        periodo_id: periodoId,
+        tema: tema,
+        descripcion_superior: $('#descripcionSuperior').val().trim(),
+        descripcion_alto: $('#descripcionAlto').val().trim(),
+        descripcion_basico: $('#descripcionBasico').val().trim(),
+        descripcion_bajo: $('#descripcionBajo').val().trim()
+    };
+    
+    mostrarLoading(logroId ? 'Actualizando logro...' : 'Creando logro...');
+    
+    $.ajax({
+        url: "{% url 'administrador:guardar_logro' %}",
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        data: JSON.stringify(datos),
+        success: function(response) {
+            ocultarLoading();
+            
+            if (response.success) {
+                // Usar la nueva función para cerrar modal
+                cerrarModal('modalLogro');
+                
+                // Mostrar mensaje de éxito
+                mostrarExito(response.mensaje);
+                
+                // Recargar la lista de logros
+                setTimeout(() => {
+                    cargarLogros();
+                }, 1000);
+                
+            } else {
+                mostrarError(response.error || 'Error al guardar el logro');
+            }
+        },
+        error: function(xhr, status, error) {
+            ocultarLoading();
+            mostrarError('Error de conexión al guardar el logro');
+        }
+    });
+}
+
+// 8. Editar logro
+$(document).on('click', '.btn-editar-logro', function() {
+    const logroId = $(this).data('logro-id');
+    abrirModalLogro(logroId);
+});
+
+// 9. Eliminar logro
+$(document).on('click', '.btn-eliminar-logro', function() {
+    const logroId = $(this).data('logro-id');
+    const logro = logrosCargados.find(l => l.id == logroId);
+    
+    if (!logro) return;
+    
+    Swal.fire({
+        title: '¿Eliminar Logro?',
+        html: `
+            <p>¿Está seguro de eliminar el siguiente logro?</p>
+            <div class="alert alert-warning text-start">
+                <strong>Tema:</strong> ${logro.tema}
+            </div>
+            <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            eliminarLogro(logroId);
+        }
+    });
+});
+
+function eliminarLogro(logroId) {
+    mostrarLoading('Eliminando logro...');
+    
+    $.ajax({
+        url: "{% url 'administrador:eliminar_logro' %}",
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        data: JSON.stringify({ logro_id: logroId }),
+        success: function(response) {
+            ocultarLoading();
+            
+            if (response.success) {
+                mostrarExito(response.mensaje);
+                
+                // Recargar la lista de logros
+                setTimeout(() => {
+                    cargarLogros();
+                }, 1000);
+                
+            } else {
+                mostrarError(response.error || 'Error al eliminar el logro');
+            }
+        },
+        error: function(xhr, status, error) {
+            ocultarLoading();
+            mostrarError('Error de conexión al eliminar el logro');
+        }
+    });
+}
+
+// 10. Copiar logros a otro período
+$('#btnCopiarLogros').click(function() {
+    abrirModalCopiarLogros();
+});
+
+function abrirModalCopiarLogros() {
+    // Limpiar y cargar opciones de períodos destino
+    $('#selectPeriodoDestino').html('<option value="">Seleccionar período destino...</option>');
+    
+    // Filtrar períodos diferentes al actual
+    periodosDisponibles.forEach(function(periodo) {
+        if (periodo.id != periodoSeleccionado) {
+            $('#selectPeriodoDestino').append(`
+                <option value="${periodo.id}">
+                    ${periodo.nombre} (${periodo.fecha_inicio} - ${periodo.fecha_fin})
+                </option>
+            `);
+        }
+    });
+    
+    // Usar la nueva función para abrir modal
+    abrirModal('modalCopiarLogros');
+}
+
+$('#selectPeriodoDestino').change(function() {
+    periodoDestinoId = $(this).val();
+});
+
+$('#btnConfirmarCopiar').click(function() {
+    if (!periodoDestinoId) {
+        mostrarError('Por favor seleccione un período destino');
+        return;
+    }
+    
+    Swal.fire({
+        title: '¿Copiar Logros?',
+        html: `
+            <p>¿Está seguro de copiar todos los logros a otro período?</p>
+            <div class="alert alert-info text-start">
+                <strong>Origen:</strong> Período actual<br>
+                <strong>Destino:</strong> Período seleccionado<br>
+                <strong>Total logros:</strong> ${logrosCargados.length}
+            </div>
+            <p class="text-muted"><small>Los logros con temas duplicados serán omitidos.</small></p>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#0dcaf0',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, copiar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            copiarLogros();
+        }
+    });
+});
+
+function copiarLogros() {
+    mostrarLoading('Copiando logros...');
+    
+    const datos = {
+        origen_asignatura_id: asignaturaSeleccionada,
+        origen_grado_id: gradoSeleccionado,
+        origen_periodo_id: periodoSeleccionado,
+        destino_periodo_id: periodoDestinoId
+    };
+    
+    $.ajax({
+        url: "{% url 'administrador:copiar_logros' %}",
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        data: JSON.stringify(datos),
+        success: function(response) {
+            ocultarLoading();
+            
+            if (response.success) {
+                // Usar la nueva función para cerrar modal
+                cerrarModal('modalCopiarLogros');
+                
+                // Mostrar resultado
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Logros copiados!',
+                    html: `
+                        <div class="text-start">
+                            <p>${response.mensaje}</p>
+                            <hr>
+                            <p><strong>Resumen:</strong></p>
+                            <ul class="text-start">
+                                <li>Copiados exitosamente: ${response.estadisticas.copiados}</li>
+                                <li>Omitidos (duplicados): ${response.estadisticas.omitidos}</li>
+                                <li>Total en origen: ${response.estadisticas.total_origen}</li>
+                            </ul>
+                        </div>
+                    `,
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#0d6efd'
+                });
+                
+            } else {
+                mostrarError(response.error || 'Error al copiar los logros');
+            }
+        },
+        error: function(xhr, status, error) {
+            ocultarLoading();
+            mostrarError('Error de conexión al copiar los logros');
+        }
+    });
+}
+
+// 11. Exportar logros (placeholder)
+$('#btnExportarLogros').click(function() {
+    Swal.fire({
+        icon: 'info',
+        title: 'Exportar Logros',
+        text: 'Esta funcionalidad estará disponible en una próxima versión.',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#0d6efd'
+    });
+});
+
+// Event listeners para manejar correctamente el cierre de modales
+$(document).ready(function() {
+    // Limpiar backdrop cuando el modal se oculta
+    $('#modalLogro').on('hidden.bs.modal', function () {
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        $('body').css({
+            'overflow': 'auto',
+            'padding-right': '0'
+        });
+    });
+    
+    $('#modalCopiarLogros').on('hidden.bs.modal', function () {
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        $('body').css({
+            'overflow': 'auto',
+            'padding-right': '0'
+        });
+    });
+    
+    // Manejar el botón de cerrar del modal
+    $('.modal .btn-close, .modal .btn-secondary').click(function() {
+        const modalId = $(this).closest('.modal').attr('id');
+        cerrarModal(modalId);
+    });
+});
+
+// Manejador de errores global para AJAX
+$(document).ajaxError(function(event, jqxhr, settings, thrownError) {
+    // No mostrar errores para solicitudes canceladas
+    if (jqxhr.status === 0 && jqxhr.statusText === 'abort') {
+        return;
+    }
+    
+    console.error('Error AJAX:', {
+        url: settings.url,
+        status: jqxhr.status,
+        error: thrownError,
+        response: jqxhr.responseText
+    });
+});
+
+// Maneja errores de JavaScript no capturados
+window.onerror = function(message, source, lineno, colno, error) {
+    console.error('Error de JavaScript:', {
+        message: message,
+        source: source,
+        line: lineno,
+        column: colno,
+        error: error
+    });
+    
+    // Mostrar error al usuario solo si no es en producción
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de JavaScript',
+            html: `
+                <div class="text-start">
+                    <p><strong>Mensaje:</strong> ${message}</p>
+                    <p><strong>Archivo:</strong> ${source}</p>
+                    <p><strong>Línea:</strong> ${lineno}</p>
+                    <p class="text-muted small">Consulte la consola para más detalles.</p>
+                </div>
+            `,
+            width: '600px'
+        });
+    }
+    
+    return false; // Previene el reporte de error por defecto
+};
+</script>
+{% endblock %}

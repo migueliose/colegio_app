@@ -1,0 +1,378 @@
+<!-- administrador/añolectivo/añolectivo_confirm_delete.html -->
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Eliminar Año Lectivo - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'administrador:añolectivo_list' %}">Años Lectivos</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Eliminar Año Lectivo</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Card de confirmación -->
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación de Año Lectivo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Advertencia crítica -->
+                    <div class="alert alert-danger">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-radiation-alt fa-3x me-3"></i>
+                            <div>
+                                <h4 class="alert-heading mb-1">¡ACCIÓN DE ALTO RIESGO!</h4>
+                                <p class="mb-0">Está a punto de eliminar permanentemente el año lectivo:</p>
+                                <h3 class="text-center my-3 text-danger">"{{ object.anho }}"</h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detalles del año lectivo -->
+                    <div class="card mb-4 border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Información del Año Lectivo
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-3">
+                                        <strong><i class="fas fa-calendar me-2 text-primary"></i>Año:</strong><br>
+                                        <span class="fs-4 fw-bold">{{ object.anho }}</span>
+                                        {% if object.estado %}
+                                        <span class="badge bg-success ms-2">
+                                            <i class="fas fa-star me-1"></i>Activo Actualmente
+                                        </span>
+                                        {% endif %}
+                                    </p>
+                                    <p class="mb-3">
+                                        <strong><i class="fas fa-school me-2 text-info"></i>Colegio:</strong><br>
+                                        {{ object.colegio.nombre }}
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-3">
+                                        <strong><i class="fas fa-building me-2 text-success"></i>Sede:</strong><br>
+                                        {{ object.sede.nombre }}
+                                    </p>
+                                    <p class="mb-3">
+                                        <strong><i class="fas fa-clock me-2 text-warning"></i>Fechas:</strong><br>
+                                        {% if object.fecha_inicio and object.fecha_fin %}
+                                        {{ object.fecha_inicio|date:"d/m/Y" }} - {{ object.fecha_fin|date:"d/m/Y" }}
+                                        {% else %}
+                                        <span class="badge bg-secondary">No definidas</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Verificación de dependencias CRÍTICAS -->
+                    <div class="card mb-4 border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                VERIFICACIÓN DE DEPENDENCIAS CRÍTICAS
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% with matriculas=object.matriculas.all periodos=object.periodos_academicos.all %}
+                            {% if matriculas.exists or periodos.exists %}
+                            <div class="alert alert-danger">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-skull-crossbones me-2"></i>
+                                    ¡NO SE PUEDE ELIMINAR! Este año lectivo tiene:
+                                </h6>
+                                <ul class="mb-2">
+                                    {% if matriculas.exists %}
+                                    <li>
+                                        <i class="fas fa-users me-1"></i>
+                                        <strong class="text-danger">{{ matriculas.count }} MATRÍCULA(S)</strong> asociada(s)
+                                    </li>
+                                    {% endif %}
+                                    {% if periodos.exists %}
+                                    <li>
+                                        <i class="fas fa-clock me-1"></i>
+                                        <strong class="text-danger">{{ periodos.count }} PERIODO(S)</strong> académico(s) configurado(s)
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                                <p class="mb-0">
+                                    <strong>IMPORTANTE:</strong> Para eliminar este año lectivo primero debe:
+                                    <ol>
+                                        {% if matriculas.exists %}
+                                        <li>Eliminar o reasignar todas las matrículas del año {{ object.anho }}</li>
+                                        {% endif %}
+                                        {% if periodos.exists %}
+                                        <li>Eliminar todos los periodos académicos del año {{ object.anho }}</li>
+                                        {% endif %}
+                                    </ol>
+                                </p>
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="{% url 'administrador:añolectivo_list' %}" class="btn btn-lg btn-success">
+                                    <i class="fas fa-arrow-left me-2"></i> VOLVER SEGURO
+                                </a>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2 fa-2x"></i>
+                                <h5 class="d-inline">¡SE PUEDE ELIMINAR!</h5>
+                                <p class="mb-0 mt-2">No se encontraron dependencias críticas para este año lectivo.</p>
+                            </div>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                    
+                    <!-- Solo mostrar formulario si no hay dependencias -->
+                    {% with matriculas=object.matriculas.all periodos=object.periodos_academicos.all %}
+                    {% if not matriculas.exists and not periodos.exists %}
+                    <form method="post" id="deleteForm">
+                        {% csrf_token %}
+                        
+                        <!-- Campo de confirmación avanzado -->
+                        <div class="mb-4">
+                            <label for="confirm_text" class="form-label fw-bold">
+                                <i class="fas fa-shield-alt me-1 text-danger"></i>
+                                Confirmación de Seguridad
+                                <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-danger text-white">
+                                    <i class="fas fa-key"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="confirm_text" 
+                                       placeholder="Escriba 'ELIMINAR AÑO {{ object.anho }}'"
+                                       required>
+                            </div>
+                            <div class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Escriba exactamente: <code>ELIMINAR AÑO {{ object.anho }}</code>
+                            </div>
+                        </div>
+                        
+                        <!-- Confirmaciones adicionales -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirm_backup">
+                                <label class="form-check-label" for="confirm_backup">
+                                    <i class="fas fa-database me-1"></i>
+                                    Confirmo que tengo un respaldo completo del sistema
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirm_aware">
+                                <label class="form-check-label" for="confirm_aware">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Entiendo que esta acción es irreversible y eliminará todos los datos asociados
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirm_responsible">
+                                <label class="form-check-label" for="confirm_responsible">
+                                    <i class="fas fa-user-shield me-1"></i>
+                                    Asumo toda la responsabilidad por esta acción
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Motivo de eliminación -->
+                        <div class="mb-4">
+                            <label for="motivo" class="form-label fw-bold">
+                                <i class="fas fa-comment-dots me-1"></i>
+                                Motivo de Eliminación (Obligatorio)
+                            </label>
+                            <textarea class="form-control" 
+                                      id="motivo" 
+                                      name="motivo" 
+                                      rows="3" 
+                                      placeholder="Explique detalladamente por qué está eliminando este año lectivo..."
+                                      required></textarea>
+                            <div class="form-text text-muted">
+                                Esta información quedará registrada en el historial del sistema.
+                            </div>
+                        </div>
+                        
+                        <!-- Botones de acción -->
+                        <div class="d-flex justify-content-between mt-5 pt-4 border-top">
+                            <a href="{% url 'administrador:añolectivo_list' %}" 
+                               class="btn btn-lg btn-success">
+                                <i class="fas fa-arrow-left me-2"></i> Cancelar
+                            </a>
+                            <button type="submit" 
+                                    id="deleteButton"
+                                    class="btn btn-lg btn-danger"
+                                    disabled>
+                                <i class="fas fa-trash-alt me-2"></i>
+                                Eliminar Permanentemente
+                            </button>
+                        </div>
+                    </form>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+                
+                <!-- Información de registro -->
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-history me-1"></i>
+                        <strong>Registro:</strong> 
+                        Creado el {{ object.created_at|date:"d/m/Y H:i" }} | 
+                        Última modificación: {{ object.updated_at|date:"d/m/Y H:i" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmInput = document.getElementById('confirm_text');
+    const confirmBackup = document.getElementById('confirm_backup');
+    const confirmAware = document.getElementById('confirm_aware');
+    const confirmResponsible = document.getElementById('confirm_responsible');
+    const motivoTextarea = document.getElementById('motivo');
+    const deleteButton = document.getElementById('deleteButton');
+    const deleteForm = document.getElementById('deleteForm');
+    
+    if (!deleteForm) return; // Si no hay formulario (por dependencias), salir
+    
+    const requiredText = `ELIMINAR AÑO {{ object.anho }}`;
+    
+    // Validar todos los requisitos
+    function validateForm() {
+        const textValid = confirmInput && confirmInput.value.trim().toUpperCase() === requiredText;
+        const backupChecked = confirmBackup && confirmBackup.checked;
+        const awareChecked = confirmAware && confirmAware.checked;
+        const responsibleChecked = confirmResponsible && confirmResponsible.checked;
+        const motivoValid = motivoTextarea && motivoTextarea.value.trim().length >= 10;
+        
+        deleteButton.disabled = !(textValid && backupChecked && awareChecked && responsibleChecked && motivoValid);
+        
+        // Validar campo de texto
+        if (confirmInput) {
+            if (textValid) {
+                confirmInput.classList.remove('is-invalid');
+                confirmInput.classList.add('is-valid');
+            } else if (confirmInput.value.trim() !== '') {
+                confirmInput.classList.remove('is-valid');
+                confirmInput.classList.add('is-invalid');
+            } else {
+                confirmInput.classList.remove('is-valid', 'is-invalid');
+            }
+        }
+        
+        // Validar motivo
+        if (motivoTextarea) {
+            if (motivoValid) {
+                motivoTextarea.classList.remove('is-invalid');
+                motivoTextarea.classList.add('is-valid');
+            } else if (motivoTextarea.value.trim() !== '') {
+                motivoTextarea.classList.remove('is-valid');
+                motivoTextarea.classList.add('is-invalid');
+            } else {
+                motivoTextarea.classList.remove('is-valid', 'is-invalid');
+            }
+        }
+    }
+    
+    // Escuchar cambios en todos los campos
+    if (confirmInput) confirmInput.addEventListener('input', validateForm);
+    if (confirmBackup) confirmBackup.addEventListener('change', validateForm);
+    if (confirmAware) confirmAware.addEventListener('change', validateForm);
+    if (confirmResponsible) confirmResponsible.addEventListener('change', validateForm);
+    if (motivoTextarea) motivoTextarea.addEventListener('input', validateForm);
+    
+    // Confirmación final
+    deleteForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Modal de confirmación final
+        const finalModal = `
+            <div class="modal fade" id="finalConfirmationModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-danger">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">
+                                <i class="fas fa-radiation-alt me-2"></i>
+                                ¡ÚLTIMA CONFIRMACIÓN!
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-danger">
+                                <h5 class="alert-heading">
+                                    <i class="fas fa-skull-crossbones me-2"></i>
+                                    ¡ESTA ACCIÓN NO SE PUEDE DESHACER!
+                                </h5>
+                                <p>¿Está absolutamente seguro de eliminar el año lectivo:</p>
+                                <h3 class="text-center my-4 text-danger">"{{ object.anho }}"</h3>
+                                <p><strong>Consecuencias:</strong></p>
+                                <ul>
+                                    <li>Se eliminarán todos los datos relacionados</li>
+                                    <li>No podrá recuperar esta información</li>
+                                    <li>Podría afectar reportes históricos</li>
+                                    <li><strong class="text-danger">ACCIÓN IRREVERSIBLE</strong></li>
+                                </ul>
+                            </div>
+                            <div class="text-center">
+                                <button type="button" class="btn btn-success btn-lg me-3" onclick="cancelarEliminacion()">
+                                    <i class="fas fa-times me-2"></i> ¡CANCELAR!
+                                </button>
+                                <button type="button" class="btn btn-danger btn-lg" onclick="procederEliminacion()">
+                                    <i class="fas fa-check me-2"></i> SÍ, ELIMINAR
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Insertar modal
+        const modalContainer = document.createElement('div');
+        modalContainer.innerHTML = finalModal;
+        document.body.appendChild(modalContainer.firstElementChild);
+        
+        const modal = new bootstrap.Modal(document.getElementById('finalConfirmationModal'));
+        modal.show();
+        
+        // Limpiar después de cerrar
+        document.getElementById('finalConfirmationModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+        
+        // Funciones del modal
+        window.cancelarEliminacion = function() {
+            modal.hide();
+        };
+        
+        window.procederEliminacion = function() {
+            // Mostrar loader
+            deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Eliminando...';
+            deleteButton.disabled = true;
+            
+            // Enviar formulario
+            deleteForm.submit();
+        };
+    });
+});
+</script>
+{% endblock %}

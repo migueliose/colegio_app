@@ -1,0 +1,49 @@
+<!-- templates/partials/programas_home.html -->
+<section class="programas-home py-5 bg-light">
+  <div class="container">
+    <div class="row mb-5">
+      <div class="col-lg-8 mx-auto text-center">
+        <h2 class="display-5 fw-bold text-dark mb-3">Nuestros Programas Académicos</h2>
+        <p class="lead text-muted">
+          Formación integral basada en valores cristianos para cada etapa del desarrollo
+        </p>
+      </div>
+    </div>
+    
+    <div class="row g-4">
+      {% for programa in programas_destacados %}
+      <div class="col-md-4">
+        <div class="card program-card h-100 border-0 shadow-sm">
+          <img src="{{ programa.imagen_principal.url }}" 
+               class="card-img-top" 
+               alt="{{ programa.nombre }}"
+               style="height: 200px; object-fit: cover;">
+          <div class="card-body">
+            <span class="badge bg-primary mb-2">{{ programa.get_nivel_display }}</span>
+            <h5 class="card-title">{{ programa.nombre }}</h5>
+            <p class="card-text text-muted">
+              {{ programa.descripcion_corta|truncatewords:20 }}
+            </p>
+          </div>
+          <div class="card-footer bg-transparent border-0">
+            <a href="{% url 'web:programa_detalle' programa.slug %}" 
+               class="btn btn-outline-primary btn-sm">
+              Conocer Más
+            </a>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12 text-center">
+        <p class="text-muted">Programas académicos disponibles próximamente</p>
+      </div>
+      {% endfor %}
+    </div>
+    
+    <div class="text-center mt-5">
+      <a href="{% url 'web:programas' %}" class="btn btn-primary btn-lg">
+        Ver Todos Nuestros Programas
+      </a>
+    </div>
+  </div>
+</section>

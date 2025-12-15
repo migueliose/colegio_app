@@ -1,0 +1,291 @@
+<!-- administrador/añolectivo/añolectivo_form.html -->
+{% extends 'gestioncolegio/base2.html' %}
+
+{% block title %}{{ title }} - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'administrador:añolectivo_list' %}">Años Lectivos</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Card principal -->
+            <div class="card shadow">
+                <div class="card-header {% if object %}bg-warning{% else %}bg-primary{% endif %} text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas {% if object %}fa-edit{% else %}fa-plus-circle{% endif %} me-2"></i>
+                        {{ title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate id="añoForm">
+                        {% csrf_token %}
+                        
+                        <!-- Año -->
+                        <div class="mb-4">
+                            <label for="{{ form.anho.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-calendar me-1"></i> Año Lectivo
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.anho }}
+                            <div class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i> Ejemplo: 2024, 2024-2025
+                            </div>
+                            {% if form.anho.errors %}
+                            <div class="invalid-feedback d-block">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {% for error in form.anho.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Colegio -->
+                        <div class="mb-4">
+                            <label for="{{ form.colegio.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-school me-1"></i> Colegio
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.colegio }}
+                            {% if form.colegio.errors %}
+                            <div class="invalid-feedback d-block">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {% for error in form.colegio.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Sede -->
+                        <div class="mb-4">
+                            <label for="{{ form.sede.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-building me-1"></i> Sede
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.sede }}
+                            {% if form.sede.errors %}
+                            <div class="invalid-feedback d-block">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {% for error in form.sede.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Fechas -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="{{ form.fecha_inicio.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-play me-1 text-success"></i> Fecha Inicio
+                                </label>
+                                {{ form.fecha_inicio }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.fecha_fin.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-stop me-1 text-danger"></i> Fecha Fin
+                                </label>
+                                {{ form.fecha_fin }}
+                            </div>
+                            <div class="col-12">
+                                <div class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i> Las fechas son opcionales pero recomendadas.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Estado -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                {{ form.estado }}
+                                <label class="form-check-label fw-bold" for="{{ form.estado.id_for_label }}">
+                                    <i class="fas fa-toggle-on me-1"></i> Activar este año lectivo
+                                </label>
+                            </div>
+                            <div class="form-text text-muted">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                <strong>Nota:</strong> Al activar este año, se desactivarán automáticamente todos los demás años lectivos.
+                            </div>
+                            {% if form.estado.errors %}
+                            <div class="invalid-feedback d-block">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {% for error in form.estado.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-5 pt-4 border-top">
+                            <a href="{% url 'administrador:añolectivo_list' %}" class="btn btn-lg btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-lg {% if object %}btn-warning{% else %}btn-primary{% endif %}">
+                                <i class="fas {% if object %}fa-save{% else %}fa-check-circle{% endif %} me-2"></i>
+                                {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Información adicional -->
+            <div class="card shadow mt-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Información Importante
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Consideraciones al crear un año lectivo:
+                        </h6>
+                        <ul class="mb-0">
+                            <li>El año lectivo activo determina el año actual del sistema</li>
+                            <li>Las matrículas se asocian a un año lectivo específico</li>
+                            <li>Los periodos académicos deben crearse dentro del año lectivo</li>
+                            <li>Un año lectivo debe tener al menos un periodo para funcionar correctamente</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Agregar clases Bootstrap a los campos
+    const inputs = document.querySelectorAll('input[type="text"], select');
+    inputs.forEach(input => {
+        input.classList.add('form-control');
+    });
+    
+    // Para el checkbox (estado)
+    const estadoCheckbox = document.getElementById('id_estado');
+    if (estadoCheckbox) {
+        estadoCheckbox.classList.add('form-check-input');
+        const parentDiv = estadoCheckbox.closest('div');
+        if (parentDiv) {
+            parentDiv.classList.add('form-switch');
+        }
+    }
+    
+    // Para los campos de fecha
+    const fechaInicio = document.getElementById('id_fecha_inicio');
+    const fechaFin = document.getElementById('id_fecha_fin');
+    if (fechaInicio && fechaInicio.type === 'text') {
+        fechaInicio.type = 'date';
+    }
+    if (fechaFin && fechaFin.type === 'text') {
+        fechaFin.type = 'date';
+    }
+    
+    // Validación del formulario
+    const form = document.getElementById('añoForm');
+    form.addEventListener('submit', function(e) {
+        let valid = true;
+        
+        // Validar año
+        const año = document.getElementById('id_anho');
+        if (!año.value.trim()) {
+            valid = false;
+            showError(año, 'El año lectivo es obligatorio');
+        } else if (!/^\d{4}(-\d{4})?$/.test(año.value.trim())) {
+            valid = false;
+            showError(año, 'Formato inválido. Use: 2024 o 2024-2025');
+        } else {
+            removeError(año);
+        }
+        
+        // Validar colegio
+        const colegio = document.getElementById('id_colegio');
+        if (!colegio.value) {
+            valid = false;
+            showError(colegio, 'Debe seleccionar un colegio');
+        } else {
+            removeError(colegio);
+        }
+        
+        // Validar sede
+        const sede = document.getElementById('id_sede');
+        if (!sede.value) {
+            valid = false;
+            showError(sede, 'Debe seleccionar una sede');
+        } else {
+            removeError(sede);
+        }
+        
+        // Validar fechas si están ambas presentes
+        if (fechaInicio.value && fechaFin.value) {
+            const inicio = new Date(fechaInicio.value);
+            const fin = new Date(fechaFin.value);
+            
+            if (inicio >= fin) {
+                valid = false;
+                showError(fechaFin, 'La fecha fin debe ser posterior a la fecha inicio');
+            }
+        }
+        
+        if (!valid) {
+            e.preventDefault();
+            // Mostrar alerta
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Error:</strong> Por favor corrija los errores en el formulario.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            form.prepend(alertDiv);
+            
+            // Scroll al primer error
+            const firstError = document.querySelector('.is-invalid');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    });
+    
+    function showError(field, message) {
+        field.classList.add('is-invalid');
+        let errorDiv = field.nextElementSibling;
+        while (errorDiv && !errorDiv.classList.contains('invalid-feedback')) {
+            errorDiv = errorDiv.nextElementSibling;
+        }
+        if (!errorDiv || !errorDiv.classList.contains('invalid-feedback')) {
+            errorDiv = document.createElement('div');
+            errorDiv.className = 'invalid-feedback d-block';
+            field.parentNode.appendChild(errorDiv);
+        }
+        errorDiv.innerHTML = `<i class="fas fa-exclamation-circle me-1"></i> ${message}`;
+    }
+    
+    function removeError(field) {
+        field.classList.remove('is-invalid');
+        let errorDiv = field.nextElementSibling;
+        while (errorDiv && !errorDiv.classList.contains('invalid-feedback')) {
+            errorDiv = errorDiv.nextElementSibling;
+        }
+        if (errorDiv && errorDiv.classList.contains('invalid-feedback')) {
+            errorDiv.remove();
+        }
+    }
+    
+    // Auto-enfoque en el primer campo
+    document.getElementById('id_anho').focus();
+});
+</script>
+{% endblock %}

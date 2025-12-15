@@ -1,0 +1,433 @@
+<!--mi_horario.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static estudiante_filters %}
+
+{% block title %}Mi Horario - {{ estudiante.nombres }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .schedule-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    
+    .day-card {
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .day-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .day-header {
+        background-color: #f8f9fa;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .day-header.today {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+    
+    .day-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .class-item {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f8f9fa;
+        transition: all 0.2s ease;
+    }
+    
+    .class-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .class-item:last-child {
+        border-bottom: none;
+    }
+    
+    .class-time {
+        font-weight: 600;
+        color: #495057;
+        min-width: 140px;
+    }
+    
+    .class-subject {
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 0.25rem;
+    }
+    
+    .class-area {
+        display: inline-block;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: white;
+        margin-right: 0.5rem;
+    }
+    
+    .class-teacher {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .class-room {
+        background-color: #e9ecef;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .class-duration {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        margin-bottom: 1.5rem;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+    }
+    
+    .current-class {
+        border-left: 4px solid #4CAF50;
+        background-color: rgba(76, 175, 80, 0.05);
+    }
+    
+    @media (max-width: 768px) {
+        .class-time {
+            min-width: 120px;
+        }
+        
+        .day-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .day-badge {
+            align-self: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="schedule-header">
+                <div class="p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="h4 mb-2">
+                                <i class="fas fa-clock me-2"></i>
+                                Mi Horario de Clases
+                            </h2>
+                            <p class="mb-0 opacity-90">
+                                <i class="fas fa-graduation-cap me-2"></i>
+                                {{ grado.nombre }} • {{ sede.nombre }}
+                            </p>
+                        </div>
+                        <div class="text-end">
+                            <div class="badge bg-white text-primary fs-6 px-3 py-2">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                {% now "d M Y" %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        {{ error }}
+    </div>
+    {% else %}
+    
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="fas fa-book"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-0">{{ total_asignaturas }}</h4>
+                        <p class="text-muted mb-0">Asignaturas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-0">{{ total_clases }}</h4>
+                        <p class="text-muted mb-0">Clases semanales</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-0">{{ total_horas_semanales }}h</h4>
+                        <p class="text-muted mb-0">Horas semanales</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-0">
+                            {% if dia_actual and dia_actual in dias_semana %}
+                                {{ dias_semana.dia_actual.nombre }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </h4>
+                        <p class="text-muted mb-0">Hoy es</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Horario por días -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-week text-primary me-2"></i>
+                        Horario Semanal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for dia_codigo, dia_data in dias_semana.items %}
+                    {% if dia_data.horarios %}
+                    <div class="day-card">
+                        <div class="day-header {% if dia_codigo == dia_actual %}today{% endif %}">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-calendar-day me-2"></i>
+                                <span>{{ dia_data.nombre }}</span>
+                                {% if dia_codigo == dia_actual %}
+                                <span class="badge bg-light text-dark ms-2">HOY</span>
+                                {% endif %}
+                            </div>
+                            <span class="day-badge bg-primary text-white">
+                                {{ dia_data.horarios|length }} clase{% if dia_data.horarios|length != 1 %}s{% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="day-body">
+                            {% for horario in dia_data.horarios %}
+                            <div class="class-item {% if dia_codigo == dia_actual %}current-day-class{% endif %}">
+                                <div class="row align-items-center">
+                                    <div class="col-md-3 col-lg-2 mb-2 mb-md-0">
+                                        <div class="class-time">
+                                            <i class="fas fa-clock me-1"></i>
+                                            {{ horario.hora_inicio_str }} - {{ horario.hora_fin_str }}
+                                        </div>
+                                        <div class="class-duration mt-1">
+                                            <small>{{ horario.duracion|floatformat:1 }} horas</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6 col-lg-7 mb-2 mb-md-0">
+                                        <div class="class-subject mb-1">
+                                            <i class="fas fa-book me-2"></i>
+                                            {{ horario.asignatura }}
+                                        </div>
+                                        {% if horario.area %}
+                                        <span class="class-area" style="background-color: {{ horario.area_color }};">
+                                            {{ horario.area }}
+                                        </span>
+                                        {% endif %}
+                                        <div class="class-teacher">
+                                            <i class="fas fa-user-tie me-1"></i>
+                                            {{ horario.docente }}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-3 col-lg-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="class-room">
+                                                <i class="fas fa-door-open me-1"></i>
+                                                {{ horario.salon }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen de horas por asignatura -->
+    <div class="row mt-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie text-primary me-2"></i>
+                        Distribución de Horas por Asignatura
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Asignatura</th>
+                                    <th class="text-end">Horas/Semana</th>
+                                    <th class="text-end">%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asignatura, horas in horas_por_asignatura.items %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-book text-muted me-2"></i>
+                                        {{ asignatura }}
+                                    </td>
+                                    <td class="text-end">{{ horas|floatformat:1 }}</td>
+                                    <td class="text-end">
+                                        {% if total_horas_semanales > 0 %}
+                                        {{ horas|divide:total_horas_semanales|multiply:100|floatformat:1 }}%
+                                        {% else %}
+                                        0%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-light">
+                                    <th>TOTAL</th>
+                                    <th class="text-end">{{ total_horas_semanales }}</th>
+                                    <th class="text-end">100%</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        Información del Horario
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-lightbulb me-2"></i>Recomendaciones:</h6>
+                        <ul class="mb-0">
+                            <li>Revisa tu horario diariamente</li>
+                            <li>Llega 5 minutos antes de cada clase</li>
+                            <li>Mantén tu material de estudio organizado</li>
+                            <li>Contacta a tu docente si tienes dudas sobre el horario</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h6 class="text-muted">Período Académico</h6>
+                        <p class="mb-2">
+                            <i class="fas fa-calendar me-2"></i>
+                            {{ matricula.año_lectivo.anho }}
+                        </p>
+                        
+                        <h6 class="text-muted mt-3">Sede</h6>
+                        <p class="mb-0">
+                            <i class="fas fa-school me-2"></i>
+                            {{ sede.nombre }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

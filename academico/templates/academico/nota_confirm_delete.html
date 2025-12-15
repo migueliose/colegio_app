@@ -1,0 +1,47 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Eliminar Nota - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirmar Eliminación
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-trash-alt fa-4x text-danger mb-3"></i>
+                    <h4>¿Está seguro de que desea eliminar esta nota?</h4>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <strong>Estudiante:</strong> {{ object.estudiante.usuario.get_full_name }}<br>
+                    <strong>Asignatura:</strong> {{ object.asignatura_grado_año_lectivo.asignatura.nombre }}<br>
+                    <strong>Periodo:</strong> {{ object.periodo_academico.periodo.nombre }} - {{ object.periodo_academico.año_lectivo.anho }}<br>
+                    <strong>Calificación:</strong> {{ object.calificacion }}
+                </div>
+                
+                <p class="text-muted">
+                    Esta acción no se puede deshacer. La nota será eliminada permanentemente del sistema.
+                </p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a href="{% url 'academico:notas_list' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-1"></i>Eliminar Nota
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

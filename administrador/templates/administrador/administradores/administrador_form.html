@@ -1,0 +1,226 @@
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-shield mr-2"></i>{{ title }}
+        </h1>
+        <a href="{% url 'administrador:administrador_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left mr-2"></i>Volver a la lista
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Información del Administrador/Rector</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <!-- Tipo de Usuario -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.tipo_usuario.label }} *</label>
+                                {{ form.tipo_usuario }}
+                                {% if form.tipo_usuario.errors %}
+                                <div class="text-danger small">{{ form.tipo_usuario.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Username -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.username.label }} *</label>
+                                {{ form.username }}
+                                {% if form.username.errors %}
+                                <div class="text-danger small">{{ form.username.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <hr class="mb-4">
+                        <h6 class="font-weight-bold text-primary mb-3">Información Personal</h6>
+                        
+                        <div class="row">
+                            <!-- Tipo de Documento -->
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">{{ form.tipo_documento.label }} *</label>
+                                {{ form.tipo_documento }}
+                                {% if form.tipo_documento.errors %}
+                                <div class="text-danger small">{{ form.tipo_documento.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Número de Documento -->
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">{{ form.numero_documento.label }} *</label>
+                                {{ form.numero_documento }}
+                                {% if form.numero_documento.errors %}
+                                <div class="text-danger small">{{ form.numero_documento.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Género -->
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">{{ form.sexo.label }}</label>
+                                {{ form.sexo }}
+                                {% if form.sexo.errors %}
+                                <div class="text-danger small">{{ form.sexo.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Fecha Nacimiento -->
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">{{ form.fecha_nacimiento.label }}</label>
+                                {{ form.fecha_nacimiento }}
+                                {% if form.fecha_nacimiento.errors %}
+                                <div class="text-danger small">{{ form.fecha_nacimiento.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Nombres -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.nombres.label }} *</label>
+                                {{ form.nombres }}
+                                {% if form.nombres.errors %}
+                                <div class="text-danger small">{{ form.nombres.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Apellidos -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.apellidos.label }} *</label>
+                                {{ form.apellidos }}
+                                {% if form.apellidos.errors %}
+                                <div class="text-danger small">{{ form.apellidos.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <hr class="mb-4">
+                        <h6 class="font-weight-bold text-primary mb-3">Información de Contacto</h6>
+                        
+                        <div class="row">
+                            <!-- Email -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.email.label }} *</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                <div class="text-danger small">{{ form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Teléfono -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.telefono.label }}</label>
+                                {{ form.telefono }}
+                                {% if form.telefono.errors %}
+                                <div class="text-danger small">{{ form.telefono.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Dirección -->
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.direccion.label }}</label>
+                            {{ form.direccion }}
+                            {% if form.direccion.errors %}
+                            <div class="text-danger small">{{ form.direccion.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <hr class="mb-4">
+                        <h6 class="font-weight-bold text-primary mb-3">Seguridad</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.password.label }}</label>
+                            {{ form.password }}
+                            {% if form.password.errors %}
+                            <div class="text-danger small">{{ form.password.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                {{ form.password.help_text }}
+                            </small>
+                        </div>
+                        
+                        <!-- Alerta para contraseñas -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <strong>Recomendación:</strong> Si no cambia la contraseña, se mantendrá la actual.
+                            Para nuevos usuarios, se recomienda establecer una contraseña segura.
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save mr-2"></i>{{ submit_text }}
+                            </button>
+                            <a href="{% url 'administrador:administrador_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times mr-2"></i>Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+$(document).ready(function() {
+    // Validación de formulario
+    $('form').on('submit', function() {
+        var tipoUsuario = $('#id_tipo_usuario').val();
+        var username = $('#id_username').val();
+        
+        if (!tipoUsuario) {
+            alert('Debe seleccionar un tipo de usuario');
+            return false;
+        }
+        
+        if (!username) {
+            alert('Debe ingresar un nombre de usuario');
+            return false;
+        }
+        
+        return true;
+    });
+    
+    // Generar username automático si está vacío
+    $('#id_numero_documento').on('blur', function() {
+        var documento = $(this).val();
+        var usernameField = $('#id_username');
+        
+        if (documento && !usernameField.val()) {
+            var tipoUsuario = $('#id_tipo_usuario').val();
+            var prefix = 'admin_';
+            
+            if (tipoUsuario == 2) { // Rector
+                prefix = 'rector_';
+            } else if (tipoUsuario == 1) { // Administrador
+                prefix = 'admin_';
+            }
+            
+            usernameField.val(prefix + documento);
+        }
+    });
+});
+</script>
+{% endblock %}

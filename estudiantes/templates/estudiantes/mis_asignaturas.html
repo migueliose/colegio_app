@@ -1,0 +1,463 @@
+<!-- mis_asignaturas.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static estudiante_filters %}
+
+{% block title %}Mis Asignaturas - {{ estudiante.nombres }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .subject-card {
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        background: white;
+    }
+    
+    .subject-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    
+    .subject-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+        background-color: #f8f9fa;
+    }
+    
+    .subject-body {
+        padding: 1.5rem;
+    }
+    
+    .subject-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+    }
+    
+    .hours-badge {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 1.25rem;
+    }
+    
+    .teacher-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #fff;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        margin-bottom: 1.5rem;
+        border: 1px solid #e9ecef;
+    }
+    
+    .area-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: white;
+    }
+    
+    .progress-container {
+        height: 8px;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 0.5rem;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        border-radius: 4px;
+    }
+    
+    .grade-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.25rem;
+        border: 3px solid;
+    }
+    
+    .subject-color-1 { background-color: #667eea; }
+    .subject-color-2 { background-color: #764ba2; }
+    .subject-color-3 { background-color: #4facfe; }
+    .subject-color-4 { background-color: #00f2fe; }
+    .subject-color-5 { background-color: #43e97b; }
+    .subject-color-6 { background-color: #38f9d7; }
+    .subject-color-7 { background-color: #fa709a; }
+    .subject-color-8 { background-color: #fee140; }
+    
+    @media (max-width: 768px) {
+        .subject-card {
+            margin-bottom: 1rem;
+        }
+        
+        .subject-header, .subject-body {
+            padding: 1rem;
+        }
+        
+        .hours-badge {
+            font-size: 1rem;
+            padding: 0.4rem 0.8rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="h4 mb-2">
+                                <i class="fas fa-book me-2"></i>
+                                Mis Asignaturas
+                            </h2>
+                            <p class="mb-0 opacity-90">
+                                <i class="fas fa-graduation-cap me-2"></i>
+                                {{ grado.nombre }} • {{ sede.nombre }}
+                            </p>
+                        </div>
+                        <div class="text-end">
+                            <div class="badge bg-white text-primary fs-6 px-3 py-2">
+                                <i class="fas fa-list-alt me-2"></i>
+                                {{ total_asignaturas }} asignaturas
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        {{ error }}
+    </div>
+    {% else %}
+    
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="subject-icon subject-color-1">
+                            <i class="fas fa-book"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-0">{{ total_asignaturas }}</h4>
+                        <p class="text-muted mb-0">Total Asignaturas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="subject-icon subject-color-2">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-0">{{ total_horas_semanales }}h</h4>
+                        <p class="text-muted mb-0">Horas semanales</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="subject-icon subject-color-3">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        {% with docentes=asignaturas|dictsort:"docente.id" %}
+                        <h4 class="mb-0">{{ docentes|length }}</h4>
+                        {% endwith %}
+                        <p class="text-muted mb-0">Docentes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="subject-icon subject-color-4">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-0">{{ promedio_general|default:"-" }}</h4>
+                        <p class="text-muted mb-0">Promedio general</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Asignaturas -->
+    <div class="row">
+        {% for asignatura in asignaturas %}
+        <div class="col-lg-6 col-xl-4">
+            <div class="subject-card">
+                <div class="subject-header">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="d-flex align-items-center">
+                            <div class="subject-icon subject-color-{{ forloop.counter|add:"-1"|divisibleby:"8"|add:"1" }} me-3">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-1">{{ asignatura.asignatura.nombre }}</h5>
+                                {% if asignatura.area %}
+                                <span class="area-badge" style="background-color: {{ asignatura.area_color }};">
+                                    {{ asignatura.area.nombre }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="hours-badge">
+                            {{ asignatura.horas_semanales }}h
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="subject-body">
+                    <!-- Información del Docente -->
+                    {% if asignatura.docente %}
+                    <div class="d-flex align-items-center mb-3">
+                        {% if asignatura.docente.usuario.foto %}
+                        <img src="{{ asignatura.docente.usuario.foto.url }}" 
+                             alt="{{ asignatura.docente.usuario.get_full_name }}" 
+                             class="teacher-avatar me-3">
+                        {% else %}
+                        <div class="teacher-avatar me-3 bg-secondary text-white d-flex align-items-center justify-content-center">
+                            {{ asignatura.docente.usuario.get_initial_icon }}
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h6 class="mb-1">{{ asignatura.docente.usuario.get_full_name }}</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-envelope me-1"></i>
+                                {{ asignatura.docente.usuario.email|default:"Sin email" }}
+                            </small>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning mb-3 py-2">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Docente por asignar
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Intensidad Horaria -->
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <small class="text-muted">Intensidad Horaria</small>
+                            <p class="mb-0 fw-semibold">
+                                {{ asignatura.horas_semanales }}h/semana
+                                {% if asignatura.intensidad_horaria %}
+                                <br><small class="text-muted">(IH: {{ asignatura.intensidad_horaria }})</small>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Área</small>
+                            <p class="mb-0 fw-semibold">{{ asignatura.area.nombre|default:"Sin área" }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Calificaciones -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <small class="text-muted">Rendimiento</small>
+                            {% if asignatura.promedio %}
+                            <span class="grade-circle 
+                                {% if asignatura.promedio >= 4.6 %}border-success text-success
+                                {% elif asignatura.promedio >= 4.0 %}border-info text-info
+                                {% elif asignatura.promedio >= 3.0 %}border-warning text-warning
+                                {% else %}border-danger text-danger
+                                {% endif %}">
+                                {{ asignatura.promedio }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">Sin calificar</span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if asignatura.promedio %}
+                        <div class="progress-container">
+                            <div class="progress-bar 
+                                {% if asignatura.promedio >= 4.6 %}bg-success
+                                {% elif asignatura.promedio >= 4.0 %}bg-info
+                                {% elif asignatura.promedio >= 3.0 %}bg-warning
+                                {% else %}bg-danger
+                                {% endif %}" 
+                                style="width: {{ asignatura.promedio|multiply:20 }}%">
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Notas por período -->
+                    {% if asignatura.notas %}
+                    <div class="mt-3">
+                        <small class="text-muted d-block mb-2">Últimas calificaciones:</small>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for nota in asignatura.notas|slice:":3" %}
+                            <span class="badge 
+                                {% if nota.calificacion >= 4.6 %}bg-success
+                                {% elif nota.calificacion >= 4.0 %}bg-info
+                                {% elif nota.calificacion >= 3.0 %}bg-warning
+                                {% else %}bg-danger
+                                {% endif %}">
+                                {{ nota.periodo_academico.periodo.nombre|slice:":3" }}: {{ nota.calificacion }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                No hay asignaturas registradas para este grado.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Resumen por Áreas -->
+    <div class="row mt-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar text-primary me-2"></i>
+                        Resumen por Áreas del Conocimiento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Área</th>
+                                    <th>Asignaturas</th>
+                                    <th>Horas/Semana</th>
+                                    <th class="text-end">% del Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for area_nombre, area_data in asignaturas_por_area.items %}
+                                <tr>
+                                    <td>
+                                        <span class="badge" style="background-color: {{ area_data.color }}; color: white;">
+                                            {{ area_nombre }}
+                                        </span>
+                                    </td>
+                                    <td>{{ area_data.asignaturas|length }}</td>
+                                    <td>{{ area_data.total_horas|floatformat:1 }}</td>
+                                    <td class="text-end">
+                                        {% if total_horas_semanales > 0 %}
+                                        {{ area_data.total_horas|divide:total_horas_semanales|multiply:100|floatformat:1 }}%
+                                        {% else %}
+                                        0%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-light">
+                                    <th>TOTAL</th>
+                                    <th>{{ total_asignaturas }}</th>
+                                    <th>{{ total_horas_semanales }}</th>
+                                    <th class="text-end">100%</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        Información Académica
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-lightbulb me-2"></i>Consejos de Estudio:</h6>
+                        <ul class="mb-0">
+                            <li>Organiza tu tiempo según la intensidad horaria</li>
+                            <li>Prioriza asignaturas con mayor carga académica</li>
+                            <li>Mantén comunicación constante con tus docentes</li>
+                            <li>Revisa el material de estudio semanalmente</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h6 class="text-muted">Promedio General</h6>
+                        <p class="mb-2">
+                            <i class="fas fa-chart-line me-2"></i>
+                            {{ promedio_general|default:"Sin calificaciones" }}
+                        </p>
+                        
+                        <h6 class="text-muted mt-3">Carga Académica</h6>
+                        <p class="mb-0">
+                            <i class="fas fa-balance-scale me-2"></i>
+                            Promedio: {{ total_horas_semanales|divide:total_asignaturas|floatformat:1 }}h por asignatura
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

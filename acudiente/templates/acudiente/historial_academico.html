@@ -1,0 +1,299 @@
+<!-- acudiente/templates/acudiente/historial_academico.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+{% load estudiante_filters %}
+
+{% block title %}Historial Académico de {{ estudiante.usuario.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'gestioncolegio:dashboard_acudiente' %}">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'acudiente:detalle_estudiante' estudiante.id %}">
+                            {{ estudiante.usuario.nombres }}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Historial Académico</li>
+                </ol>
+            </nav>
+            
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="h3 mb-1">
+                                <i class="fas fa-history me-2"></i>Historial Académico
+                            </h1>
+                            <p class="text-muted mb-0">
+                                {{ estudiante.usuario.get_full_name }}
+                                {% if estadisticas.años_estudiados %}
+                                • {{ estadisticas.años_estudiados }} años de trayectoria
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div>
+                            <a href="{% url 'acudiente:documentos_estudiante' estudiante.id %}" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-file-pdf me-1"></i> Documentos
+                            </a>
+                            <button class="btn btn-primary" onclick="window.print()">
+                                <i class="fas fa-print me-1"></i> Imprimir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Resumen Estadístico
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Años Estudiados -->
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="card border-primary h-100">
+                                <div class="card-body text-center">
+                                    <div class="display-4 text-primary mb-2">
+                                        {{ estadisticas.años_estudiados|default:"0" }}
+                                    </div>
+                                    <h6 class="text-muted mb-1">Años Estudiantiles</h6>
+                                    <small class="text-muted">Trayectoria académica</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Promedio General -->
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="card border-success h-100">
+                                <div class="card-body text-center">
+                                    <div class="display-4 text-success mb-2">
+                                        {{ estadisticas.promedio_general|default:"0.00" }}
+                                    </div>
+                                    <h6 class="text-muted mb-1">Promedio General</h6>
+                                    <small class="text-muted">/ 5.0</small>
+                                    <div class="progress mt-2" style="height: 8px;">
+                                        <div class="progress-bar bg-success" 
+                                             style="width: {{ estadisticas.promedio_general|default:0|multiply:20 }}%">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mejor Promedio -->
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="card border-warning h-100">
+                                <div class="card-body text-center">
+                                    <div class="display-4 text-warning mb-2">
+                                        {{ estadisticas.mejor_promedio|default:"0.00" }}
+                                    </div>
+                                    <h6 class="text-muted mb-1">Mejor Promedio</h6>
+                                    <small class="text-muted">Récord académico</small>
+                                    <div class="mt-2">
+                                        <i class="fas fa-trophy text-warning"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Total Registros -->
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="card border-info h-100">
+                                <div class="card-body text-center">
+                                    <div class="display-4 text-info mb-2">
+                                        {{ estadisticas.total_registros|default:"0" }}
+                                    </div>
+                                    <h6 class="text-muted mb-1">Registros Históricos</h6>
+                                    <small class="text-muted">Total en sistema</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial por Año -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>Historial por Año Lectivo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if historial_organizado %}
+                        {% for año, año_data in historial_organizado.items %}
+                        <div class="mb-5">
+                            <!-- Encabezado del año -->
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="mb-0">
+                                    <i class="fas fa-calendar me-2 text-primary"></i>
+                                    Año {{ año }}
+                                </h4>
+                                <div>
+                                    {% if año_data.info.id %}
+                                        <a href="{% url 'acudiente:boletin_pdf' estudiante.id año_data.info.id %}" 
+                                           class="btn btn-outline-primary btn-sm"
+                                           target="_blank">
+                                            <i class="fas fa-file-pdf me-1"></i> Boletín Final
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Períodos del año -->
+                            {% for periodo, registros in año_data.periodos.items %}
+                            <div class="card mb-3">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-calendar-week me-2"></i>
+                                        {{ periodo }}
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Asignatura</th>
+                                                    <th class="text-center">Promedio</th>
+                                                    <th class="text-center">Faltas</th>
+                                                    <th>Logros</th>
+                                                    <th class="text-center">Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for registro in registros %}
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ registro.asignatura.nombre }}</strong>
+                                                        {% if registro.asignatura.ih %}
+                                                        <br>
+                                                        <small class="text-muted">IH: {{ registro.asignatura.ih }}</small>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        {% if registro.promedio_periodo %}
+                                                        <span class="badge {% if registro.promedio_periodo >= 3.5 %}bg-success{% elif registro.promedio_periodo >= 3.0 %}bg-warning{% else %}bg-danger{% endif %} p-2">
+                                                            {{ registro.promedio_periodo|floatformat:1 }}
+                                                        </span>
+                                                        {% else %}
+                                                        <span class="text-muted">-</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        {% if registro.faltas and registro.faltas > 0 %}
+                                                        <span class="badge bg-danger">{{ registro.faltas }}</span>
+                                                        {% else %}
+                                                        <span class="text-muted">0</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if registro.logros %}
+                                                        <small>{{ registro.logros|truncatechars:50 }}</small>
+                                                        {% else %}
+                                                        <span class="text-muted">-</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        {% if registro.promedio_periodo %}
+                                                            {% if registro.promedio_periodo >= 3.5 %}
+                                                            <span class="badge bg-success">Aprobado</span>
+                                                            {% elif registro.promedio_periodo >= 3.0 %}
+                                                            <span class="badge bg-warning">Regular</span>
+                                                            {% else %}
+                                                            <span class="badge bg-danger">Reprobado</span>
+                                                            {% endif %}
+                                                        {% else %}
+                                                        <span class="text-muted">Sin calificar</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                            <tfoot class="table-light">
+                                                <tr>
+                                                    <td><strong>Promedio del período</strong></td>
+                                                    <td class="text-center">
+                                                        <strong class="{{ registros|calculate_average:'promedio_periodo'|get_average_color }}">
+                                                            {{ registros|calculate_average:'promedio_periodo'|floatformat:2|default:"-" }}
+                                                        </strong>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <strong>{{ registros|sum:"faltas" }}</strong>
+                                                    </td>
+                                                    <td colspan="2"></td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% if not forloop.last %}
+                        <hr class="my-4">
+                        {% endif %}
+                        {% endfor %}
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay historial académico</h5>
+                        <p class="text-muted">
+                            No se encontraron registros históricos para este estudiante
+                        </p>
+                        <a href="{% url 'acudiente:notas_estudiante' estudiante.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-chart-bar me-1"></i> Ver Notas Actuales
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información Adicional -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-light">
+                <div class="d-flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-lightbulb text-warning fa-2x"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="alert-heading">Interpretación del Historial</h6>
+                        <ul class="mb-0">
+                            <li><strong>Promedio ≥ 3.5:</strong> Desempeño sobresaliente</li>
+                            <li><strong>Promedio 3.0 - 3.4:</strong> Desempeño satisfactorio</li>
+                            <li><strong>Promedio < 3.0:</strong> Desempeño por mejorar</li>
+                            <li><strong>Faltas:</strong> Número de ausencias no justificadas</li>
+                            <li><strong>Logros:</strong> Principales competencias desarrolladas</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

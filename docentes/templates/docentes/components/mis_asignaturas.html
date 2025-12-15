@@ -1,0 +1,128 @@
+{% load docente_filters %}
+<div class="card border-0 shadow-sm h-100">
+    <div class="card-header bg-white border-0 py-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-book-open text-primary me-2"></i>
+                Mis Asignaturas
+                <span class="badge bg-light text-dark ms-2">{{ total_asignaturas }}</span>
+            </h5>
+            <div class="btn-group btn-group-sm">
+                <a href="{% url 'docentes:asignaturas_list' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-list me-1"></i>Todas
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if mis_asignaturas %}
+            <div class="row g-3">
+                {% for asignatura in mis_asignaturas %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card border assignment-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title mb-0 text-truncate" title="{{ asignatura.asignatura.nombre }}">
+                                    {{ asignatura.asignatura.nombre }}
+                                </h6>
+                                <span class="badge bg-light text-dark small">
+                                    {{ asignatura|horas_semana }}h/sem
+                                </span>
+                            </div>
+                            
+                            <div class="assignment-info">
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="fas fa-graduation-cap text-muted me-2 small"></i>
+                                    <small class="text-muted">{{ asignatura.grado_año_lectivo.grado.nombre }}</small>
+                                </div>
+                                
+                                {% if asignatura.sede %}
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="fas fa-school text-muted me-2 small"></i>
+                                    <small class="text-muted">{{ asignatura.sede.nombre }}</small>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-users text-muted me-2 small"></i>
+                                    <small class="text-muted">
+                                        {{ asignatura|count_estudiantes_asignatura }} estudiante{{ asignatura|count_estudiantes_asignatura|pluralize }}
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-1">
+                                <a href="{% url 'docentes:calificar_notas' %}?grado_id={{ asignatura.grado_año_lectivo.grado.id }}&asignatura_id={{ asignatura.asignatura.id }}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-edit me-1"></i>Calificar
+                                </a>
+                                <a href="#" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-list me-1"></i>Ver Estudiantes
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Paginación -->
+            {% if asignaturas_paginator.num_pages > 1 %}
+            <div class="mt-4">
+                <nav aria-label="Paginación de asignaturas">
+                    <ul class="pagination pagination-sm justify-content-center">
+                        {% if mis_asignaturas.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page_asignaturas={{ mis_asignaturas.previous_page_number }}#asignaturas">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+                        </li>
+                        {% endif %}
+                        
+                        {% for num in asignaturas_paginator.page_range %}
+                            {% if mis_asignaturas.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > mis_asignaturas.number|add:'-3' and num < mis_asignaturas.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page_asignaturas={{ num }}#asignaturas">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if mis_asignaturas.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page_asignaturas={{ mis_asignaturas.next_page_number }}#asignaturas">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    
+                    <div class="text-center mt-1">
+                        <small class="text-muted">
+                            Mostrando {{ mis_asignaturas.start_index }}-{{ mis_asignaturas.end_index }} de {{ total_asignaturas }} asignaturas
+                        </small>
+                    </div>
+                </nav>
+            </div>
+            {% endif %}
+            
+        {% else %}
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-book-open display-4 d-block mb-3"></i>
+                <h6>No tienes asignaturas asignadas</h6>
+                <p class="small">Contacta con la administración para asignarte materias</p>
+            </div>
+        {% endif %}
+    </div>
+</div>

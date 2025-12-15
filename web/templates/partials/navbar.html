@@ -1,0 +1,171 @@
+{% load static %}
+{% load gestion_extras %}
+
+<!-- AGREGAR data-theme al navbar -->
+<nav class="navbar navbar-expand-lg navbar-light py-3" data-theme-component>
+  <div class="container">
+    <!-- Logo -->
+    <a class="navbar-brand fw-bold text-primary d-flex align-items-center" href="{% url 'web:home' %}">
+      <img src="{% static 'web/images/logo.png' %}" alt="Logo Colegio El Shadai" width="40" class="me-2" loading="lazy">
+      <span>Col. Crist. El Shadai</span>
+    </a>
+
+    <!-- Botón responsive - MEJORADO -->
+    <button class="navbar-toggler border-1 border-secondary" 
+            type="button" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#mainNavbar"
+            aria-controls="mainNavbar" 
+            aria-expanded="false" 
+            aria-label="Menú">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Enlaces - CORREGIDO COLORES MÓVIL -->
+    <div class="collapse navbar-collapse bg-light rounded-lg mt-2 mt-lg-0" id="mainNavbar">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0 text-center align-items-center">
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/' %}active fw-bold{% endif %}" 
+             href="{% url 'web:home' %}">Inicio</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'about' in request.path %}active fw-bold{% endif %}" 
+             href="{% url 'web:about' %}">Nosotros</a>
+        </li>
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle {% if 'programas' in request.path %}active fw-bold{% endif %}" 
+             href="#" id="programasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Programas
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="programasDropdown">
+            <li><a class="dropdown-item" href="{% url 'web:programas' %}">Todos los Programas</a></li>
+            <li><hr class="dropdown-divider"></li>
+            {% with programas_destacados=programas|default:"" %}
+              {% if programas_destacados %}
+                {% for programa in programas_destacados %}
+                  <li>
+                    <a class="dropdown-item" href="{% url 'web:programa_detalle' programa.slug %}">
+                      {{ programa.nombre }}
+                    </a>
+                  </li>
+                {% endfor %}
+              {% else %}
+                <li><a class="dropdown-item" href="{% url 'web:programas' %}">Preescolar</a></li>
+                <li><a class="dropdown-item" href="{% url 'web:programas' %}">Primaria</a></li>
+              {% endif %}
+            {% endwith %}
+          </ul>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if 'admision' in request.path %}active fw-bold{% endif %}" 
+             href="{% url 'web:admision' %}">Admisiones</a>
+        </li>
+        
+        <li class="nav-item">
+          <a class="nav-link {% if 'noticias' in request.path %}active fw-bold{% endif %}" 
+             href="{% url 'web:noticias' %}">Noticias</a>
+        </li>
+        
+        <li class="nav-item">
+          <a class="nav-link {% if 'contact' in request.path %}active fw-bold{% endif %}" 
+             href="{% url 'web:contact' %}">Contacto</a>
+        </li>
+
+        <!-- Botón de Tema - MEJORADO -->
+        <li class="nav-item ms-2">
+          <button id="themeToggle" class="btn btn-outline-primary btn-sm px-3 theme-toggle" 
+                  title="Cambiar entre modo claro y oscuro"
+                  aria-label="Cambiar tema">
+            <i class="fas fa-moon"></i>
+          </button>
+        </li>
+
+        <!-- Usuario -->
+        {% if user.is_authenticated %}
+          <li class="nav-item dropdown ms-2">
+              <a class="nav-link dropdown-toggle d-flex align-items-center" 
+                 href="#" 
+                 id="navbarDropdown" 
+                 role="button" 
+                 data-bs-toggle="dropdown" 
+                 aria-expanded="false">
+                  <i class="fas fa-user me-1"></i> 
+                  <span class="d-none d-md-inline">{{ user.first_name|default:user.username|truncatechars:15 }}</span>
+                  {% if user|es_administrador or user.is_superuser %}
+                  <span class="badge bg-danger ms-1">Admin</span>
+                  {% elif user|es_docente %}
+                  <span class="badge bg-warning ms-1">Docente</span>
+                  {% elif user|es_estudiante %}
+                  <span class="badge bg-success ms-1">Estudiante</span>
+                  {% elif user|es_acudiente %}
+                  <span class="badge bg-info ms-1">Acudiente</span>
+                  {% endif %}
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                  <li><a class="dropdown-item" href="{% url 'web:perfil' %}">
+                      <i class="fas fa-id-card me-2"></i>Mi Perfil
+                  </a></li>
+                  
+                  {% if user|tiene_perfil_extendido or user.is_superuser %}
+                  <li>
+                    {% if user.is_superuser %}
+                      <a class="dropdown-item" href="{% url 'gestioncolegio:dashboard_administrador' %}">
+                          <i class="fas fa-tachometer-alt me-2"></i>Dashboard Super Admin
+                      </a>
+                    {% elif user|es_administrador %}
+                      <a class="dropdown-item" href="{% url 'gestioncolegio:dashboard_administrador' %}">
+                          <i class="fas fa-tachometer-alt me-2"></i>Dashboard Administrador
+                      </a>
+                    {% elif user|es_docente %}
+                      <a class="dropdown-item" href="{% url 'gestioncolegio:dashboard_docente' %}">
+                          <i class="fas fa-chalkboard-teacher me-2"></i>Dashboard Docente
+                      </a>
+                    {% elif user|es_estudiante %}                    
+                      {% if estudiante.estado %}
+                        <a class="dropdown-item" href="{% url 'gestioncolegio:dashboard_estudiante' %}">
+                            <i class="fas fa-user-graduate me-2"></i>Dashboard Estudiante
+                        </a>
+                      {% else %}
+                        <a class="dropdown-item" href="{% url 'estudiantes:cuenta_inactiva' %}">
+                            <i class="fas fa-user-graduate me-2"></i>Dashboard Inactivo
+                        </a>
+                      
+                      {% endif %}
+                    {% elif user|es_acudiente %}
+                      <a class="dropdown-item" href="{% url 'gestioncolegio:dashboard_acudiente' %}">
+                          <i class="fas fa-user-friends me-2"></i>Dashboard Acudiente
+                      </a>
+                    {% endif %}
+                  </li>
+                  {% endif %}
+                  
+                  {% if user.is_staff or user.is_superuser %}
+                  <li><a class="dropdown-item" href="{% url 'admin:index' %}">
+                      <i class="fas fa-cogs me-2"></i>Panel Administración
+                  </a></li>
+                  {% endif %}
+                  
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                      <form action="{% url 'logout' %}" method="post" class="px-2">
+                          {% csrf_token %}
+                          <button type="submit" class="dropdown-item text-danger">
+                              <i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión
+                          </button>
+                      </form>
+                  </li>
+              </ul>
+          </li>
+        {% else %}
+          <li class="nav-item ms-2">
+              <a class="btn btn-primary px-3" href="{% url 'login' %}">
+                  <i class="fas fa-sign-in-alt me-1"></i><span class="d-none d-md-inline">Ingresar</span>
+              </a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>

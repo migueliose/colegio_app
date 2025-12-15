@@ -1,0 +1,333 @@
+<!-- components/quick_actions.html -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 py-3">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-lightning-charge-fill text-primary me-2"></i>
+            Acciones Rápidas
+        </h5>
+        <p class="text-muted small mb-0 mt-1">Accesos directos a las funciones más utilizadas</p>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <!-- Columna 1 -->
+            <div class="col-md-3">
+                <a href="{% url 'estudiantes:estudiante_perfil' %}" 
+                class="card quick-action-card text-decoration-none h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px;">
+                            <i class="bi bi-person-badge text-primary fs-3"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-2">Mi Perfil</h6>
+                        <p class="text-muted small mb-0">Información personal y académica</p>
+                        <span class="badge bg-primary rounded-pill mt-2">Completo</span>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- Columna 2 -->
+            <div class="col-md-3">
+                <a href="{% url 'estudiantes:estudiante_informe' %}" 
+                   class="card quick-action-card text-decoration-none h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-success bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px;">
+                            <i class="bi bi-graph-up text-success fs-3"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-2">Informes</h6>
+                        <p class="text-muted small mb-0">Ver rendimiento detallado</p>
+                        {% if periodo_actual %}
+                        <span class="badge bg-success rounded-pill mt-2">{{ periodo_actual.periodo.nombre }}</span>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+            
+            <!-- Columna 3 - Constancia -->
+            <div class="col-md-3">
+                <a href="{% url 'estudiantes:estudiante_constancia_pdf' %}" 
+                   class="card quick-action-card text-decoration-none h-100" target="_blank">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-info bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px;">
+                            <i class="bi bi-file-earmark-text text-info fs-3"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-2">Constancia</h6>
+                        <p class="text-muted small mb-0">Generar documento oficial</p>
+                        <span class="badge bg-info rounded-pill mt-2">PDF</span>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- Columna 4 - Observador -->
+            <div class="col-md-3">
+                <a href="{% url 'estudiantes:estudiante_observador_pdf' %}" 
+                   class="card quick-action-card text-decoration-none h-100" target="_blank">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-warning bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px;">
+                            <i class="bi bi-clipboard-data text-warning fs-3"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-2">Observador</h6>
+                        <p class="text-muted small mb-0">Ver historial conductual</p>
+                        <span class="badge bg-warning rounded-pill mt-2">PDF</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <br>
+        <div class="row g-3">    
+            <!-- Columna 5 - Descargar PDF del período actual -->
+            <div class="col-md-3">
+                {% if periodo_actual and periodo_actual.id %}
+                <a href="{% url 'estudiantes:estudiante_informe_pdf' periodo_id=periodo_actual.id %}" 
+                class="card quick-action-card text-decoration-none h-100" target="_blank">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-secondary bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px;">
+                            <i class="bi bi-download text-secondary fs-3"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-2">Informe Actual PDF</h6>
+                        <p class="text-muted small mb-0">
+                            {{ periodo_actual.periodo.nombre|default:"Período actual" }}
+                        </p>
+                        <span class="badge bg-secondary rounded-pill mt-2">Descargar</span>
+                    </div>
+                </a>
+                {% else %}
+                <div class="card text-decoration-none h-100 border-secondary bg-light">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-secondary bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px;">
+                            <i class="bi bi-download text-secondary fs-3 opacity-50"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-2 text-muted">Informe PDF</h6>
+                        <p class="text-muted small mb-0">No disponible</p>
+                        <span class="badge bg-light text-dark border rounded-pill mt-2">Próximamente</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Columna 6 - Boletín Final -->
+            <div class="col-md-3">
+                <a href="{% url 'estudiantes:seleccionar_año_lectivo' %}?tipo=final" 
+                   class="card quick-action-card text-decoration-none h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-danger bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px;">
+                            <i class="bi bi-file-earmark-spreadsheet text-danger fs-3"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-2">Boletín Final</h6>
+                        <p class="text-muted small mb-0">
+                            {% if años_anteriores_count > 0 %}
+                            Seleccionar año
+                            {% else %}
+                            Primer año
+                            {% endif %}
+                        </p>
+                        {% if años_anteriores_count > 0 %}
+                        <span class="badge bg-danger rounded-pill mt-2">{{ años_anteriores_count }} años</span>
+                        {% else %}
+                        <span class="badge bg-light text-dark border rounded-pill mt-2">Nuevo</span>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+            
+            <!-- Columna 7 - Reporte de Notas del período actual -->
+            <div class="col-md-3">
+                {% if periodo_actual and periodo_actual.id %}
+                <a href="{% url 'estudiantes:estudiante_reporte_notas_pdf_periodo' periodo_id=periodo_actual.id %}" 
+                class="card quick-action-card text-decoration-none h-100" target="_blank">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-info bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px;">
+                            <i class="bi bi-file-earmark-text text-info fs-3"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-2">Reporte de Notas</h6>
+                        <p class="text-muted small mb-0">{{ periodo_actual.periodo.nombre }}</p>
+                        <span class="badge bg-info rounded-pill mt-2">Oficial</span>
+                    </div>
+                </a>
+                {% else %}
+                <div class="card quick-action-card text-decoration-none h-100 bg-light">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-info bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px;">
+                            <i class="bi bi-file-earmark-text text-info fs-3 opacity-50"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-2 text-muted">Reporte de Notas</h6>
+                        <p class="text-muted small mb-0">No disponible</p>
+                        <span class="badge bg-light text-dark border rounded-pill mt-2">Próximamente</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Columna 8 - Horario -->
+            <div class="col-md-3">
+                <a href="{% url 'estudiantes:horarios_list' %}" 
+                class="card quick-action-card text-decoration-none h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-dark bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px;">
+                            <i class="bi bi-calendar-week text-dark fs-3"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-2">Mi Horario</h6>
+                        <p class="text-muted small mb-0">Ver clases semanales</p>
+                        {% if estudiante and estudiante.grado_actual %}
+                        <span class="badge bg-dark rounded-pill mt-2">{{ estudiante.grado_actual.grado.nombre }}</span>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Fila adicional para años anteriores -->
+        {% if años_anteriores_list and años_anteriores_list|length > 1 %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card border-info">
+                    <div class="card-header bg-info bg-opacity-10 border-info py-2">
+                        <h6 class="mb-0">
+                            <i class="bi bi-clock-history text-info me-2"></i>
+                            Años Anteriores Disponibles
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for año in años_anteriores_list|slice:"1:" %}
+                            <a href="{% url 'estudiantes:seleccionar_año_lectivo' %}?tipo=final&año_id={{ año.id }}" 
+                               class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-calendar2-week me-1"></i>
+                                Año {{ año.anho }}
+                                <span class="badge bg-info rounded-pill ms-1">{{ año.grado }}</span>
+                            </a>
+                            {% endfor %}
+                            {% if años_anteriores_list|length > 5 %}
+                            <button type="button" class="btn btn-info btn-sm" 
+                                    data-bs-toggle="modal" data-bs-target="#modalAnhosAnteriores">
+                                <i class="bi bi-three-dots me-1"></i>
+                                Ver todos
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Footer con enlaces rápidos -->
+    <div class="card-footer bg-white border-top py-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                {% if periodo_actual %}
+                Período actual: <strong>{{ periodo_actual.periodo.nombre }}</strong> 
+                ({{ periodo_actual.fecha_inicio|date:"d/m/Y" }} - {{ periodo_actual.fecha_fin|date:"d/m/Y" }})
+                {% else %}
+                Sin período académico activo
+                {% endif %}
+            </small>
+            <div>
+                <a href="{% url 'estudiantes:seleccionar_año_lectivo' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-search me-1"></i>
+                    Buscar por año
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para años anteriores -->
+<div class="modal fade" id="modalAnhosAnteriores" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Todos los Años Anteriores
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group">
+                    {% for año in años_anteriores_list %}
+                    <a href="{% url 'estudiantes:seleccionar_año_lectivo' %}?tipo=final&año_id={{ año.id }}" 
+                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">Año {{ año.anho }}</h6>
+                            <small class="text-muted">{{ año.grado }} - {{ año.sede }}</small>
+                        </div>
+                        <span class="badge bg-primary rounded-pill">{{ año.estado_matricula }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .quick-action-card {
+        transition: all 0.3s ease;
+        border: 1px solid #e9ecef;
+        border-radius: 15px;
+        text-decoration: none;
+        color: inherit;
+        background: white;
+        height: 100%;
+    }
+    
+    .quick-action-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        text-decoration: none;
+        color: inherit;
+        border-color: #dee2e6;
+    }
+
+    .quick-action-card .card-body {
+        transition: all 0.3s ease;
+        padding: 1.5rem;
+    }
+
+    .quick-action-card:hover .card-body {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+
+    .quick-action-card:hover .rounded-circle {
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        transform: scale(1.1);
+        transition: all 0.3s ease;
+    }
+
+    .quick-action-card .rounded-circle {
+        transition: all 0.3s ease;
+        width: 70px;
+        height: 70px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem auto;
+    }
+    
+    .quick-action-card h6 {
+        font-size: 0.95rem;
+        min-height: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .quick-action-card p {
+        font-size: 0.8rem;
+        min-height: 2.5rem;
+    }
+</style>
+
+<script>
+    // Mostrar tooltips para los badges
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>

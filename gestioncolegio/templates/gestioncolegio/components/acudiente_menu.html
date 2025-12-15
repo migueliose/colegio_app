@@ -1,0 +1,230 @@
+<!-- gestioncolegio/components/acudiente_menu.html -->
+{% load static estudiante_filters %}
+
+<!-- Estudiantes (Versión optimizada) -->
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" 
+       aria-expanded="false">
+        <i class="fas fa-users me-1"></i>Estudiantes
+        {% if user_acudientes|length > 0 %}
+        <span class="badge bg-primary ms-1">{{ user_acudientes|length }}</span>
+        {% endif %}
+    </a>
+    <ul class="dropdown-menu">
+        
+        <!-- Lista de estudiantes -->
+        {% for acudiente_rel in user_acudientes %}
+        {% with estudiante=acudiente_rel.estudiante %}
+        <li>
+            <a class="dropdown-item d-flex justify-content-between align-items-center" 
+               href="{% url 'acudiente:detalle_estudiante' estudiante.id %}">
+                <div>
+                    <i class="fas fa-user-graduate me-2"></i>
+                    {{ estudiante.usuario.get_full_name }}
+                    <br>
+                    <small class="text-muted ms-4">
+                        <!-- Usa matriculas_activas del context processor -->
+                        {% if matriculas_activas and estudiante.id in matriculas_activas %}
+                            {{ matriculas_activas|get_item:estudiante.id }}
+                        {% else %}
+                            Sin matrícula activa
+                        {% endif %}
+                    </small>
+                </div>
+                <span class="badge bg-info">
+                    {{ acudiente_rel.parentesco|default:"Hijo(a)" }}
+                </span>
+            </a>
+        </li>
+        {% endwith %}
+        {% empty %}
+        <li>
+            <a class="dropdown-item disabled" href="#">
+                <i class="fas fa-user-slash me-2"></i>
+                Sin estudiantes asignados
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</li>
+
+<!-- Académico (Versión optimizada) -->
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" 
+       aria-expanded="false">
+        <i class="fas fa-graduation-cap me-1"></i> Académico
+    </a>
+    <ul class="dropdown-menu">
+        <!-- Por estudiante -->
+        {% for acudiente_rel in user_acudientes %}
+        {% with estudiante=acudiente_rel.estudiante %}
+        <li>
+            <a class="dropdown-item fw-bold" href="{% url 'acudiente:detalle_estudiante' estudiante.id %}">
+                <i class="fas fa-user me-2"></i>
+                {{ estudiante.usuario.get_full_name|truncatechars:20 }}
+                {% if matriculas_activas and estudiante.id in matriculas_activas %}
+                    <small class="text-muted d-block ms-4">
+                        {{ matriculas_activas|get_item:estudiante.id }}
+                    </small>
+                {% endif %}
+            </a>
+            <ul class="list-unstyled ms-3">
+                <li>
+                    <a class="dropdown-item py-1" 
+                       href="{% url 'acudiente:notas_estudiante' estudiante.id %}">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Notas y Calificaciones
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-1" 
+                       href="{% url 'acudiente:historial_academico' estudiante.id %}">
+                        <i class="fas fa-history me-2"></i>
+                        Historial Académico
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-1" 
+                       href="{% url 'acudiente:horario_estudiante' estudiante.id %}">
+                        <i class="fas fa-clock me-2"></i>
+                        Horario de Clases
+                    </a>
+                </li>
+            </ul>
+        </li>
+        {% if not forloop.last %}<li><hr class="dropdown-divider m-1"></li>{% endif %}
+        {% endwith %}
+        {% empty %}
+        <li>
+            <a class="dropdown-item disabled" href="#">
+                Sin información académica
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</li>
+
+<!-- Seguimiento (Versión optimizada) -->
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" 
+       aria-expanded="false">
+        <i class="fas fa-chart-line me-1"></i> Seguimiento
+    </a>
+    <ul class="dropdown-menu">
+        <!-- Por estudiante -->
+        {% for acudiente_rel in user_acudientes %}
+        {% with estudiante=acudiente_rel.estudiante %}
+        <li>
+            <a class="dropdown-item fw-bold" href="{% url 'acudiente:detalle_estudiante' estudiante.id %}">
+                <i class="fas fa-user me-2"></i>
+                {{ estudiante.usuario.get_full_name|truncatechars:20 }}
+                {% if matriculas_activas and estudiante.id in matriculas_activas %}
+                    <small class="text-muted d-block ms-4">
+                        {{ matriculas_activas|get_item:estudiante.id }}
+                    </small>
+                {% endif %}
+            </a>
+            <ul class="list-unstyled ms-3">
+                <li>
+                    <a class="dropdown-item py-1" 
+                       href="{% url 'acudiente:comportamiento_estudiante' estudiante.id %}">
+                        <i class="fas fa-user-check me-2"></i>
+                        Comportamiento
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-1" 
+                       href="{% url 'acudiente:asistencia_estudiante' estudiante.id %}">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        Asistencia
+                    </a>
+                </li>
+            </ul>
+        </li>
+        {% if not forloop.last %}<li><hr class="dropdown-divider m-1"></li>{% endif %}
+        {% endwith %}
+        {% empty %}
+        <li>
+            <a class="dropdown-item disabled" href="#">
+                Sin información de seguimiento
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</li>
+
+<!-- Documentos (Versión optimizada) -->
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" 
+       aria-expanded="false">
+        <i class="fas fa-file-alt me-1"></i> Documentos
+    </a>
+    <ul class="dropdown-menu">
+        {% for acudiente_rel in user_acudientes %}
+        {% with estudiante=acudiente_rel.estudiante %}
+        <li>
+            <a class="dropdown-item fw-bold" href="{% url 'acudiente:documentos_estudiante' estudiante.id %}">
+                <i class="fas fa-user me-2"></i>
+                {{ estudiante.usuario.get_full_name|truncatechars:15 }}
+                {% if matriculas_activas and estudiante.id in matriculas_activas %}
+                    <small class="text-muted d-block ms-4">
+                        {{ matriculas_activas|get_item:estudiante.id }}
+                    </small>
+                {% endif %}
+            </a>
+            <ul class="list-unstyled ms-3">
+                <li>
+                    <a class="dropdown-item py-1" 
+                       href="{% url 'acudiente:documentos_estudiante' estudiante.id %}">
+                        <i class="fas fa-folder-open me-2"></i>
+                        Todos los documentos
+                    </a>
+                </li>
+                {% if año_lectivo_actual %}
+                <li><hr class="dropdown-divider m-1"></li>
+                <li class="dropdown-header small">Documentos año actual</li>
+                <li>
+                    <a class="dropdown-item py-1" 
+                       href="{% url 'acudiente:constancia_pdf' estudiante.id año_lectivo_actual.id %}"
+                       target="_blank">
+                        <i class="fas fa-certificate me-2"></i>
+                        Constancia PDF
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-1" 
+                       href="{% url 'acudiente:observador_pdf' estudiante.id año_lectivo_actual.id %}"
+                       target="_blank">
+                        <i class="fas fa-user-check me-2"></i>
+                        Observador PDF
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-1" 
+                       href="{% url 'acudiente:boletin_pdf' estudiante.id año_lectivo_actual.id %}"
+                       target="_blank">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Reporte de Notas PDF
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </li>
+        {% if not forloop.last %}<li><hr class="dropdown-divider m-1"></li>{% endif %}
+        {% endwith %}
+        {% empty %}
+        <li>
+            <a class="dropdown-item disabled" href="#">
+                Sin documentos disponibles
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</li>
+
+<!-- Comunicación -->
+<li class="nav-item">
+    <a class="nav-link" href="#">
+        <i class="fas fa-comments me-1"></i> Comunicación
+    </a>
+</li>

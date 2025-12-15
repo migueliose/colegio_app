@@ -1,0 +1,272 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Detalle Estudiante - {{ estudiante.usuario.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="fas fa-user-graduate me-2"></i>Detalle del Estudiante
+        </h1>
+
+        <div class="btn-toolbar">
+            <a href="{% url 'usuarios:estudiantes_list' %}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left me-1"></i>Volver a la Lista
+            </a>
+            <a href="{% url 'usuarios:estudiante_update' estudiante.pk %}" class="btn btn-warning me-2">
+                <i class="fas fa-edit me-1"></i>Editar
+            </a>
+
+            {% if estudiante.estado %}
+            <a href="{% url 'usuarios:estudiante_delete' estudiante.pk %}" class="btn btn-danger">
+                <i class="fas fa-user-slash me-1"></i>Desactivar
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+
+        <!-- COLUMNA IZQUIERDA -->
+        <div class="col-md-4 mb-4">
+
+            <!-- Información Personal -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-id-card me-2"></i>Información Personal
+                    </h5>
+                </div>
+
+                <div class="card-body text-center">
+
+                    {% if estudiante.foto %}
+                    <img src="{{ estudiante.foto.url }}" class="rounded-circle mb-3" width="150" height="150">
+                    {% else %}
+                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                         style="width: 150px; height: 150px;">
+                        <i class="fas fa-user fa-4x text-white"></i>
+                    </div>
+                    {% endif %}
+
+                    <h4 class="text-primary">{{ estudiante.usuario.get_full_name }}</h4>
+
+                    <p class="text-muted mb-1"><i class="fas fa-graduation-cap me-1"></i>Estudiante</p>
+
+                    {% if estudiante.estado %}
+                    <span class="badge bg-success mb-3">
+                        <i class="fas fa-check me-1"></i>Activo
+                    </span>
+                    {% else %}
+                    <span class="badge bg-danger mb-3">
+                        <i class="fas fa-times me-1"></i>Inactivo
+                    </span>
+                    {% endif %}
+
+                </div>
+            </div>
+
+            <!-- Información de Contacto -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-address-book me-2"></i>Contacto</h5>
+                </div>
+                <div class="card-body">
+
+                    <div class="list-group list-group-flush">
+
+                        <div class="list-group-item px-0">
+                            <i class="fas fa-envelope text-primary me-2"></i>
+                            <strong>Email:</strong><br>
+                            {{ estudiante.usuario.email|default:"No registrado" }}
+                        </div>
+
+                        <div class="list-group-item px-0">
+                            <i class="fas fa-phone text-success me-2"></i>
+                            <strong>Teléfono:</strong><br>
+                            {{ estudiante.usuario.telefono|default:"No registrado" }}
+                        </div>
+
+                        <div class="list-group-item px-0">
+                            <i class="fas fa-map-marker-alt text-warning me-2"></i>
+                            <strong>Dirección:</strong><br>
+                            {{ estudiante.usuario.direccion|default:"No registrada" }}
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- COLUMNA DERECHA -->
+        <div class="col-md-8">
+
+            <!-- Información del Usuario -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-circle me-2"></i>Información del Usuario
+                    </h5>
+                </div>
+
+                <div class="card-body">
+                    <div class="row">
+
+                        <div class="col-md-6">
+                            <p><strong>Tipo de Documento:</strong><br>
+                                {{ estudiante.usuario.tipo_documento.nombre }}</p>
+
+                            <p><strong>Número de Documento:</strong><br>
+                                {{ estudiante.usuario.numero_documento }}</p>
+
+                            <p><strong>Fecha de Nacimiento:</strong><br>
+                                {{ estudiante.usuario.fecha_nacimiento|default:"No registrada" }}</p>
+                        </div>
+
+                        <div class="col-md-6">
+                            <p><strong>Género:</strong><br>
+                                {{ estudiante.usuario.get_sexo_display|default:"No especificado" }}</p>
+
+                            <p><strong>Usuario:</strong><br>
+                                {{ estudiante.usuario.username }}</p>
+
+                            <p><strong>Fecha de Registro:</strong><br>
+                                {{ estudiante.created_at|date:"d/m/Y" }}</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Matrículas -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-school me-2"></i>Matrículas
+                    </h5>
+                </div>
+
+                <div class="card-body">
+
+                    {% if matricula %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Año</th>
+                                    <th>Grado</th>
+                                    <th>Sede</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for m in matricula %}
+                                <tr>
+                                    <td>{{ m.año_lectivo.anho }}</td>
+                                    <td>{{ m.grado_año_lectivo.grado.nombre }}</td>
+                                    <td>{{ m.sede.nombre }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-exclamation-circle fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No tiene matrículas registradas.</p>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+            <!-- Acudientes -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2"></i>Acudientes
+                    </h5>
+                </div>
+
+                <div class="card-body">
+
+                    {% if acudientes %}
+                    <div class="row">
+                        {% for a in acudientes %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-warning">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ a.acudiente.nombres }} {{ a.acudiente.apellidos }}</h6>
+                                    <p class="card-text mb-1">
+                                        <small>
+                                            <i class="fas fa-phone me-1"></i>{{ a.acudiente.telefono }}<br>
+                                            <i class="fas fa-envelope me-1"></i>{{ a.acudiente.email }}<br>
+                                            <i class="fas fa-users me-1"></i>{{ a.relacion }}
+                                        </small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-users fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No hay acudientes registrados.</p>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+            <!-- Últimas Notas -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-book-open me-2"></i>Últimas Calificaciones
+                    </h5>
+                </div>
+
+                <div class="card-body">
+
+                    {% if notas %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Asignatura</th>
+                                    <th>Periodo</th>
+                                    <th>Nota</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for n in notas %}
+                                <tr>
+                                    <td>{{ n.asignatura_grado_año_lectivo.asignatura.nombre }}</td>
+                                    <td>{{ n.periodo_academico.nombre }}</td>
+                                    <td>{{ n.valor }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-book fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No hay calificaciones registradas.</p>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

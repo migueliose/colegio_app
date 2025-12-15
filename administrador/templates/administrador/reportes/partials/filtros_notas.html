@@ -1,0 +1,112 @@
+<!-- templates/administrador/reportes/partials/filtros_notas.html -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" id="filterFormNotas">
+            <input type="hidden" name="tipo" value="{{ tipo_reporte }}">
+            
+            {% if tipo_reporte == 'individual' %}
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label">Estudiante</label>
+                        <select name="estudiante" class="form-select" required>
+                            <option value="">Seleccionar estudiante...</option>
+                            {% for estudiante in estudiantes %}
+                            <option value="{{ estudiante.id }}" {% if filtros.estudiante_id == estudiante.id|stringformat:"s" %}selected{% endif %}>
+                                {{ estudiante.usuario.get_full_name }} - {{ estudiante.usuario.numero_documento }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Periodo Académico</label>
+                        <select name="periodo" class="form-select">
+                            <option value="">Todos los periodos</option>
+                            {% for periodo in periodos %}
+                            <option value="{{ periodo.id }}" {% if filtros.periodo_id == periodo.id|stringformat:"s" %}selected{% endif %}>
+                                {{ periodo.periodo.nombre }} - {{ periodo.año_lectivo.anho }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search me-2"></i>Consultar
+                            </button>
+                            <a href="{% url 'administrador:reporte_notas' %}?tipo=individual" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Periodo Académico</label>
+                        <select name="periodo" class="form-select">
+                            <option value="">Todos los periodos</option>
+                            {% for periodo in periodos %}
+                            <option value="{{ periodo.id }}" {% if filtros.periodo_id == periodo.id|stringformat:"s" %}selected{% endif %}>
+                                {{ periodo.periodo.nombre }} - {{ periodo.año_lectivo.anho }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Grado</label>
+                        <select name="grado" class="form-select">
+                            <option value="">Todos los grados</option>
+                            {% for grado in grados %}
+                            <option value="{{ grado.id }}" {% if filtros.grado_id == grado.id|stringformat:"s" %}selected{% endif %}>
+                                {{ grado.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Asignatura</label>
+                        <select name="asignatura" class="form-select">
+                            <option value="">Todas las asignaturas</option>
+                            {% for asignatura in asignaturas %}
+                            <option value="{{ asignatura.id }}" {% if filtros.asignatura_id == asignatura.id|stringformat:"s" %}selected{% endif %}>
+                                {{ asignatura.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Sede</label>
+                        <select name="sede" class="form-select">
+                            <option value="">Todas las sedes</option>
+                            {% for sede in sedes %}
+                            <option value="{{ sede.id }}" {% if filtros.sede_id == sede.id|stringformat:"s" %}selected{% endif %}>
+                                {{ sede.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-filter me-2"></i>Filtrar
+                            </button>
+                            <a href="{% url 'administrador:reporte_notas' %}?tipo=grupal" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Cambio automático entre pestañas
+    $('.nav-tabs .nav-link').on('click', function(e) {
+        e.preventDefault();
+        window.location.href = $(this).attr('href');
+    });
+});
+</script>

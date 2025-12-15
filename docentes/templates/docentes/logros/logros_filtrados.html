@@ -1,0 +1,160 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Logros Filtrados - Docentes{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4"><i class="fas fa-filter me-2"></i>Logros por Grado y Asignatura</h1>
+        <div>
+            <a href="{% url 'docentes:lista_logros' %}" class="btn btn-secondary me-2">
+                <i class="fas fa-list me-2"></i>Vista General
+            </a>
+            <a href="{% url 'docentes:crear_logro' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Nuevo Logro
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros específicos -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-sliders-h me-2"></i>Filtros
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="grado" class="form-label">Grado</label>
+                    <select name="grado" id="grado" class="form-select" onchange="this.form.submit()">
+                        <option value="">Seleccione un grado</option>
+                        {% for grado in grados %}
+                        <option value="{{ grado.id }}" 
+                            {% if grado_seleccionado == grado.id %}selected{% endif %}>
+                            {{ grado.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label for="asignatura" class="form-label">Asignatura</label>
+                    <select name="asignatura" id="asignatura" class="form-select" 
+                            {% if not grado_seleccionado %}disabled{% endif %}>
+                        <option value="">Seleccione una asignatura</option>
+                        {% for asignatura in asignaturas_filtradas %}
+                        <option value="{{ asignatura.id }}"
+                            {% if asignatura_seleccionada == asignatura.id %}selected{% endif %}>
+                            {{ asignatura.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100" 
+                            {% if not grado_seleccionado %}disabled{% endif %}>
+                        <i class="fas fa-search me-2"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resultados -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-trophy me-2"></i>Resultados
+            {% if grado_seleccionado and asignatura_seleccionada %}
+            <span class="badge bg-primary ms-2">{{ logros|length }} logros</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if grado_seleccionado and asignatura_seleccionada %}
+                {% if logros %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Periodo</th>
+                                <th>Tema</th>
+                                <th>Superior</th>
+                                <th>Alto</th>
+                                <th>Básico</th>
+                                <th>Bajo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for logro in logros %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-info">{{ logro.nombre_periodo }}</span>
+                                </td>
+                                <td>{{ logro.tema|truncatechars:80 }}</td>
+                                <td>{{ logro.descripcion_superior|truncatechars:40|default:"-" }}</td>
+                                <td>{{ logro.descripcion_alto|truncatechars:40|default:"-" }}</td>
+                                <td>{{ logro.descripcion_basico|truncatechars:40|default:"-" }}</td>
+                                <td>{{ logro.descripcion_bajo|truncatechars:40|default:"-" }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'docentes:detalle_logro' logro.id %}" 
+                                           class="btn btn-info" title="Ver">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'docentes:editar_logro' logro.id %}" 
+                                           class="btn btn-warning" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'docentes:eliminar_logro' logro.id %}" 
+                                           class="btn btn-danger" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-warning text-center">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    No hay logros registrados para esta combinación de grado y asignatura.
+                </div>
+                {% endif %}
+            {% else %}
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle me-2"></i>
+                Seleccione un grado y una asignatura para ver los logros específicos.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Habilitar/deshabilitar select de asignatura según grado
+    $('#grado').change(function() {
+        var gradoId = $(this).val();
+        if (gradoId) {
+            $('#asignatura').prop('disabled', false);
+            // Aquí podrías cargar asignaturas vía AJAX si lo prefieres
+        } else {
+            $('#asignatura').prop('disabled', true);
+            $('#asignatura').val('');
+        }
+    });
+    
+    // Inicializar selects
+    $('#grado, #asignatura').select2({
+        placeholder: "Seleccione...",
+        allowClear: true,
+        width: '100%'
+    });
+});
+</script>
+{% endblock %}

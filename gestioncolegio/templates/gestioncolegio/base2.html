@@ -1,0 +1,67 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Colegio Cristiano El Shadai{% endblock %}</title>
+
+    <link rel="icon" type="image/x-icon" href="{% static 'web/images/favicon.ico' %}">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- CSS del sistema -->
+    <link rel="stylesheet" href="{% static 'gestioncolegio/css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'gestioncolegio/css/navbar.css' %}">
+
+    <!-- Meta adicional -->
+    {% block extra_meta %}{% endblock %}
+
+    <!-- CSS adicional por vista -->
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Navbar -->
+    {% include 'gestioncolegio/includes/navbar.html' %}
+
+    <!-- Contenido principal -->
+    <main class="container-fluid py-4 fade-in" style="padding-top: var(--header-height);">
+        {% include 'gestioncolegio/includes/messages.html' %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    {% block footer %}
+        {% include 'gestioncolegio/includes/footer.html' %}
+    {% endblock %}
+
+    <!-- ================================ -->
+    <!-- SCRIPTS -->
+    <!-- ================================ -->
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- Bootstrap 5 JS Bundle con Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Scripts adicionales por vista -->
+    {% block extra_js %}{% endblock %}
+    
+    <!-- Scripts inline por vista -->
+    {% block inline_js %}{% endblock %}
+</body>
+</html>

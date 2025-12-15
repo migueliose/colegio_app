@@ -1,0 +1,141 @@
+<!-- gestioncolegio/includes/user_menu.html -->
+<ul class="navbar-nav">
+    {% if user.is_authenticated %}
+    <!-- Menú de Usuario -->
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" 
+           data-bs-toggle="dropdown" aria-expanded="false">
+            <div class="user-avatar me-2">
+                {% if user.tipo_usuario.nombre == 'Docente' %}
+                <i class="fas fa-chalkboard-teacher"></i>
+                {% elif user.tipo_usuario.nombre == 'Estudiante' %}
+                <i class="fas fa-user-graduate"></i>
+                {% elif user.tipo_usuario.nombre == 'Administrador' %}
+                <i class="fas fa-user-shield"></i>
+                {% else %}
+                <i class="fas fa-user"></i>
+                {% endif %}
+            </div>
+            <div class="d-none d-md-block text-start">
+                <div class="fw-semibold text-white">{{ user.get_full_name|default:user.username|truncatechars:20 }}</div>
+                <small class="text-white-50">
+                    {{ user.tipo_usuario.nombre|default:"Usuario" }}
+                </small>
+            </div>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li class="dropdown-header">
+                <div class="d-flex align-items-center">
+                    <div class="user-avatar-lg me-3">
+                        {% if user.tipo_usuario.nombre == 'Docente' %}
+                        <i class="fas fa-chalkboard-teacher fs-4"></i>
+                        {% elif user.tipo_usuario.nombre == 'Estudiante' %}
+                        <i class="fas fa-user-graduate fs-4"></i>
+                        {% elif user.tipo_usuario.nombre == 'Administrador' %}
+                        <i class="fas fa-user-shield fs-4"></i>
+                        {% else %}
+                        <i class="fas fa-user fs-4"></i>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class="fw-bold">{{ user.get_full_name|default:user.username }}</div>
+                        <small class="text-muted">{{ user.email|default:"Sin email" }}</small>
+                        <div class="mt-1">
+                            <span class="badge bg-primary">{{ user.tipo_usuario.nombre|default:"Usuario" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            
+            <li>
+                {% if user.tipo_usuario.nombre == 'Estudiante' %}
+                    <a class="dropdown-item d-flex align-items-center" href="{% url 'estudiantes:estudiante_perfil' %}">
+                {% else %}
+                    <a class="dropdown-item d-flex align-items-center" href="{% url 'web:perfil' %}">
+                {% endif %}
+                        <i class="fas fa-user me-2 text-primary"></i>
+                        <div>
+                            <div>Mi Perfil</div>
+                            <small class="text-muted">Gestionar mi cuenta</small>
+                        </div>
+                    </a>
+            </li>
+            
+            {% if user.tipo_usuario.nombre == 'Docente' %}
+            <li>
+                <a class="dropdown-item d-flex align-items-center" href="{% url 'gestioncolegio:dashboard_docente' %}">
+                    <i class="fas fa-tachometer-alt me-2 text-success"></i>
+                    <div>
+                        <div>Dashboard Docente</div>
+                        <small class="text-muted">Mi panel principal</small>
+                    </div>
+                </a>
+            </li>
+            {% endif %}
+            
+            <li>
+                <a class="dropdown-item d-flex align-items-center" href="{% url 'web:home' %}">
+                    <i class="fas fa-globe me-2 text-info"></i>
+                    <div>
+                        <div>Sitio Web Público</div>
+                        <small class="text-muted">Visitar sitio web</small>
+                    </div>
+                </a>
+            </li>
+            
+            <li><hr class="dropdown-divider"></li>
+            
+            <li>
+                <form action="{% url 'logout' %}" method="post" class="px-3 py-2">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-sign-out-alt me-2"></i> 
+                        <span>Cerrar Sesión</span>
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </li>
+    {% else %}
+    <!-- Usuario no autenticado -->
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center" href="{% url 'login' %}">
+            <i class="fas fa-sign-in-alt me-2"></i>
+            <span>Iniciar Sesión</span>
+        </a>
+    </li>
+    {% endif %}
+</ul>
+
+<style>
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 14px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .user-avatar-lg {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 18px;
+    }
+    
+    .dropdown-header {
+        padding: 1rem;
+    }
+</style>

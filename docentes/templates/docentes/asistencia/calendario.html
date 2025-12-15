@@ -1,0 +1,209 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+{% load asistencia_filters %}  <!-- Necesitas cargar este filtro -->
+
+{% block title %}Calendario de Asistencia - {{ grado_año_lectivo.grado.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="bi bi-calendar3 me-2"></i>
+                            Calendario de Asistencia: {{ grado_año_lectivo.grado.nombre }}
+                        </h4>
+                        <div>
+                            <a href="{% url 'docentes:asistencia_principal' %}" class="btn btn-light btn-sm">
+                                <i class="bi bi-arrow-left me-1"></i>Volver
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Navegación de meses -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="?mes={{ mes_anterior }}&año={{ año_anterior }}" 
+                                   class="btn btn-outline-primary">
+                                    <i class="bi bi-chevron-left"></i> {{ meses_nombres|slice:mes_anterior|first }}
+                                </a>
+                                
+                                <h3 class="mb-0 text-center">
+                                    {{ mes_nombre }} {{ año_actual }}
+                                    <br>
+                                    <small class="text-muted fs-6">
+                                        Periodo: {{ periodo_academico.periodo.nombre }}
+                                    </small>
+                                </h3>
+                                
+                                <a href="?mes={{ mes_siguiente }}&año={{ año_siguiente }}" 
+                                   class="btn btn-outline-primary">
+                                    {{ meses_nombres|slice:mes_siguiente|first }} <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calendario -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-danger">Dom</th>
+                                    <th>Lun</th>
+                                    <th>Mar</th>
+                                    <th>Mié</th>
+                                    <th>Jue</th>
+                                    <th>Vie</th>
+                                    <th class="text-danger">Sáb</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for semana in calendario %}
+                                <tr>
+                                    {% for dia in semana %}
+                                    <td class="{% if dia == 0 %}bg-light{% endif %}">
+                                        {% if dia != 0 %}
+                                            {% with fecha_key=dia|stringformat:"02d"|add:"-"|add:mes_actual|stringformat:"02d"|add:"-"|add:año_actual %}
+                                            <div class="py-2">
+                                                <strong>{{ dia }}</strong>
+                                                <div class="mt-2">
+                                                    <!-- Contadores por día -->
+                                                    {% with conteos_dia=asistencias_por_dia|get_item:fecha_key %}
+                                                    {% if conteos_dia %}
+                                                        <small class="d-block">
+                                                            <span class="badge bg-success" title="Asistieron">
+                                                                {{ conteos_dia.A|default:0 }}
+                                                            </span>
+                                                            <span class="badge bg-danger" title="Faltaron">
+                                                                {{ conteos_dia.F|default:0 }}
+                                                            </span>
+                                                            <span class="badge bg-warning" title="Justificadas">
+                                                                {{ conteos_dia.J|default:0 }}
+                                                            </span>
+                                                        </small>
+                                                    {% else %}
+                                                        <small class="text-muted">Sin datos</small>
+                                                    {% endif %}
+                                                    {% endwith %}
+                                                </div>
+                                            </div>
+                                            {% endwith %}
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Leyenda -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5>Leyenda:</h5>
+                            <div class="d-flex flex-wrap gap-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-success me-2">A</span>
+                                    <span>Asistió</span>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-danger me-2">F</span>
+                                    <span>Faltó</span>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-warning me-2">J</span>
+                                    <span>Falta Justificada</span>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-secondary me-2">-</span>
+                                    <span>Sin registro</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de estudiantes con resumen -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5>Resumen por Estudiante</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Estudiante</th>
+                                            <th class="text-center">Asistencias</th>
+                                            <th class="text-center">Faltas</th>
+                                            <th class="text-center">Justificadas</th>
+                                            <th class="text-center">Porcentaje</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in estudiantes %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    {% if item.estudiante.foto %}
+                                                        <img src="{{ item.estudiante.foto.url }}" class="rounded-circle me-2" width="40" height="40">
+                                                    {% else %}
+                                                        <div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                                                            <i class="bi bi-person text-white"></i>
+                                                        </div>
+                                                    {% endif %}
+                                                    <span>{{ item.estudiante.usuario.get_full_name }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-success">{{ item.asistencias_count }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-danger">{{ item.faltas_count }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-warning">{{ item.justificadas_count }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar {% if item.porcentaje >= 80 %}bg-success{% elif item.porcentaje >= 60 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                         style="width: {{ item.porcentaje }}%">
+                                                        {{ item.porcentaje|floatformat:1 }}%
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <!-- CORRECCIÓN: Usar item.estudiante.id en lugar de estudiante.id -->
+                                                <a href="{% url 'docentes:asistencia_historico' item.estudiante.id %}" 
+                                                   class="btn btn-sm btn-info">
+                                                    <i class="bi bi-clock-history"></i> Historial
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">
+                                                No hay estudiantes en este curso
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Scripts específicos para el calendario si los necesitas
+</script>
+{% endblock %}

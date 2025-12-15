@@ -1,0 +1,27 @@
+<!-- messages.html-->
+{% if messages %}
+<div class="container mb-4">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="fas 
+                {% if message.tags == 'success' %}fa-check-circle text-success
+                {% elif message.tags == 'error' or message.tags == 'danger' %}fa-exclamation-circle text-danger
+                {% elif message.tags == 'warning' %}fa-exclamation-triangle text-warning
+                {% else %}fa-info-circle text-info{% endif %} 
+                me-3 fs-5"></i>
+            <div class="flex-grow-1">
+                <h6 class="alert-heading mb-1">
+                    {% if message.tags == 'success' %}Éxito
+                    {% elif message.tags == 'error' or message.tags == 'danger' %}Error
+                    {% elif message.tags == 'warning' %}Advertencia
+                    {% else %}Información{% endif %}
+                </h6>
+                <div class="mb-0">{{ message }}</div>
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

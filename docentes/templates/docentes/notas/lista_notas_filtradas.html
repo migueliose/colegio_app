@@ -1,0 +1,179 @@
+<!-- notas/lista_notas_filtradas.html -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-light border-0">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-users me-2"></i>
+            Estudiantes de {{ grado_seleccionado.nombre }} - {{ asignatura_seleccionada.nombre }}
+        </h5>
+        <small class="text-muted">Período: {{ periodo_seleccionado.periodo.nombre }}</small>
+    </div>
+    <div class="card-body">
+        <form id="formCalificaciones" method="post" action="{% url 'docentes:guardar_notas' %}">
+            {% csrf_token %}
+            <input type="hidden" name="grado" value="{{ grado_seleccionado.id }}">
+            <input type="hidden" name="asignatura" value="{{ asignatura_seleccionada.id }}">
+            <input type="hidden" name="periodo" value="{{ periodo_seleccionado.id }}">
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="5%">#</th>
+                            <th width="25%">Estudiante</th>
+                            <th width="15%">Documento</th>
+                            <th width="15%">Calificación (0.0 - 5.0)</th>
+                            <th width="30%">Observaciones</th>
+                            <th width="10%">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in estudiantes_data %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if data.estudiante.foto %}
+                                    <img src="{{ data.estudiante.foto.url }}" alt="{{ data.estudiante.usuario.get_full_name }}" 
+                                         class="rounded-circle me-2" width="32" height="32">
+                                    {% else %}
+                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2 text-white" 
+                                         style="width: 32px; height: 32px; font-size: 12px;">
+                                        {{ data.estudiante.usuario.nombres|first|upper }}
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="fw-semibold">{{ data.estudiante.usuario.get_full_name }}</div>
+                                        <small class="text-muted">{{ data.estudiante.usuario.numero_documento }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ data.estudiante.usuario.numero_documento }}</td>
+                            <td>
+                                <input type="number" 
+                                       name="nota_{{ data.estudiante.id }}" 
+                                       value="{{ data.calificacion|default:'' }}"
+                                       class="form-control form-control-sm calificacion-input"
+                                       min="0" max="5" step="0.1"
+                                       placeholder="0.0 - 5.0">
+                            </td>
+                            <td>
+                                <textarea name="observacion_{{ data.estudiante.id }}" 
+                                          class="form-control form-control-sm observacion-input"
+                                          rows="1" 
+                                          placeholder="Observaciones opcionales">{{ data.observaciones|default:'' }}</textarea>
+                            </td>
+                            <td>
+                                {% if data.calificacion %}
+                                <span class="badge bg-success">Calificado</span>
+                                {% else %}
+                                <span class="badge bg-warning">Pendiente</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="fas fa-exclamation-circle display-4 d-block mb-2"></i>
+                                No hay estudiantes en este grado
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if estudiantes_data %}
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <div>
+                    <span class="text-muted">
+                        {{ estudiantes_data|length }} estudiante{{ estudiantes_data|length|pluralize }} encontrado{{ estudiantes_data|length|pluralize }}
+                    </span>
+                </div>
+                <div>
+                    <button type="button" id="guardarTodoBtn" class="btn btn-success">
+                        <i class="fas fa-save me-1"></i>Guardar Todas las Calificaciones
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('formCalificaciones');
+    const guardarTodoBtn = document.getElementById('guardarTodoBtn');
+    
+    guardarTodoBtn.addEventListener('click', function() {
+        // Validar calificaciones antes de enviar
+        const calificacionesInputs = document.querySelectorAll('.calificacion-input');
+        let calificacionesValidas = true;
+        
+        calificacionesInputs.forEach(input => {
+            if (input.value && (input.value < 0 || input.value > 5)) {
+                calificacionesValidas = false;
+                input.classList.add('is-invalid');
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!calificacionesValidas) {
+            alert('Las calificaciones deben estar entre 0.0 y 5.0');
+            return;
+        }
+        
+        // Mostrar loading
+        guardarTodoBtn.disabled = true;
+        guardarTodoBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando...';
+        
+        // Enviar formulario
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarMensaje('success', data.message);
+                if (data.warning) {
+                    mostrarMensaje('warning', data.warning);
+                }
+                // Recargar la lista para mostrar estados actualizados
+                setTimeout(() => {
+                    document.getElementById('cargarEstudiantesBtn').click();
+                }, 2000);
+            } else {
+                mostrarMensaje('error', data.error || 'Error al guardar las calificaciones');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarMensaje('error', 'Error de conexión');
+        })
+        .finally(() => {
+            guardarTodoBtn.disabled = false;
+            guardarTodoBtn.innerHTML = '<i class="fas fa-save me-1"></i>Guardar Todas las Calificaciones';
+        });
+    });
+    
+    function mostrarMensaje(tipo, mensaje) {
+        // Implementar sistema de mensajes (puedes usar tu sistema existente)
+        const alertClass = tipo === 'success' ? 'alert-success' : 'alert-danger';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        // Insertar mensaje al inicio del card-body
+        const cardBody = document.querySelector('.card-body');
+        cardBody.insertAdjacentHTML('afterbegin', alertHtml);
+    }
+});
+</script>

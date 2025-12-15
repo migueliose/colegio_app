@@ -1,0 +1,165 @@
+<!-- administrador/configuracion/sede_list.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Sedes - Configuración{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-header {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+    }
+    .filter-card {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .badge-director {
+        background-color: #17a2b8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm filter-card">
+                <div class="card-body p-3">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-6">
+                            <label for="colegio" class="form-label">Filtrar por Colegio:</label>
+                            <select name="colegio" id="colegio" class="form-select">
+                                <option value="">Todos los colegios</option>
+                                {% for colegio in colegios %}
+                                <option value="{{ colegio.id }}" 
+                                    {% if selected_colegio == colegio.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ colegio.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-filter me-1"></i> Filtrar
+                            </button>
+                            <a href="{% url 'administrador:sede_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Sedes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0 text-white">
+                            <i class="fas fa-building me-2"></i>Lista de Sedes
+                        </h4>
+                        <a href="{% url 'administrador:sede_create' %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-plus me-1"></i> Nueva Sede
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if sedes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Colegio</th>
+                                    <th>Nombre</th>
+                                    <th>Dirección</th>
+                                    <th>Contacto</th>
+                                    <th>Director</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sede in sedes %}
+                                <tr>
+                                    <td>{{ sede.colegio.nombre }}</td>
+                                    <td>
+                                        <a href="#" class="text-decoration-none text-dark fw-semibold">
+                                            {{ sede.nombre }}
+                                        </a>
+                                    </td>
+                                    <td>{{ sede.direccion|truncatechars:25 }}</td>
+                                    <td>
+                                        {% if sede.telefono %}
+                                        <div class="small"><i class="fas fa-phone me-1"></i>{{ sede.telefono }}</div>
+                                        {% endif %}
+                                        {% if sede.email %}
+                                        <div class="small"><i class="fas fa-envelope me-1"></i>{{ sede.email }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if sede.director %}
+                                        <span class="badge badge-director rounded-pill px-3 py-1">
+                                            <i class="fas fa-user-tie me-1"></i> {{ sede.director.get_short_name }}
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary rounded-pill px-3 py-1">
+                                            Sin asignar
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if sede.estado %}
+                                        <span class="badge bg-success rounded-pill px-3 py-1">
+                                            <i class="fas fa-check-circle me-1"></i> Activa
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-danger rounded-pill px-3 py-1">
+                                            <i class="fas fa-times-circle me-1"></i> Inactiva
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'administrador:sede_update' sede.pk %}" 
+                                           class="btn btn-sm btn-outline-primary me-1" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if sede.estado %}
+                                        <a href="#" class="btn btn-sm btn-outline-danger" title="Desactivar">
+                                            <i class="fas fa-toggle-on"></i>
+                                        </a>
+                                        {% else %}
+                                        <a href="#" class="btn btn-sm btn-outline-success" title="Activar">
+                                            <i class="fas fa-toggle-off"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="fas fa-building fa-4x text-muted"></i>
+                        </div>
+                        <h5 class="text-muted mb-3">No hay sedes registradas</h5>
+                        <p class="text-muted mb-4">Comienza agregando la primera sede</p>
+                        <a href="{% url 'administrador:sede_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i> Agregar Sede
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

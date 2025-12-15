@@ -1,0 +1,218 @@
+<!-- administrador/configuracion/año_lectivo_form.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Configuración{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-header {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+    .year-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .calendar-icon {
+        font-size: 4rem;
+        opacity: 0.8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0 text-white">
+                            <i class="fas fa-calendar-alt me-2"></i>{{ title }}
+                        </h4>
+                        <a href="{% url 'administrador:año_lectivo_list' %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i> Volver
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if title == 'Crear Nuevo Año Lectivo' %}
+                    <div class="year-card text-center mb-4">
+                        <i class="fas fa-calendar-alt calendar-icon mb-3"></i>
+                        <h4 class="mb-2">Configurar Nuevo Año Lectivo</h4>
+                        <p class="mb-0 opacity-75">Complete la información del año académico</p>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Información Básica -->
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.colegio.id_for_label }}" class="form-label">
+                                    Colegio <span class="text-danger">*</span>
+                                </label>
+                                {{ form.colegio }}
+                                {% if form.colegio.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.colegio.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.sede.id_for_label }}" class="form-label">
+                                    Sede <span class="text-danger">*</span>
+                                </label>
+                                {{ form.sede }}
+                                {% if form.sede.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.sede.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Año y Fechas -->
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.anho.id_for_label }}" class="form-label">
+                                    Año Lectivo <span class="text-danger">*</span>
+                                </label>
+                                {{ form.anho }}
+                                {% if form.anho.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.anho.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Ejemplo: 2024, 2024-2025
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.fecha_inicio.id_for_label }}" class="form-label">
+                                    Fecha de Inicio
+                                </label>
+                                {{ form.fecha_inicio }}
+                                {% if form.fecha_inicio.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.fecha_inicio.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.fecha_fin.id_for_label }}" class="form-label">
+                                    Fecha de Finalización
+                                </label>
+                                {{ form.fecha_fin }}
+                                {% if form.fecha_fin.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.fecha_fin.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Estado -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    {{ form.estado }}
+                                    <label class="form-check-label" for="{{ form.estado.id_for_label }}">
+                                        Año Lectivo Activo
+                                    </label>
+                                </div>
+                                {% if form.estado.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.estado.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Solo puede haber un año lectivo activo por sede
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'administrador:año_lectivo_list' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block inline_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Añadir clases Bootstrap
+        const inputs = document.querySelectorAll('input[type="text"], input[type="date"]');
+        const selects = document.querySelectorAll('select');
+        
+        inputs.forEach(input => input.classList.add('form-control'));
+        selects.forEach(select => select.classList.add('form-control'));
+        
+        // Switch de estado
+        const estadoSwitch = document.getElementById('{{ form.estado.id_for_label }}');
+        if (estadoSwitch) {
+            estadoSwitch.classList.add('form-check-input');
+        }
+        
+        // Filtrar sedes según colegio seleccionado
+        const colegioSelect = document.getElementById('{{ form.colegio.id_for_label }}');
+        const sedeSelect = document.getElementById('{{ form.sede.id_for_label }}');
+        
+        if (colegioSelect && sedeSelect) {
+            colegioSelect.addEventListener('change', function() {
+                const colegioId = this.value;
+                if (colegioId) {
+                    // Habilitar select de sedes
+                    sedeSelect.disabled = false;
+                    
+                    // Aquí podrías hacer una petición AJAX para filtrar sedes
+                    // Por ahora, se manejará en el backend
+                } else {
+                    sedeSelect.disabled = true;
+                    sedeSelect.value = '';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

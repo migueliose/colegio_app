@@ -1,0 +1,601 @@
+/* ============================================
+   COLEGIO CRISTIANO EL SHADAI - RESPONSIVE.CSS
+   Versión estandarizada - V1.0
+   ============================================ */
+
+/* ===== 1. DISPOSITIVOS GRANDES (≥1200px) ===== */
+@media (min-width: 1200px) {
+    /* Ajustes específicos para pantallas grandes */
+    .container {
+        max-width: 1140px;
+    }
+    
+    .carousel-item img {
+        height: 550px;
+    }
+    
+    .programa-hero {
+        min-height: 450px;
+    }
+}
+
+/* ===== 2. DISPOSITIVOS MEDIANOS (992px - 1199px) ===== */
+@media (max-width: 1199px) and (min-width: 992px) {
+    .container {
+        max-width: 960px;
+    }
+    
+    .carousel-item img {
+        height: 450px;
+    }
+    
+    .custom-card h1 {
+        font-size: 2.2rem;
+    }
+    
+    .programa-card .row {
+        flex-direction: column;
+    }
+    
+    .programa-card .col-md-4,
+    .programa-card .col-md-8 {
+        width: 100%;
+    }
+    
+    .programa-card img {
+        height: 250px !important;
+    }
+}
+
+/* ===== 3. TABLETS (768px - 991px) ===== */
+@media (max-width: 991px) {
+    .container {
+        max-width: 720px;
+    }
+    
+    /* Layout Padding */
+    .layout_padding {
+        padding: 50px 0;
+    }
+    
+    /* Hero Section */
+    .hero_section {
+        min-height: auto;
+        padding: 50px 0;
+    }
+    
+    .hero_section .row {
+        flex-direction: column;
+    }
+    
+    .detail-box,
+    .img-container {
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .img-container {
+        margin-top: 30px;
+    }
+    
+    /* Cards */
+    .custom-card {
+        padding: 20px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .custom-card h1 {
+        font-size: 2rem;
+    }
+    
+    /* Carrusel */
+    .carousel-item img {
+        height: 350px;
+    }
+    
+    /* Navegación */
+    .navbar-collapse {
+        background: rgba(0, 0, 0, 0.9);
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 10px;
+    }
+    
+    .custom_nav-container.navbar-expand-lg .navbar-nav .nav-link {
+        margin: 5px 0;
+        text-align: left;
+    }
+    
+    /* Botones */
+    .btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+    
+    /* Programas */
+    .programa-hero {
+        min-height: 300px;
+        text-align: center;
+    }
+    
+    .programa-hero h1 {
+        font-size: 2rem;
+    }
+    
+    .programa-sidebar {
+        margin-top: 2rem;
+        position: static;
+    }
+    
+    /* Características */
+    .caracteristicas .col-md-6 {
+        margin-bottom: 1rem;
+    }
+    
+    /* Footer */
+    .footer_section .row > div {
+        margin-bottom: 2rem;
+    }
+    
+    /* Grid de valores */
+    .value-card {
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* ===== 4. DISPOSITIVOS PEQUEÑOS (576px - 767px) ===== */
+@media (max-width: 767px) {
+    .container {
+        max-width: 540px;
+    }
+    
+    /* Tipografía */
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.75rem; }
+    h3 { font-size: 1.5rem; }
+    
+    /* Navegación */
+    .navbar-brand span {
+        font-size: 16px;
+    }
+    
+    /* Hero */
+    .custom-card h1 {
+        font-size: 1.75rem;
+    }
+    
+    .custom-card p {
+        font-size: 1rem;
+    }
+    
+    /* Carrusel */
+    .carousel-item img,
+    .gallery-card .card-img-top {
+        height: 250px;
+    }
+    
+    .carousel-caption h2 {
+        font-size: 1.2rem;
+    }
+    
+    /* Botones */
+    .btn {
+        width: 100%;
+        margin-bottom: 10px;
+        display: block;
+    }
+    
+    .btn-lg {
+        padding: 12px 24px;
+        font-size: 1rem;
+    }
+    
+    /* Cards */
+    .programa-card,
+    .program-card {
+        margin-bottom: 1.5rem;
+    }
+    
+    .programa-card img {
+        height: 200px !important;
+    }
+    
+    .program-card .card-img-top {
+        height: 180px;
+    }
+    
+    /* CTA Sections */
+    .programa-cta .btn,
+    .cta-admision .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Formularios */
+    .contact-section .row > div {
+        margin-bottom: 2rem;
+    }
+    
+    /* Footer */
+    .footer-title {
+        font-size: 16px;
+    }
+    
+    .social-box {
+        justify-content: center;
+    }
+    
+    /* Páginas legales */
+    .pagina-legal-section {
+        padding: 2rem 0;
+    }
+    
+    .page-title {
+        font-size: 1.75rem;
+    }
+    
+    .page-navigation .btn {
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* ===== 5. TELÉFONOS PEQUEÑOS (<576px) ===== */
+@media (max-width: 575px) {
+    /* Ajustes de contenedor */
+    .container {
+        padding-right: 15px;
+        padding-left: 15px;
+    }
+    
+    /* Tipografía */
+    h1 { font-size: 1.75rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.25rem; }
+    
+    .main-heading {
+        font-size: 1.75rem;
+    }
+    
+    /* Hero */
+    .hero-text {
+        padding: 15px 20px;
+    }
+    
+    /* Cards */
+    .card-body,
+    .card-header,
+    .card-footer {
+        padding: 15px;
+    }
+    
+    /* Programas */
+    .programa-card .row {
+        flex-direction: column;
+    }
+    
+    .programa-card .col-md-4 {
+        width: 100%;
+        height: 200px;
+    }
+    
+    .programa-card .col-md-8 {
+        width: 100%;
+    }
+    
+    .programa-image {
+        height: 200px;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .programa-info .d-flex {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    /* CTA */
+    .cta-admision .text-lg-end {
+        text-align: center !important;
+        margin-top: 1rem;
+    }
+    
+    .cta-admision .btn {
+        width: 100%;
+    }
+    
+    /* Formularios de contacto */
+    .contact-form-card,
+    .contact-info {
+        padding: 20px;
+    }
+    
+    /* Grid system */
+    .row.g-4 > [class*="col-"] {
+        padding-right: calc(var(--spacing-xs) / 2);
+        padding-left: calc(var(--spacing-xs) / 2);
+    }
+}
+
+/* ===== 6. ORIENTACIÓN LANDSCAPE ===== */
+@media (max-height: 500px) and (orientation: landscape) {
+    .hero_section {
+        min-height: 150vh;
+        padding: 30px 0;
+    }
+    
+    .top_container {
+        min-height: 150vh;
+    }
+    
+    .custom-card {
+        padding: 15px;
+    }
+    
+    .carousel-item img {
+        height: 300px;
+    }
+}
+
+/* ===== 7. IMPRESIÓN ===== */
+@media print {
+    .navbar,
+    .footer_section,
+    .theme-toggle,
+    .btn,
+    .carousel-controls,
+    .social-box {
+        display: none !important;
+    }
+    
+    body {
+        font-size: 12pt;
+        line-height: 1.5;
+        color: #000;
+        background: #fff;
+    }
+    
+    .container {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+    }
+    
+    a {
+        color: #000;
+        text-decoration: underline;
+    }
+    
+    .card {
+        border: 1px solid #ddd;
+        box-shadow: none;
+    }
+    
+    .page-break {
+        page-break-before: always;
+    }
+}
+
+/* ===== 8. PREFERENCIAS DE REDUCCIÓN DE MOVIMIENTO ===== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    
+    .fade-in,
+    .fade-in-up {
+        animation: none;
+        opacity: 1;
+    }
+    
+    .btn:hover,
+    .card:hover,
+    .gallery-card:hover,
+    .programa-card:hover,
+    .value-card:hover {
+        transform: none;
+    }
+    
+    .carousel-item img {
+        transition: none;
+    }
+}
+
+/* ===== 9. MODO DE ALTO CONTRASTE ===== */
+@media (prefers-contrast: high) {
+    :root {
+        --primary-color: #0000AA;
+        --secondary-color: #FFAA00;
+        --accent-color: #0055FF;
+        --text-color: #000000;
+        --text-light: #FFFFFF;
+        --border-color: #000000;
+    }
+    
+    .btn {
+        border-width: 2px;
+    }
+    
+    .card {
+        border-width: 2px;
+    }
+}
+
+/* ===== 10. AJUSTES PARA ZOOM ===== */
+@media (min-width: 1920px) {
+    html {
+        font-size: 18px;
+    }
+    
+    .container {
+        max-width: 1600px;
+    }
+}
+
+@media (max-width: 320px) {
+    html {
+        font-size: 14px;
+    }
+    
+    .container {
+        padding-right: 10px;
+        padding-left: 10px;
+    }
+}
+
+/* ===== 11. RESPONSIVE PARA LAYOUT BASE ===== */
+
+/* Tablets y móviles grandes */
+@media (max-width: 991.98px) {
+    .site-wrapper {
+        overflow-x: hidden;
+    }
+    
+    .top_container {
+        min-height: 50vh;
+    }
+    
+    .main-content {
+        padding-top: 70px;
+    }
+    
+    .common_style {
+        padding: 2rem 0;
+    }
+    
+    .container {
+        padding-right: 15px;
+        padding-left: 15px;
+    }
+}
+
+/* Móviles */
+@media (max-width: 767.98px) {
+    .top_container {
+        min-height: 40vh;
+        text-align: center;
+    }
+    
+    .top_container .row {
+        flex-direction: column;
+    }
+    
+    .top_container .col-md-6 {
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+    
+    .top_container .custom-card {
+        margin-bottom: 2rem;
+    }
+    
+    .main-content {
+        padding-top: 60px;
+    }
+    
+    .common_style .container {
+        padding: 1.5rem 15px;
+    }
+    
+    .py-5 {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+    
+    /* Ajustar padding para móviles pequeños */
+    body {
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+}
+
+/* Móviles pequeños */
+@media (max-width: 575.98px) {
+    .top_container {
+        min-height: 35vh;
+        padding: 1.5rem 0;
+    }
+    
+    .top_container h1 {
+        font-size: 1.75rem;
+    }
+    
+    .top_container p {
+        font-size: 1rem;
+    }
+    
+    .main-content {
+        padding-top: 55px;
+    }
+    
+    .common_style {
+        padding: 1.5rem 0;
+    }
+    
+    .container {
+        padding-right: 12px;
+        padding-left: 12px;
+    }
+    
+    /* Botones en móviles */
+    .btn {
+        display: block;
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .btn-group .btn {
+        display: inline-block;
+        width: auto;
+    }
+}
+
+/* Orientación landscape */
+@media (max-height: 600px) and (orientation: landscape) {
+    .top_container {
+        min-height: 100vh;
+    }
+    
+    .main-content {
+        padding-top: 60px;
+    }
+}
+
+/* Pantallas muy grandes */
+@media (min-width: 1400px) {
+    .container {
+        max-width: 1320px;
+    }
+    
+    .top_container {
+        min-height: 80vh;
+    }
+}
+
+/* Ajustes para impresión */
+@media print {
+    .top_container,
+    .header_section,
+    .footer_section {
+        display: none !important;
+    }
+    
+    .main-content {
+        padding-top: 0 !important;
+    }
+    
+    .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+    
+    body {
+        background: white !important;
+        color: black !important;
+    }
+}

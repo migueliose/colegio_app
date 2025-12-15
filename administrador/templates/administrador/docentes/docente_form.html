@@ -1,0 +1,324 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0">{{ title }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_administrador' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'administrador:docente_list' %}">Docentes</a></li>
+                    <li class="breadcrumb-item active">{{ title }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'administrador:docente_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Información del Docente</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="docente-form">
+                        {% csrf_token %}
+                        
+                        <!-- Mensajes de error del formulario -->
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <strong>Por favor corrija los siguientes errores:</strong>
+                            <ul>
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ field.label }}: {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        <!-- Verificación de usuario existente -->
+                        <div class="alert alert-info d-none" id="user-info-alert">
+                            <div id="user-info-content"></div>
+                        </div>
+
+                        <div class="row g-3">
+                            <!-- Documento -->
+                            <div class="col-md-4">
+                                <label for="id_tipo_documento" class="form-label">Tipo de Documento *</label>
+                                {{ form.tipo_documento }}
+                            </div>
+                            <div class="col-md-8">
+                                <label for="id_numero_documento" class="form-label">Número de Documento *</label>
+                                <div class="input-group">
+                                    {{ form.numero_documento }}
+                                    <button type="button" class="btn btn-outline-secondary" 
+                                            id="verificar-usuario-btn" data-tipo="Docente">
+                                        Verificar
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">
+                                    El sistema verificará si este usuario ya existe
+                                </small>
+                            </div>
+
+                            <!-- Nombres y Apellidos -->
+                            <div class="col-md-6">
+                                <label for="id_nombres" class="form-label">Nombres *</label>
+                                {{ form.nombres }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_apellidos" class="form-label">Apellidos *</label>
+                                {{ form.apellidos }}
+                            </div>
+
+                            <!-- Contacto -->
+                            <div class="col-md-6">
+                                <label for="id_email" class="form-label">Email</label>
+                                {{ form.email }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_telefono" class="form-label">Teléfono</label>
+                                {{ form.telefono }}
+                            </div>
+
+                            <!-- Dirección -->
+                            <div class="col-12">
+                                <label for="id_direccion" class="form-label">Dirección</label>
+                                {{ form.direccion }}
+                            </div>
+
+                            <!-- Información personal -->
+                            <div class="col-md-6">
+                                <label for="id_sexo" class="form-label">Sexo</label>
+                                {{ form.sexo }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
+                                {{ form.fecha_nacimiento }}
+                            </div>
+
+                            <!-- Campos solo para creación o actualización -->
+                            {% if not object %}
+                            <div class="col-md-6">
+                                <label for="id_username" class="form-label">Nombre de Usuario</label>
+                                <input type="text" name="username" id="id_username" 
+                                       class="form-control" 
+                                       placeholder="Se generará automáticamente si se deja vacío">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_password" class="form-label">Contraseña *</label>
+                                {{ form.password }}
+                                {% if object %}
+                                <small class="form-text text-muted">
+                                    {{ form.password.help_text }}
+                                </small>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <div class="col-md-12">
+                                <label for="id_password" class="form-label">Contraseña</label>
+                                {{ form.password }}
+                                <small class="form-text text-muted">
+                                    {{ form.password.help_text }}
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'administrador:docente_list' %}" 
+                               class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información adicional (solo para edición) -->
+            {% if object %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Información Adicional</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Fecha de Creación:</strong> {{ object.created_at|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Última Actualización:</strong> {{ object.updated_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Estado:</strong> 
+                                {% if object.estado %}
+                                <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                            </p>
+                            {% if object.usuario.last_login %}
+                            <p><strong>Último Acceso:</strong> {{ object.usuario.last_login|date:"d/m/Y H:i" }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Configurar select2 para los campos select
+    $('select').select2({
+        theme: 'bootstrap-5',
+        width: '100%'
+    });
+
+    // Función para verificar usuario
+    $('#verificar-usuario-btn').click(function() {
+        var numeroDocumento = $('#id_numero_documento').val();
+        var tipoUsuario = $(this).data('tipo');
+        
+        if (!numeroDocumento) {
+            alert('Por favor ingrese un número de documento');
+            return;
+        }
+
+        // Mostrar loading
+        $(this).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verificando...');
+        $(this).prop('disabled', true);
+
+        // Realizar petición AJAX
+        $.ajax({
+            url: '{% url "administrador:verificar_usuario" %}',
+            data: {
+                'numero_documento': numeroDocumento,
+                'tipo_usuario': tipoUsuario
+            },
+            dataType: 'json',
+            success: function(data) {
+                // Restaurar botón
+                $('#verificar-usuario-btn').html('Verificar');
+                $('#verificar-usuario-btn').prop('disabled', false);
+
+                if (data.error) {
+                    // Mostrar error
+                    $('#user-info-alert').removeClass('alert-info alert-warning alert-danger').addClass('alert-danger');
+                    $('#user-info-content').html('<strong>Error:</strong> ' + data.error);
+                    $('#user-info-alert').removeClass('d-none');
+                } else if (data.existe) {
+                    // Usuario existe
+                    if (data.usuario.ya_es_tipo) {
+                        // Ya tiene perfil de este tipo
+                        $('#user-info-alert').removeClass('alert-info alert-warning alert-danger').addClass('alert-danger');
+                        $('#user-info-content').html('<strong>¡Atención!</strong> ' + data.mensaje);
+                        $('#user-info-alert').removeClass('d-none');
+                        
+                        // Deshabilitar envío del formulario
+                        $('#docente-form button[type="submit"]').prop('disabled', true);
+                    } else {
+                        // Usuario existe pero no tiene este perfil
+                        $('#user-info-alert').removeClass('alert-info alert-warning alert-danger').addClass('alert-warning');
+                        var html = '<strong>¡Usuario encontrado!</strong> ' + data.mensaje + '<br><br>';
+                        html += '<strong>Datos encontrados:</strong><br>';
+                        html += '- Nombres: ' + data.usuario.nombres + '<br>';
+                        html += '- Apellidos: ' + data.usuario.apellidos + '<br>';
+                        html += '- Email: ' + (data.usuario.email || 'No registrado') + '<br>';
+                        html += '- Teléfono: ' + (data.usuario.telefono || 'No registrado') + '<br><br>';
+                        html += '<button type="button" class="btn btn-sm btn-primary" id="cargar-datos-btn">Cargar Datos</button>';
+                        $('#user-info-content').html(html);
+                        $('#user-info-alert').removeClass('d-none');
+
+                        // Configurar botón para cargar datos
+                        $('#cargar-datos-btn').click(function() {
+                            // Cargar datos en el formulario
+                            if (data.usuario.nombres) $('#id_nombres').val(data.usuario.nombres);
+                            if (data.usuario.apellidos) $('#id_apellidos').val(data.usuario.apellidos);
+                            if (data.usuario.email) $('#id_email').val(data.usuario.email);
+                            if (data.usuario.telefono) $('#id_telefono').val(data.usuario.telefono);
+                            if (data.usuario.direccion) $('#id_direccion').val(data.usuario.direccion);
+                            if (data.usuario.sexo) $('#id_sexo').val(data.usuario.sexo).trigger('change');
+                            if (data.usuario.fecha_nacimiento) $('#id_fecha_nacimiento').val(data.usuario.fecha_nacimiento);
+                            if (data.usuario.tipo_documento_id) $('#id_tipo_documento').val(data.usuario.tipo_documento_id).trigger('change');
+                            
+                            // Mostrar mensaje
+                            $('#user-info-alert').removeClass('alert-warning').addClass('alert-success');
+                            $('#user-info-content').html('<strong>¡Datos cargados!</strong> Revise la información y complete los campos faltantes.');
+                        });
+                    }
+                } else {
+                    // Usuario no existe
+                    $('#user-info-alert').removeClass('alert-info alert-warning alert-danger').addClass('alert-success');
+                    $('#user-info-content').html('<strong>' + data.mensaje + '</strong><br>Complete los siguientes campos:');
+                    $('#user-info-alert').removeClass('d-none');
+                    
+                    // Habilitar envío del formulario
+                    $('#docente-form button[type="submit"]').prop('disabled', false);
+                }
+            },
+            error: function() {
+                // Restaurar botón
+                $('#verificar-usuario-btn').html('Verificar');
+                $('#verificar-usuario-btn').prop('disabled', false);
+                
+                // Mostrar error
+                $('#user-info-alert').removeClass('alert-info alert-warning alert-danger').addClass('alert-danger');
+                $('#user-info-content').html('<strong>Error:</strong> No se pudo verificar el usuario. Intente nuevamente.');
+                $('#user-info-alert').removeClass('d-none');
+            }
+        });
+    });
+
+    // Generar username automático basado en número de documento
+    $('#id_numero_documento').on('blur', function() {
+        if ($('#id_username').val() === '') {
+            var numeroDoc = $(this).val();
+            if (numeroDoc) {
+                $('#id_username').val('doc_' + numeroDoc);
+            }
+        }
+    });
+
+    // Validación de formulario
+    $('#docente-form').on('submit', function(e) {
+        var numeroDocumento = $('#id_numero_documento').val();
+        if (!numeroDocumento) {
+            e.preventDefault();
+            alert('El número de documento es obligatorio');
+            return false;
+        }
+        
+        // Validar que el usuario haya sido verificado o se haya intentado verificar
+        var alertVisible = !$('#user-info-alert').hasClass('d-none');
+        if (!alertVisible) {
+            if (!confirm('¿Desea continuar sin verificar el usuario?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

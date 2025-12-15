@@ -1,0 +1,597 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Gestión de Acudientes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0">Gestión de Acudientes</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_administrador' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Acudientes</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group">
+                <a href="{% url 'administrador:acudiente_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nueva Relación
+                </a>
+                <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" 
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="visually-hidden">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#importModal">
+                            <i class="fas fa-file-import me-2"></i> Importar desde Excel
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="fas fa-file-export me-2"></i> Exportar a Excel
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="fas fa-print me-2"></i> Imprimir Listado
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="fas fa-envelope me-2"></i> Enviar Comunicación Masiva
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-primary border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                Total Relaciones
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ total_acudientes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-link fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-success border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                Padres
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ padres }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-male fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-info border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                Madres
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ madres }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-female fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-warning border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                Sin Acudientes
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ estudiantes_sin_acudiente }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-times fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-filter me-2"></i>Filtros de Búsqueda
+                </h5>
+                <button class="btn btn-sm btn-outline-secondary" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#filtersCollapse">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+            </div>
+        </div>
+        <div class="collapse show" id="filtersCollapse">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Búsqueda General</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" name="search" class="form-control" 
+                                   placeholder="Nombre acudiente, estudiante o documento..." 
+                                   value="{{ request.GET.search }}">
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Parentesco</label>
+                        <select name="parentesco" class="form-control">
+                            <option value="">Todos</option>
+                            <option value="padre" {% if request.GET.parentesco == 'padre' %}selected{% endif %}>
+                                Padre
+                            </option>
+                            <option value="madre" {% if request.GET.parentesco == 'madre' %}selected{% endif %}>
+                                Madre
+                            </option>
+                            <option value="abuel" {% if request.GET.parentesco == 'abuel' %}selected{% endif %}>
+                                Abuelo/Abuela
+                            </option>
+                            <option value="tío" {% if request.GET.parentesco == 'tío' %}selected{% endif %}>
+                                Tío/Tía
+                            </option>
+                            <option value="hermano" {% if request.GET.parentesco == 'hermano' %}selected{% endif %}>
+                                Hermano/Hermana
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Estado</label>
+                        <select name="estado" class="form-control">
+                            <option value="">Todos</option>
+                            <option value="activo" {% if request.GET.estado == 'activo' %}selected{% endif %}>
+                                Activos
+                            </option>
+                            <option value="inactivo" {% if request.GET.estado == 'inactivo' %}selected{% endif %}>
+                                Inactivos
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="d-grid gap-2 w-100">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter me-1"></i> Filtrar
+                            </button>
+                            <a href="{% url 'administrador:acudiente_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-redo me-1"></i> Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listado de Acudientes -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Relaciones de Acudientes
+                    <span class="badge bg-primary ms-2">{{ page_obj.paginator.count }}</span>
+                </h5>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" 
+                            onclick="window.print()" title="Imprimir">
+                        <i class="fas fa-print"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" 
+                            id="export-btn" title="Exportar">
+                        <i class="fas fa-download"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            {% if acudientes %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="acudientes-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="50" class="text-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="select-all">
+                                </div>
+                            </th>
+                            <th>Acudiente</th>
+                            <th>Estudiante</th>
+                            <th>Parentesco</th>
+                            <th>Información Contacto</th>
+                            <th>Estado</th>
+                            <th width="120" class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for acudiente in acudientes %}
+                        <tr>
+                            <td class="text-center">
+                                <div class="form-check">
+                                    <input class="form-check-input select-item" type="checkbox" 
+                                           value="{{ acudiente.pk }}">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if acudiente.acudiente.foto %}
+                                    <img src="{{ acudiente.acudiente.foto.url }}" 
+                                         alt="{{ acudiente.acudiente.get_full_name }}" 
+                                         class="rounded-circle me-2" 
+                                         style="width: 32px; height: 32px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center me-2" 
+                                         style="width: 32px; height: 32px;">
+                                        <i class="fas fa-user-tie text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong class="d-block">{{ acudiente.acudiente.get_full_name }}</strong>
+                                        <small class="text-muted">
+                                            {{ acudiente.acudiente.numero_documento }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if acudiente.estudiante.foto %}
+                                    <img src="{{ acudiente.estudiante.foto.url }}" 
+                                         alt="{{ acudiente.estudiante.usuario.get_full_name }}" 
+                                         class="rounded-circle me-2" 
+                                         style="width: 32px; height: 32px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center me-2" 
+                                         style="width: 32px; height: 32px;">
+                                        <i class="fas fa-user-graduate text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong class="d-block">{{ acudiente.estudiante.usuario.get_full_name }}</strong>
+                                        <small class="text-muted">
+                                            {% if acudiente.estudiante.matricula_actual %}
+                                            {{ acudiente.estudiante.matricula_actual.grado_año_lectivo.grado.nombre }}
+                                            {% else %}
+                                            Sin matrícula
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ acudiente.parentesco }}</span>
+                            </td>
+                            <td>
+                                <div class="small">
+                                    {% if acudiente.acudiente.email %}
+                                    <div class="text-truncate" style="max-width: 150px;">
+                                        <i class="fas fa-envelope me-1 text-muted"></i>
+                                        {{ acudiente.acudiente.email }}
+                                    </div>
+                                    {% endif %}
+                                    {% if acudiente.acudiente.telefono %}
+                                    <div>
+                                        <i class="fas fa-phone me-1 text-muted"></i>
+                                        {{ acudiente.acudiente.telefono }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                {% if acudiente.estudiante.estado and acudiente.acudiente.estado %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i> Activa
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times-circle me-1"></i> Inactiva
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'administrador:acudiente_detail' acudiente.pk %}" 
+                                       class="btn btn-outline-info" title="Ver detalle"
+                                       data-bs-toggle="tooltip" data-bs-placement="top">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'administrador:acudiente_update' acudiente.pk %}" 
+                                       class="btn btn-outline-warning" title="Editar"
+                                       data-bs-toggle="tooltip" data-bs-placement="top">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'administrador:acudiente_delete' acudiente.pk %}" 
+                                       class="btn btn-outline-danger" title="Eliminar"
+                                       data-bs-toggle="tooltip" data-bs-placement="top">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Acciones en Lote -->
+            <div class="border-top p-3 bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                id="selected-count" disabled>
+                            <span id="count">0</span> relaciones seleccionadas
+                        </button>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-primary btn-sm" 
+                                id="batch-email" disabled>
+                            <i class="fas fa-envelope me-1"></i> Enviar Email
+                        </button>
+                        <button type="button" class="btn btn-outline-success btn-sm" 
+                                id="batch-export" disabled>
+                            <i class="fas fa-file-export me-1"></i> Exportar
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                id="batch-delete" disabled>
+                            <i class="fas fa-trash me-1"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paginación -->
+            {% if page_obj.has_other_pages %}
+            <div class="border-top p-3">
+                <nav aria-label="Page navigation">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">
+                                Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} 
+                                de {{ page_obj.paginator.count }} relaciones
+                            </small>
+                        </div>
+                        <ul class="pagination mb-0">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <!-- Estado vacío -->
+            <div class="text-center py-5">
+                <i class="fas fa-user-tie fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No se encontraron relaciones de acudientes</h4>
+                <p class="text-muted mb-4">
+                    {% if request.GET %}
+                    Intente con otros criterios de búsqueda
+                    {% else %}
+                    No hay acudientes registrados en el sistema
+                    {% endif %}
+                </p>
+                <a href="{% url 'administrador:acudiente_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i> Crear primera relación
+                </a>
+                <a href="{% url 'administrador:estudiante_list' %}" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-user-graduate me-1"></i> Ver estudiantes sin acudientes
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="card-footer text-muted small">
+            <div class="row">
+                <div class="col">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Última actualización: {% now "d/m/Y H:i" %}
+                </div>
+                <div class="col text-end">
+                    <i class="fas fa-database me-1"></i>
+                    {{ page_obj.paginator.count }} registros en total
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Importación -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Importar Relaciones desde Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Seleccione un archivo Excel con el formato correcto:</p>
+                <ul class="small">
+                    <li><strong>Columnas requeridas:</strong></li>
+                    <li>DocumentoEstudiante (Documento del estudiante)</li>
+                    <li>DocumentoAcudiente (Documento del acudiente)</li>
+                    <li>Parentesco (Padre, Madre, etc.)</li>
+                </ul>
+                <div class="mb-3">
+                    <label class="form-label">Archivo Excel (.xlsx, .xls)</label>
+                    <input type="file" class="form-control" accept=".xlsx,.xls">
+                </div>
+                <div class="alert alert-info small mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Los documentos deben existir previamente en el sistema.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="#" class="btn btn-outline-primary">
+                    <i class="fas fa-download me-1"></i> Descargar Plantilla
+                </a>
+                <button type="button" class="btn btn-primary">Importar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Selección múltiple
+    $('#select-all').change(function() {
+        $('.select-item').prop('checked', this.checked);
+        updateSelectedCount();
+    });
+
+    $('.select-item').change(function() {
+        if (!this.checked) {
+            $('#select-all').prop('checked', false);
+        } else {
+            var allChecked = $('.select-item:checked').length === $('.select-item').length;
+            $('#select-all').prop('checked', allChecked);
+        }
+        updateSelectedCount();
+    });
+
+    function updateSelectedCount() {
+        var count = $('.select-item:checked').length;
+        $('#count').text(count);
+        
+        var enabled = count > 0;
+        $('#selected-count').prop('disabled', !enabled);
+        $('#batch-email').prop('disabled', !enabled);
+        $('#batch-export').prop('disabled', !enabled);
+        $('#batch-delete').prop('disabled', !enabled);
+        
+        if (enabled) {
+            $('#selected-count').removeClass('btn-outline-secondary').addClass('btn-primary');
+        } else {
+            $('#selected-count').removeClass('btn-primary').addClass('btn-outline-secondary');
+        }
+    }
+
+    // Acciones en lote
+    $('#batch-email').click(function() {
+        var selected = [];
+        $('.select-item:checked').each(function() {
+            selected.push($(this).val());
+        });
+        
+        if (selected.length > 0) {
+            alert('Enviar email a ' + selected.length + ' acudiente(s) seleccionado(s)');
+            // Implementar lógica AJAX aquí
+        }
+    });
+
+    $('#batch-delete').click(function() {
+        var selected = [];
+        $('.select-item:checked').each(function() {
+            selected.push($(this).val());
+        });
+        
+        if (selected.length > 0) {
+            if (confirm(`¿Está seguro de eliminar ${selected.length} relación(es) seleccionada(s)?`)) {
+                alert('Eliminando ' + selected.length + ' relación(es)...');
+                // Implementar lógica AJAX aquí
+            }
+        }
+    });
+
+    // Exportación
+    $('#export-btn').click(function() {
+        alert('Exportando listado...');
+    });
+
+    // Búsqueda en tiempo real
+    $('#search-input').on('keyup', function() {
+        var value = $(this).val().toLowerCase();
+        $('#acudientes-table tbody tr').filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
+    });
+});
+</script>
+{% endblock %}

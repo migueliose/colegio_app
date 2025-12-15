@@ -1,0 +1,125 @@
+<!--quick_actions.html-->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 py-3">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-bolt text-warning me-2"></i>
+            Acciones Rápidas
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <!-- Columna 1 -->
+            <div class="col-md-3 col-6">
+                <a href="{% url 'docentes:calificar_notas' %}" 
+                   class="card quick-action-card text-decoration-none h-100">
+                    <div class="card-body text-center p-3">
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-3 mb-2 mx-auto" style="width: 60px; height: 60px;">
+                            <i class="fas fa-edit text-primary fs-4"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-1">Registrar Notas</h6>
+                        <p class="text-muted small mb-0">Ingresar calificaciones</p>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- Columna 2 -->
+            <div class="col-md-3 col-6">
+                <a href="{% url 'docentes:lista_comportamientos' %}" 
+                   class="card quick-action-card text-decoration-none h-100">
+                    <div class="card-body text-center p-3">
+                        <div class="bg-success bg-opacity-10 rounded-circle p-3 mb-2 mx-auto" style="width: 60px; height: 60px;">
+                            <i class="fas fa-clipboard-list text-success fs-4"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-1">Comportamiento</h6>
+                        <p class="text-muted small mb-0">Ver observaciones</p>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- Columna 3 -->
+            <div class="col-md-3 col-6">
+                <a href="{% url 'docentes:horarios_list' %}" 
+                   class="card quick-action-card text-decoration-none h-100">
+                    <div class="card-body text-center p-3">
+                        <div class="bg-info bg-opacity-10 rounded-circle p-3 mb-2 mx-auto" style="width: 60px; height: 60px;">
+                            <i class="fas fa-calendar-alt text-info fs-4"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-1">Mi Horario</h6>
+                        <p class="text-muted small mb-0">Ver horario de clases</p>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- Columna 4 -->
+            <div class="col-md-3 col-6">
+                <a href="{% url 'docentes:lista_logros' %}" 
+                   class="card quick-action-card text-decoration-none h-100">
+                    <div class="card-body text-center p-3">
+                        <div class="bg-warning bg-opacity-10 rounded-circle p-3 mb-2 mx-auto" style="width: 60px; height: 60px;">
+                            <i class="fas fa-trophy text-warning fs-4"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-1">Logros</h6>
+                        <p class="text-muted small mb-0">Gestionar logros</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Segunda Fila de Acciones -->
+        <div class="row g-3 mt-2">
+            <div class="col-md-3 col-6">
+                <a href="{% url 'docentes:lista_notas_docente' %}" 
+                   class="card quick-action-card text-decoration-none h-100">
+                    <div class="card-body text-center p-3">
+                        <div class="bg-danger bg-opacity-10 rounded-circle p-3 mb-2 mx-auto" style="width: 60px; height: 60px;">
+                            <i class="fas fa-chart-bar text-danger fs-4"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-1">Mis Notas</h6>
+                        <p class="text-muted small mb-0">Ver calificaciones</p>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="col-md-3 col-6">
+                <a href="{% url 'docentes:asistencia_principal' %}" 
+                class="card quick-action-card text-decoration-none h-100">
+                    <div class="card-body text-center p-3">
+                        <div class="bg-info bg-opacity-10 rounded-circle p-3 mb-2 mx-auto" 
+                            style="width: 60px; height: 60px;">
+                            <i class="fas fa-calendar-check text-info fs-4"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-1">Asistencia</h6>
+                        <p class="text-muted small mb-0">Registrar asistencia</p>
+                    </div>
+                </a>
+            </div>
+
+            
+            <div class="col-md-3 col-6">
+                <a href="{% url 'web:perfil' %}" 
+                   class="card quick-action-card text-decoration-none h-100">
+                    <div class="card-body text-center p-3">
+                        <div class="bg-dark bg-opacity-10 rounded-circle p-3 mb-2 mx-auto" style="width: 60px; height: 60px;">
+                            <i class="fas fa-user text-dark fs-4"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-1">Mi Perfil</h6>
+                        <p class="text-muted small mb-0">Información personal</p>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="col-md-3 col-6">
+                <a href="{% url 'web:home' %}" 
+                   class="card quick-action-card text-decoration-none h-100">
+                    <div class="card-body text-center p-3">
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-3 mb-2 mx-auto" style="width: 60px; height: 60px;">
+                            <i class="fas fa-home text-primary fs-4"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-1">Sitio Web</h6>
+                        <p class="text-muted small mb-0">Página institucional</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

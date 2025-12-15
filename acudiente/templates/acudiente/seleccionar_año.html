@@ -1,0 +1,95 @@
+<!-- acudiente/templates/acudiente/seleccionar_año.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static estudiante_filters %}
+
+{% block title %}Seleccionar Año - {{ estudiante.usuario.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        Seleccionar Año Lectivo
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h5 class="text-muted">{{ estudiante.usuario.get_full_name }}</h5>
+                        <p class="text-muted">
+                            Seleccione el año lectivo para generar el documento
+                        </p>
+                    </div>
+                    
+                    <div class="list-group">
+                        {% for año_lectivo in años_lectivos %}
+                        <div class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-1">
+                                        <i class="fas fa-calendar me-2 text-primary"></i>
+                                        Año Lectivo {{ año_lectivo.anho }}
+                                    </h5>
+                                    <p class="mb-1 text-muted">
+                                        <i class="fas fa-graduation-cap me-1"></i>
+                                        {% with matricula=estudiante.matriculas.filter(año_lectivo=año_lectivo).first %}
+                                            {% if matricula %}
+                                                {{ matricula.grado_año_lectivo.grado.nombre }}
+                                            {% endif %}
+                                        {% endwith %}
+                                    </p>
+                                </div>
+                                <div class="btn-group" role="group">
+                                    {% if tipo_documento == 'boletin' %}
+                                    <a href="{% url 'acudiente:boletin_pdf' estudiante.id año_lectivo.id %}" 
+                                       class="btn btn-outline-primary btn-sm"
+                                       target="_blank">
+                                        <i class="fas fa-chart-bar me-1"></i> Boletín
+                                    </a>
+                                    {% elif tipo_documento == 'observador' %}
+                                    <a href="{% url 'acudiente:observador_pdf' estudiante.id año_lectivo.id %}" 
+                                       class="btn btn-outline-warning btn-sm"
+                                       target="_blank">
+                                        <i class="fas fa-user-check me-1"></i> Observador
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'acudiente:documentos_estudiante' estudiante.id %}" 
+                                       class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-ellipsis-h me-1"></i> Más
+                                    </a>
+                                </div>
+                            </div>
+                            {% if año_lectivo.estado %}
+                            <div class="mt-2">
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i> Año Actual
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No hay años lectivos registrados</h5>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <a href="{% url 'acudiente:detalle_estudiante' estudiante.id %}" 
+                           class="btn btn-outline-secondary me-2">
+                            <i class="fas fa-arrow-left me-1"></i> Volver
+                        </a>
+                        <a href="{% url 'acudiente:documentos_estudiante' estudiante.id %}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-folder-open me-1"></i> Ver todos los documentos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

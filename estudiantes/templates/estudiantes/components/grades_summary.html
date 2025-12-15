@@ -1,0 +1,143 @@
+<!-- estudiantes/components/grades_summary.html -->
+{% load static estudiante_filters %}
+<div class="card border-0 shadow-sm h-100">
+    <div class="card-header bg-white border-0 py-3">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-journal-text text-primary me-2"></i>
+            Resumen de Notas
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if notas_estudiante %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Asignatura</th>
+                        <th class="text-center">Nota</th>
+                        <th class="text-center">Desempeño</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for nota in notas_estudiante|slice:":6" %}
+                    <tr>
+                        <td class="text-truncate" style="max-width: 120px;" 
+                            data-bs-toggle="tooltip" title="{{ nota.nombre }}">
+                            <i class="bi bi-journal me-2 text-muted"></i>
+                            {{ nota.nombre|truncatechars:25 }}
+                        </td>
+                        <td class="text-center">
+                            {% if nota.tiene_nota %}
+                            <span class="badge bg-{{ nota.desempeno|color_desempeno }} px-3">
+                                {{ nota.calificacion|floatformat:1 }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary px-3">
+                                <i class="bi bi-clock"></i>
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if nota.tiene_nota %}
+                            <span class="badge bg-{{ nota.desempeno|color_desempeno }}">
+                                {{ nota.desempeno|default:"Sin calificar" }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                Pendiente
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Resumen rápido -->
+        <div class="mt-4">
+            <h6 class="small text-muted mb-3">Distribución</h6>
+            <div class="row text-center">
+                <div class="col-3">
+                    <div class="bg-success bg-opacity-10 rounded p-2">
+                        <span class="h5 mb-0 d-block text-success">
+                            {{ notas_estudiante|count_performance:"Superior" }}
+                        </span>
+                        <small class="text-muted">Superior</small>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="bg-info bg-opacity-10 rounded p-2">
+                        <span class="h5 mb-0 d-block text-info">
+                            {{ notas_estudiante|count_performance:"Alto" }}
+                        </span>
+                        <small class="text-muted">Alto</small>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="bg-warning bg-opacity-10 rounded p-2">
+                        <span class="h5 mb-0 d-block text-warning">
+                            {{ notas_estudiante|count_performance:"Básico" }}
+                        </span>
+                        <small class="text-muted">Básico</small>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="bg-danger bg-opacity-10 rounded p-2">
+                        <span class="h5 mb-0 d-block text-danger">
+                            {{ notas_estudiante|count_performance:"Bajo" }}
+                        </span>
+                        <small class="text-muted">Bajo</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Totales -->
+            <div class="row mt-3 text-center">
+                <div class="col-6">
+                    <div class="bg-light rounded p-2">
+                        <span class="h6 mb-0 d-block">
+                            {{ notas_estudiante|count_evaluated }} / {{ notas_estudiante|length }}
+                        </span>
+                        <small class="text-muted">Evaluadas</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="bg-light rounded p-2">
+                        <span class="h6 mb-0 d-block">
+                            {{ notas_estudiante|calcular_promedio|floatformat:1|default:"-" }}
+                        </span>
+                        <small class="text-muted">Promedio</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="{% url 'estudiantes:estudiante_informe' %}" 
+               class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-eye me-1"></i>Ver informe completo
+            </a>
+            {% if periodo_actual and periodo_actual.id %}
+            <a href="{% url 'estudiantes:estudiante_informe_periodo' periodo_actual.id %}" 
+               class="btn btn-sm btn-primary ms-2">
+                <i class="bi bi-graph-up me-1"></i>Ver detalle
+            </a>
+            {% endif %}
+        </div>
+        
+        {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-journal-x display-4 d-block mb-3"></i>
+            <h6>No hay calificaciones</h6>
+            <p class="small mb-3">Las calificaciones aparecerán aquí cuando sean registradas</p>
+            {% if periodo_actual %}
+            <div class="alert alert-info small">
+                <i class="bi bi-info-circle me-1"></i>
+                Período actual: <strong>{{ periodo_actual.periodo.nombre }}</strong>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>

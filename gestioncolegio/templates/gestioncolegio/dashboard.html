@@ -1,0 +1,351 @@
+<!-- gestioncolegio/dashboard.html -->
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Dashboard - Sistema de Gestión{% endblock %}
+{% if estudiante.estado %}
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-sync-alt me-1"></i>Actualizar
+                </button>
+            </div>
+            <span class="text-muted">
+                {% now "j F Y" %}
+            </span>
+        </div>
+    </div>
+
+    <!-- Tarjetas de estadísticas para Administradores/Rectores -->
+    {% if user.tipo_usuario.nombre in 'Administrador,Rector' or user.is_superuser %}
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                Estudiantes Activos
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">
+                                {{ total_estudiantes|default:0 }}
+                            </div>
+                            <div class="mt-2">
+                                <a href="{% url 'usuarios:estudiantes_list' %}" class="text-decoration-none small">
+                                    Ver todos <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-graduate fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                Docentes Activos
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">
+                                {{ total_docentes|default:0 }}
+                            </div>
+                            <div class="mt-2">
+                                <a href="{% url 'usuarios:docentes_list' %}" class="text-decoration-none small">
+                                    Ver todos <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                Matrículas {{ año_lectivo_actual.anho|default:"Actual" }}
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">
+                                {{ matriculas_actual|default:0 }}
+                            </div>
+                            <div class="mt-2">
+                                <a href="{% url 'gestioncolegio:matricula_list' %}" class="text-decoration-none small">
+                                    Ver todas <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                Total Usuarios
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">
+                                {{ total_usuarios|default:0 }}
+                            </div>
+                            <div class="mt-2">
+                                <a href="{% url 'usuarios:gestion_usuarios' %}" class="text-decoration-none small">
+                                    Gestionar <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones rápidas para administradores -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3 col-6">
+                            <a href="{% url 'usuarios:estudiante_create' %}" class="btn btn-outline-primary w-100 h-100 py-3">
+                                <i class="fas fa-user-plus fa-2x mb-2"></i><br>
+                                Nuevo Estudiante
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <a href="{% url 'usuarios:docente_create' %}" class="btn btn-outline-success w-100 h-100 py-3">
+                                <i class="fas fa-chalkboard-teacher fa-2x mb-2"></i><br>
+                                Nuevo Docente
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <a href="{% url 'gestioncolegio:matricula_create' %}" class="btn btn-outline-info w-100 h-100 py-3">
+                                <i class="fas fa-clipboard-check fa-2x mb-2"></i><br>
+                                Nueva Matrícula
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <a href="{% url 'academico:nota_create' %}" class="btn btn-outline-warning w-100 h-100 py-3">
+                                <i class="fas fa-graduation-cap fa-2x mb-2"></i><br>
+                                Registrar Nota
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Panel específico para Docentes -->
+    {% if user.tipo_usuario.nombre == 'Docente' %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chalkboard-teacher me-2"></i>Mis Asignaturas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if mis_asignaturas %}
+                    <div class="row">
+                        {% for asignatura in mis_asignaturas %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body">
+                                    <h6 class="card-title text-primary">{{ asignatura.asignatura.nombre }}</h6>
+                                    <p class="card-text text-muted small">
+                                        <i class="fas fa-graduation-cap me-1"></i>Grado: {{ asignatura.grado_año_lectivo.grado.nombre }}<br>
+                                        <i class="fas fa-school me-1"></i>Sede: {{ asignatura.sede.nombre }}<br>
+                                        <i class="fas fa-users me-1"></i>Estudiantes: {{ asignatura.estudiantes_count|default:"0" }}
+                                    </p>
+                                    <div class="mt-3">
+                                        <a href="{% url 'academico:notas_list' %}?asignatura={{ asignatura.id }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-graduation-cap me-1"></i>Gestionar Notas
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-book fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No tiene asignaturas asignadas</h5>
+                        <p class="text-muted">Contacte con el administrador del sistema.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Panel específico para Estudiantes -->
+    {% if user.tipo_usuario.nombre == 'Estudiante' and estudiante %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-graduate me-2"></i>Mi Información Académica
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Información Personal</h6>
+                            <p>
+                                <strong>Grado Actual:</strong> 
+                                {% if estudiante.grado_actual %}
+                                {{ estudiante.grado_actual.grado.nombre }}
+                                {% else %}
+                                <span class="text-muted">Sin matrícula activa</span>
+                                {% endif %}<br>
+                                <strong>Sede:</strong> 
+                                {% if estudiante.sede_actual %}
+                                {{ estudiante.sede_actual.nombre }}
+                                {% else %}
+                                <span class="text-muted">No asignada</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Notas Recientes</h6>
+                            {% if notas_recientes %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Asignatura</th>
+                                            <th>Calificación</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for nota in notas_recientes %}
+                                        <tr>
+                                            <td>{{ nota.asignatura_grado_año_lectivo.asignatura.nombre }}</td>
+                                            <td>
+                                                <span class="badge {% if nota.calificacion >= 3.0 %}bg-success{% else %}bg-danger{% endif %}">
+                                                    {{ nota.calificacion }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No hay notas registradas.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Información general para todos los usuarios -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Información del Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="fas fa-calendar me-2 text-primary"></i>
+                                Año Lectivo Actual
+                            </span>
+                            <span class="badge bg-primary">
+                                {{ año_lectivo_actual.anho|default:"No configurado" }}
+                            </span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="fas fa-user-tie me-2 text-success"></i>
+                                Tu Rol
+                            </span>
+                            <span class="badge bg-success">
+                                {{ user.tipo_usuario.nombre|default:"Usuario" }}
+                            </span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="fas fa-clock me-2 text-info"></i>
+                                Último Acceso
+                            </span>
+                            <small class="text-muted">{% now "H:i" %}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-question-circle me-2"></i>Ayuda y Soporte
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-book me-2 text-primary"></i>
+                            Manual de Usuario
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-video me-2 text-success"></i>
+                            Video Tutoriales
+                        </a>
+                        <a href="{% url 'web:contact' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-envelope me-2 text-info"></i>
+                            Contactar Soporte
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

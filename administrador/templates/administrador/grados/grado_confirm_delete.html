@@ -1,0 +1,267 @@
+<!-- gestioncolegio/templates/gestioncolegio/grados/grado_confirm_delete.html -->
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Eliminar Grado - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'administrador:grado_list' %}">Grados</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Eliminar Grado</li>
+            </ol>
+        </nav>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'administrador:grado_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Información del grado a eliminar -->
+                    <div class="alert alert-danger">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-skull-crossbones me-2"></i>
+                            ¡ADVERTENCIA!
+                        </h6>
+                        <p class="mb-0">
+                            Estás a punto de eliminar permanentemente un grado del sistema.
+                            Esta acción <strong>NO SE PUEDE DESHACER</strong>.
+                        </p>
+                    </div>
+                    
+                    <!-- Detalles del grado -->
+                    <div class="card mb-4 border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Detalles del Grado
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="fas fa-signature me-2 text-primary"></i>Nombre:</strong><br>
+                                        <span class="badge bg-primary fs-6">{{ object.get_nombre_display }}</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="fas fa-layer-group me-2 text-info"></i>Nivel Escolar:</strong><br>
+                                        <span class="badge bg-info fs-6">{{ object.nivel_escolar.nombre }}</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1">
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar-plus me-1"></i>
+                                            Creado: {{ object.created_at|date:"d/m/Y" }}
+                                        </small>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1">
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar-check me-1"></i>
+                                            Última actualización: {{ object.updated_at|date:"d/m/Y" }}
+                                        </small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Verificación de dependencias -->
+                    <div class="card mb-4 border-info">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-link me-2"></i>
+                                Verificación de Dependencias
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% if object.matriculas.exists or object.logros.exists or object.grados_año_lectivo.exists %}
+                            <div class="alert alert-warning">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                    ¡ATENCIÓN!
+                                </h6>
+                                <p>Este grado tiene las siguientes dependencias:</p>
+                                <ul>
+                                    {% if object.matriculas.exists %}
+                                    <li>
+                                        <i class="fas fa-users me-1"></i>
+                                        {{ object.matriculas.count }} matrícula(s) asociada(s)
+                                    </li>
+                                    {% endif %}
+                                    {% if object.logros.exists %}
+                                    <li>
+                                        <i class="fas fa-trophy me-1"></i>
+                                        {{ object.logros.count }} logro(s) académico(s)
+                                    </li>
+                                    {% endif %}
+                                    {% if object.grados_año_lectivo.exists %}
+                                    <li>
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        {{ object.grados_año_lectivo.count }} relación(es) con años lectivos
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                                <p class="mb-0">
+                                    <strong>Advertencia:</strong> Si eliminas este grado, estas dependencias podrían quedar huérfanas.
+                                </p>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                No se encontraron dependencias críticas para este grado.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Formulario de confirmación -->
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Campo de confirmación adicional -->
+                        <div class="mb-4">
+                            <label for="confirm_text" class="form-label fw-bold">
+                                <i class="fas fa-keyboard me-1"></i>
+                                Confirmar Eliminación
+                                <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="fas fa-edit text-danger"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="confirm_text" 
+                                       placeholder="Escriba 'ELIMINAR' para confirmar"
+                                       required>
+                            </div>
+                            <div class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Por seguridad, escriba la palabra <strong>ELIMINAR</strong> en mayúsculas para confirmar.
+                            </div>
+                        </div>
+                        
+                        <!-- Motivo de eliminación -->
+                        <div class="mb-4">
+                            <label for="motivo" class="form-label fw-bold">
+                                <i class="fas fa-comment-dots me-1"></i>
+                                Motivo de la Eliminación (Opcional)
+                            </label>
+                            <textarea class="form-control" 
+                                      id="motivo" 
+                                      name="motivo" 
+                                      rows="3" 
+                                      placeholder="Describa brevemente el motivo de la eliminación..."></textarea>
+                        </div>
+                        
+                        <!-- Botones de acción -->
+                        <div class="d-flex justify-content-between mt-5 pt-4 border-top">
+                            <div>
+                                <a href="{% url 'administrador:grado_list' %}" 
+                                   class="btn btn-lg btn-success">
+                                    <i class="fas fa-times me-2"></i> Cancelar
+                                </a>
+                            </div>
+                            <div>
+                                <button type="submit" 
+                                        id="deleteButton"
+                                        class="btn btn-lg btn-danger"
+                                        disabled>
+                                    <i class="fas fa-trash-alt me-2"></i>
+                                    Confirmar Eliminación
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Pie de página informativo -->
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt me-1 text-danger"></i>
+                        <strong>Nota de seguridad:</strong> Esta acción es irreversible. Asegúrese de haber verificado todas las dependencias antes de proceder.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmInput = document.getElementById('confirm_text');
+    const deleteButton = document.getElementById('deleteButton');
+    const form = document.querySelector('form');
+    
+    // Validar el campo de confirmación
+    confirmInput.addEventListener('input', function() {
+        if (this.value.trim().toUpperCase() === 'ELIMINAR') {
+            deleteButton.disabled = false;
+            confirmInput.classList.remove('is-invalid');
+            confirmInput.classList.add('is-valid');
+        } else {
+            deleteButton.disabled = true;
+            confirmInput.classList.remove('is-valid');
+            if (this.value.trim() !== '') {
+                confirmInput.classList.add('is-invalid');
+            } else {
+                confirmInput.classList.remove('is-invalid');
+            }
+        }
+    });
+    
+    // Confirmación adicional antes de enviar
+    form.addEventListener('submit', function(event) {
+        if (!confirm('¿ESTÁ ABSOLUTAMENTE SEGURO?\n\nEsta acción eliminará permanentemente el grado y no podrá recuperarse.')) {
+            event.preventDefault();
+            return false;
+        }
+        
+        // Mostrar loader en el botón
+        deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Eliminando...';
+        deleteButton.disabled = true;
+    });
+    
+    // Efecto visual en el botón de eliminar
+    deleteButton.addEventListener('mouseenter', function() {
+        if (!this.disabled) {
+            this.style.transform = 'scale(1.05)';
+        }
+    });
+    
+    deleteButton.addEventListener('mouseleave', function() {
+        this.style.transform = 'scale(1)';
+    });
+    
+    // Tecla Escape para cancelar
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            window.location.href = "{% url 'administrador:grado_list' %}";
+        }
+    });
+});
+</script>
+{% endblock %}

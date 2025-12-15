@@ -1,0 +1,302 @@
+<!-- administrador/asignaturas/asignatura_form.html -->
+{% extends 'gestioncolegio/base2.html' %}
+
+{% block title %}{{ title }} - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'administrador:asignatura_list' %}">Asignaturas</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Card principal -->
+            <div class="card shadow">
+                <div class="card-header {% if object %}bg-warning{% else %}bg-primary{% endif %} text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas {% if object %}fa-edit{% else %}fa-plus-circle{% endif %} me-2"></i>
+                        {{ title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate id="asignaturaForm">
+                        {% csrf_token %}
+                        
+                        <!-- Nombre de la Asignatura -->
+                        <div class="mb-4">
+                            <label for="{{ form.nombre.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-signature me-1"></i> Nombre de la Asignatura
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nombre }}
+                            {% if form.nombre.help_text %}
+                            <div class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i> {{ form.nombre.help_text }}
+                            </div>
+                            {% endif %}
+                            {% if form.nombre.errors %}
+                            <div class="invalid-feedback d-block">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {% for error in form.nombre.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Área -->
+                        <div class="mb-4">
+                            <label for="{{ form.area.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-sitemap me-1"></i> Área
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.area }}
+                            {% if form.area.help_text %}
+                            <div class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i> {{ form.area.help_text }}
+                            </div>
+                            {% endif %}
+                            {% if form.area.errors %}
+                            <div class="invalid-feedback d-block">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {% for error in form.area.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Intensidad Horaria -->
+                        <div class="mb-4">
+                            <label for="{{ form.ih.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-clock me-1"></i> Intensidad Horaria (IH)
+                            </label>
+                            {{ form.ih }}
+                            <div class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i> Número de horas semanales asignadas a esta asignatura
+                            </div>
+                            {% if form.ih.errors %}
+                            <div class="invalid-feedback d-block">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {% for error in form.ih.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-5 pt-4 border-top">
+                            <a href="{% url 'administrador:asignatura_list' %}" class="btn btn-lg btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-lg {% if object %}btn-warning{% else %}btn-primary{% endif %}">
+                                <i class="fas {% if object %}fa-save{% else %}fa-check-circle{% endif %} me-2"></i>
+                                {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Guía de asignaturas comunes -->
+            <div class="card shadow mt-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Asignaturas Comunes por Nivel
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="asignaturasGuide">
+                        <!-- Preescolar -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePreescolar">
+                                    <i class="fas fa-school me-2"></i> Preescolar
+                                </button>
+                            </h2>
+                            <div id="collapsePreescolar" class="accordion-collapse collapse" data-bs-parent="#asignaturasGuide">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6 class="text-info">Desarrollo Personal y Social</h6>
+                                            <ul>
+                                                <li>Autonomía Personal</li>
+                                                <li>Relaciones Sociales</li>
+                                                <li>Identidad Personal</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6 class="text-info">Expresión y Comunicación</h6>
+                                            <ul>
+                                                <li>Lenguaje Verbal</li>
+                                                <li>Expresión Artística</li>
+                                                <li>Educación Física</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Primaria -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePrimaria">
+                                    <i class="fas fa-university me-2"></i> Primaria
+                                </button>
+                            </h2>
+                            <div id="collapsePrimaria" class="accordion-collapse collapse" data-bs-parent="#asignaturasGuide">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <h6 class="text-success">Ciencias</h6>
+                                            <ul>
+                                                <li>Matemáticas (5h)</li>
+                                                <li>Ciencias Naturales (4h)</li>
+                                                <li>Tecnología e Informática (2h)</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="text-success">Humanidades</h6>
+                                            <ul>
+                                                <li>Lengua Castellana (5h)</li>
+                                                <li>Inglés (3h)</li>
+                                                <li>Ciencias Sociales (4h)</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="text-success">Especiales</h6>
+                                            <ul>
+                                                <li>Educación Física (2h)</li>
+                                                <li>Educación Artística (2h)</li>
+                                                <li>Ética y Valores (1h)</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Agregar clases Bootstrap a los campos
+    document.querySelectorAll('input[type="text"], select').forEach(field => {
+        field.classList.add('form-control');
+    });
+    
+    // Cargar áreas según el nivel seleccionado (si existe el campo)
+    const nivelFilter = document.getElementById('id_nivel_escolar');
+    const areaSelect = document.getElementById('id_area');
+    
+    if (nivelFilter && areaSelect) {
+        nivelFilter.addEventListener('change', function() {
+            const nivelId = this.value;
+            if (nivelId) {
+                // Hacer petición AJAX para cargar áreas del nivel seleccionado
+                fetch(`/api/areas/?nivel=${nivelId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        areaSelect.innerHTML = '<option value="">Seleccione un área</option>';
+                        data.forEach(area => {
+                            const option = document.createElement('option');
+                            option.value = area.id;
+                            option.textContent = area.nombre;
+                            areaSelect.appendChild(option);
+                        });
+                    });
+            }
+        });
+    }
+    
+    // Validación del formulario
+    const form = document.getElementById('asignaturaForm');
+    form.addEventListener('submit', function(e) {
+        let valid = true;
+        
+        // Validar nombre
+        const nombre = document.getElementById('id_nombre');
+        if (!nombre.value.trim()) {
+            valid = false;
+            showError(nombre, 'El nombre de la asignatura es obligatorio');
+        } else if (nombre.value.trim().length < 3) {
+            valid = false;
+            showError(nombre, 'El nombre debe tener al menos 3 caracteres');
+        } else {
+            removeError(nombre);
+        }
+        
+        // Validar área
+        const area = document.getElementById('id_area');
+        if (!area.value) {
+            valid = false;
+            showError(area, 'Debe seleccionar un área');
+        } else {
+            removeError(area);
+        }
+        
+        // Validar intensidad horaria (opcional)
+        const ih = document.getElementById('id_ih');
+        if (ih.value && (isNaN(ih.value) || ih.value < 0 || ih.value > 10)) {
+            valid = false;
+            showError(ih, 'La intensidad horaria debe ser un número entre 0 y 10');
+        } else {
+            removeError(ih);
+        }
+        
+        if (!valid) {
+            e.preventDefault();
+            // Mostrar alerta
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Error:</strong> Por favor corrija los errores en el formulario.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            form.prepend(alertDiv);
+            
+            // Scroll al primer error
+            const firstError = document.querySelector('.is-invalid');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    });
+    
+    function showError(field, message) {
+        field.classList.add('is-invalid');
+        let errorDiv = field.nextElementSibling;
+        if (!errorDiv || !errorDiv.classList.contains('invalid-feedback')) {
+            errorDiv = document.createElement('div');
+            errorDiv.className = 'invalid-feedback d-block';
+            field.parentNode.appendChild(errorDiv);
+        }
+        errorDiv.innerHTML = `<i class="fas fa-exclamation-circle me-1"></i> ${message}`;
+    }
+    
+    function removeError(field) {
+        field.classList.remove('is-invalid');
+        const errorDiv = field.nextElementSibling;
+        if (errorDiv && errorDiv.classList.contains('invalid-feedback')) {
+            errorDiv.remove();
+        }
+    }
+    
+    // Auto-enfoque en el primer campo
+    document.getElementById('id_nombre').focus();
+});
+</script>
+{% endblock %}

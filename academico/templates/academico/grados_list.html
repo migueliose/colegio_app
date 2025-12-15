@@ -1,0 +1,191 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Grados Académicos - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="fas fa-graduation-cap me-2"></i>Gestión de Grados Académicos
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'academico:grado_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Nuevo Grado
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ total_grados }}</h4>
+                            <small>Total Grados</small>
+                        </div>
+                        <i class="fas fa-graduation-cap fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ preescolar_count }}</h4>
+                            <small>Preescolar</small>
+                        </div>
+                        <i class="fas fa-child fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ primaria_count }}</h4>
+                            <small>Primaria</small>
+                        </div>
+                        <i class="fas fa-user-graduate fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ bachillerato_count }}</h4>
+                            <small>Bachillerato</small>
+                        </div>
+                        <i class="fas fa-university fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Grados por Nivel -->
+    <div class="row">
+        {% for nivel in niveles_con_grados %}
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header 
+                    {% if nivel.nombre == 'Preescolar' %}bg-success
+                    {% elif nivel.nombre == 'Primaria' %}bg-info
+                    {% else %}bg-warning{% endif %} text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas 
+                            {% if nivel.nombre == 'Preescolar' %}fa-child
+                            {% elif nivel.nombre == 'Primaria' %}fa-user-graduate
+                            {% else %}fa-university{% endif %} me-2"></i>
+                        {{ nivel.nombre }}
+                        <span class="badge bg-light text-dark ms-2">{{ nivel.grados.count }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if nivel.grados.all %}
+                    <div class="list-group list-group-flush">
+                        {% for grado in nivel.grados.all %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ grado.nombre }}</h6>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Creado: {{ grado.created_at|date:"d/m/Y" }}
+                                </small>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'academico:grado_update' grado.pk %}" 
+                                   class="btn btn-outline-warning" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'academico:grado_delete' grado.pk %}" 
+                                   class="btn btn-outline-danger" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-graduation-cap fa-2x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">No hay grados registrados en este nivel.</p>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-light">
+                    <a href="{% url 'academico:grado_create' %}?nivel={{ nivel.id }}" 
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-plus me-1"></i>Agregar Grado a {{ nivel.nombre }}
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-graduation-cap fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No hay niveles escolares configurados</h4>
+                    <p class="text-muted">Primero debe configurar los niveles escolares en el sistema.</p>
+                    <a href="{% url 'admin:academico_nivelescolar_add' %}" class="btn btn-primary">
+                        <i class="fas fa-cogs me-1"></i>Configurar en Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Información General -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-info-circle me-2"></i>Información sobre los Grados
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-child text-success me-2"></i>
+                                <div>
+                                    <strong>Preescolar</strong>
+                                    <p class="mb-0 text-muted small">Prejardín, Jardín, Transición</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-user-graduate text-info me-2"></i>
+                                <div>
+                                    <strong>Primaria</strong>
+                                    <p class="mb-0 text-muted small">Primero a Quinto grado</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-university text-warning me-2"></i>
+                                <div>
+                                    <strong>Bachillerato</strong>
+                                    <p class="mb-0 text-muted small">Sexto a Undécimo grado</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

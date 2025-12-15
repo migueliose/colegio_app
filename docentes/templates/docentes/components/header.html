@@ -1,0 +1,48 @@
+<!--header.html-->
+{% load static %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="welcome-card text-white p-4 shadow">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <!-- Foto del docente -->
+                        {% if docente.foto_url %}
+                        <img src="{{ docente.foto_url }}" alt="Foto de {{ user.get_full_name }}" 
+                            class="rounded-circle me-3 border border-3 border-white shadow" 
+                            width="60" height="60">
+                        {% else %}
+                        <div class="rounded-circle bg-white bg-opacity-20 d-flex align-items-center justify-content-center me-3 border border-3 border-white shadow" 
+                            style="width: 60px; height: 60px;">
+                            <i class="fas fa-chalkboard-teacher text-white fs-4"></i>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Información del docente -->
+                        <div>
+                            <h1 class="h3 mb-2">¡Bienvenido, Prof. {{ user.get_full_name }}! 👨‍🏫</h1>
+                            <p class="mb-0 opacity-75">
+                                <i class="fas fa-book me-2"></i>
+                                {{ total_asignaturas }} asignatura(s) • {{ total_estudiantes }} estudiante(s)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Fecha y estado -->
+                <div class="col-md-4 text-md-end">
+                    <div class="d-flex flex-column flex-md-row justify-content-md-end gap-2">
+                        <span class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-calendar me-1"></i>
+                            {% now "d M Y" %}
+                        </span>
+                        <span class="badge bg-success text-white fs-6">
+                            <i class="fas fa-user-check me-1"></i>
+                            Activo
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

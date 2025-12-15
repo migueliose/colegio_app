@@ -1,0 +1,583 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Asistencia{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-calendar-check me-2"></i>Gestión de Asistencia
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label for="curso_select" class="form-label">Seleccionar Curso</label>
+                            <select id="curso_select" class="form-select">
+                                <option value="">-- Seleccione un curso --</option>
+                                {% for curso in cursos %}
+                                <option value="{{ curso.grado_año_lectivo.id }}">
+                                    {{ curso.grado.nombre }} - {{ curso.sede.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="periodo_select" class="form-label">Periodo Académico</label>
+                            <select id="periodo_select" class="form-select">
+                                <option value="">-- Seleccione periodo --</option>
+                                {% for periodo in periodos %}
+                                <option value="{{ periodo.id }}">{{ periodo.periodo.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fecha_select" class="form-label">Fecha</label>
+                            <input type="date" id="fecha_select" class="form-control" value="{{ hoy|date:'Y-m-d' }}">
+                        </div>
+                    </div>
+
+                    <!-- Días de la semana actual -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3">Semana Actual</h5>
+                            <div class="d-flex justify-content-between">
+                                {% for dia in dias_semana %}
+                                <div class="text-center">
+                                    <div class="card {% if dia.es_hoy %}border-primary{% endif %}" 
+                                         style="width: 120px; cursor: pointer;"
+                                         onclick="seleccionarFecha('{{ dia.fecha|date:'Y-m-d' }}')">
+                                        <div class="card-body py-2">
+                                            <h6 class="card-title mb-1">{{ dia.nombre_corto }}</h6>
+                                            <p class="card-text mb-0 fs-5">{{ dia.fecha.day }}</p>
+                                            <small class="text-muted">{{ dia.fecha|date:'M' }}</small>
+                                            {% if dia.es_hoy %}
+                                            <div class="badge bg-primary mt-1">Hoy</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-primary" onclick="cargarEstudiantes()">
+                                    <i class="bi bi-search me-2"></i>Consultar Estudiantes
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="abrirRegistroMasivo()">
+                                    <i class="bi bi-check-all me-2"></i>Registro Masivo
+                                </button>
+                                <button type="button" class="btn btn-info" onclick="verCalendario()">
+                                    <i class="bi bi-calendar3 me-2"></i>Ver Calendario
+                                </button>
+                                <button type="button" class="btn btn-warning" onclick="generarReporte()">
+                                    <i class="bi bi-file-earmark-text me-2"></i>Generar Reporte
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de estudiantes (se cargará dinámicamente) -->
+                    <div id="tabla-estudiantes-container" class="d-none">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Registro de Asistencia</h5>
+                                    <div>
+                                        <span id="info-curso" class="badge bg-info me-2"></span>
+                                        <span id="info-fecha" class="badge bg-secondary"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="tabla-estudiantes">
+                                        <thead>
+                                            <tr>
+                                                <th>Estudiante</th>
+                                                <th>Documento</th>
+                                                <th>Asistió</th>
+                                                <th>Faltó</th>
+                                                <th>Justificada</th>
+                                                <th>Justificación</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="cuerpo-tabla">
+                                            <!-- Se llenará con JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-success" onclick="guardarAsistencia()">
+                                        <i class="bi bi-save me-2"></i>Guardar Asistencia
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="cancelarRegistro()">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estadísticas -->
+                    <div class="row mt-4">
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">Asistencia Total</h6>
+                                    <h2 id="contador-asistencia">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-danger text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">Faltas Total</h6>
+                                    <h2 id="contador-faltas">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">Justificadas</h6>
+                                    <h2 id="contador-justificadas">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">Porcentaje</h6>
+                                    <h2 id="porcentaje-asistencia">0%</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block modals %}
+    <!-- Modal para registro masivo -->
+    <div class="modal fade" id="modalMasivo" tabindex="-1" aria-labelledby="modalMasivoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalMasivoLabel">Registro Masivo de Asistencia</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Estado para todos los estudiantes:</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="estado_masivo" id="masivo_asistio" value="A" checked>
+                            <label class="btn btn-outline-success" for="masivo_asistio">Asistió</label>
+                            
+                            <input type="radio" class="btn-check" name="estado_masivo" id="masivo_falto" value="F">
+                            <label class="btn btn-outline-danger" for="masivo_falto">Faltó</label>
+                            
+                            <input type="radio" class="btn-check" name="estado_masivo" id="masivo_justificada" value="J">
+                            <label class="btn btn-outline-warning" for="masivo_justificada">Justificada</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="justificacion_masiva" class="form-label">Justificación (opcional):</label>
+                        <textarea id="justificacion_masiva" class="form-control" rows="3" 
+                                placeholder="Ingrese una justificación si aplica..."></textarea>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Esta acción aplicará el mismo estado a todos los estudiantes del curso seleccionado.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="guardarMasivo()" id="btnGuardarMasivo">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ========== VARIABLES GLOBALES ==========
+let estudiantesActuales = [];
+let cursoSeleccionado = null;
+let periodoSeleccionado = null;
+let fechaSeleccionada = '{{ hoy|date:"Y-m-d" }}';
+let modalMasivoInstance = null;
+
+// ========== FUNCIONES BÁSICAS ==========
+function seleccionarFecha(fecha) {
+    fechaSeleccionada = fecha;
+    document.getElementById('fecha_select').value = fecha;
+}
+
+function cargarEstudiantes() {
+    cursoSeleccionado = document.getElementById('curso_select').value;
+    periodoSeleccionado = document.getElementById('periodo_select').value;
+    
+    if (!cursoSeleccionado || !periodoSeleccionado) {
+        alert('Por favor seleccione un curso y un periodo académico.');
+        return;
+    }
+    
+    // Mostrar carga
+    const tablaContainer = document.getElementById('tabla-estudiantes-container');
+    const cuerpoTabla = document.getElementById('cuerpo-tabla');
+    tablaContainer.classList.remove('d-none');
+    cuerpoTabla.innerHTML = '<tr><td colspan="7" class="text-center"><div class="spinner-border"></div></td></tr>';
+    
+    // Obtener curso y periodo seleccionados
+    const cursoOption = document.getElementById('curso_select').selectedOptions[0];
+    const periodoOption = document.getElementById('periodo_select').selectedOptions[0];
+    
+    // Actualizar información
+    document.getElementById('info-curso').textContent = cursoOption.text;
+    document.getElementById('info-fecha').textContent = fechaSeleccionada;
+    
+    // Hacer petición AJAX
+    fetch(`{% url 'docentes:ajax_obtener_estudiantes_curso' %}?curso_id=${cursoSeleccionado}&periodo_id=${periodoSeleccionado}&fecha=${fechaSeleccionada}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                estudiantesActuales = data.estudiantes;
+                actualizarTabla();
+                actualizarEstadisticas();
+            } else {
+                alert('Error: ' + data.error);
+                tablaContainer.classList.add('d-none');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar los estudiantes.');
+            tablaContainer.classList.add('d-none');
+        });
+}
+
+function actualizarTabla() {
+    const cuerpoTabla = document.getElementById('cuerpo-tabla');
+    let html = '';
+    
+    estudiantesActuales.forEach(estudiante => {
+        const asistencia = estudiante.asistencia || null;
+        const estadoActual = asistencia ? asistencia.estado : null;
+        
+        html += `
+        <tr data-estudiante-id="${estudiante.id}">
+            <td>
+                <div class="d-flex align-items-center">
+                    ${estudiante.foto_url ? 
+                        `<img src="${estudiante.foto_url}" class="rounded-circle me-2" width="40" height="40">` : 
+                        `<div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                            <i class="bi bi-person text-white"></i>
+                        </div>`}
+                    <span>${estudiante.nombre_completo}</span>
+                </div>
+            </td>
+            <td>${estudiante.numero_documento}</td>
+            <td class="text-center">
+                <input type="radio" class="btn-check estado-radio" name="estado_${estudiante.id}" 
+                       id="asistio_${estudiante.id}" value="A" 
+                       ${estadoActual === 'A' ? 'checked' : ''}>
+                <label class="btn btn-outline-success btn-sm" for="asistio_${estudiante.id}">
+                    <i class="bi bi-check-circle"></i>
+                </label>
+            </td>
+            <td class="text-center">
+                <input type="radio" class="btn-check estado-radio" name="estado_${estudiante.id}" 
+                       id="falto_${estudiante.id}" value="F"
+                       ${estadoActual === 'F' ? 'checked' : ''}>
+                <label class="btn btn-outline-danger btn-sm" for="falto_${estudiante.id}">
+                    <i class="bi bi-x-circle"></i>
+                </label>
+            </td>
+            <td class="text-center">
+                <input type="radio" class="btn-check estado-radio" name="estado_${estudiante.id}" 
+                       id="justificada_${estudiante.id}" value="J"
+                       ${estadoActual === 'J' ? 'checked' : ''}>
+                <label class="btn btn-outline-warning btn-sm" for="justificada_${estudiante.id}">
+                    <i class="bi bi-question-circle"></i>
+                </label>
+            </td>
+            <td>
+                <input type="text" class="form-control form-control-sm justificacion-input" 
+                       placeholder="Justificación..." 
+                       value="${asistencia && asistencia.justificacion ? asistencia.justificacion : ''}"
+                       data-estudiante-id="${estudiante.id}">
+            </td>
+            <td>
+                ${asistencia && asistencia.id ? 
+                    `<button class="btn btn-info btn-sm" onclick="verHistorial(${estudiante.id})">
+                        <i class="bi bi-clock-history"></i>
+                    </button>` : ''}
+            </td>
+        </tr>`;
+    });
+    
+    cuerpoTabla.innerHTML = html;
+    
+    // Agregar eventos a los radios
+    document.querySelectorAll('.estado-radio').forEach(radio => {
+        radio.addEventListener('change', actualizarEstadisticas);
+    });
+}
+
+function actualizarEstadisticas() {
+    let asistencias = 0;
+    let faltas = 0;
+    let justificadas = 0;
+    
+    estudiantesActuales.forEach(estudiante => {
+        const radios = document.querySelectorAll(`input[name="estado_${estudiante.id}"]:checked`);
+        if (radios.length > 0) {
+            const estado = radios[0].value;
+            if (estado === 'A') asistencias++;
+            else if (estado === 'F') faltas++;
+            else if (estado === 'J') justificadas++;
+        }
+    });
+    
+    const total = estudiantesActuales.length;
+    const porcentaje = total > 0 ? ((asistencias / total) * 100).toFixed(1) : 0;
+    
+    document.getElementById('contador-asistencia').textContent = asistencias;
+    document.getElementById('contador-faltas').textContent = faltas;
+    document.getElementById('contador-justificadas').textContent = justificadas;
+    document.getElementById('porcentaje-asistencia').textContent = porcentaje + '%';
+}
+
+function guardarAsistencia() {
+    if (!cursoSeleccionado || !periodoSeleccionado) {
+        alert('Por favor seleccione un curso y periodo.');
+        return;
+    }
+    
+    const asistencias = [];
+    
+    estudiantesActuales.forEach(estudiante => {
+        const radios = document.querySelectorAll(`input[name="estado_${estudiante.id}"]:checked`);
+        const justificacionInput = document.querySelector(`.justificacion-input[data-estudiante-id="${estudiante.id}"]`);
+        
+        if (radios.length > 0) {
+            asistencias.push({
+                estudiante_id: estudiante.id,
+                estado: radios[0].value,
+                justificacion: justificacionInput ? justificacionInput.value : ''
+            });
+        }
+    });
+    
+    if (asistencias.length === 0) {
+        alert('No hay asistencias para guardar.');
+        return;
+    }
+    
+    // Mostrar confirmación
+    if (!confirm(`¿Está seguro de guardar la asistencia para ${asistencias.length} estudiantes?`)) {
+        return;
+    }
+    
+    // Enviar datos
+    fetch('{% url "docentes:registrar_asistencia" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            fecha: fechaSeleccionada,
+            curso_id: cursoSeleccionado,
+            periodo_id: periodoSeleccionado,
+            asistencias: asistencias
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            cargarEstudiantes(); // Recargar para ver cambios
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al guardar la asistencia.');
+    });
+}
+
+// ========== FUNCIONES PARA MODAL MASIVO ==========
+function abrirRegistroMasivo() {
+    if (!cursoSeleccionado || !periodoSeleccionado) {
+        alert('Por favor seleccione un curso y periodo primero.');
+        return;
+    }
+
+    const modalElement = document.getElementById('modalMasivo');
+    console.log('modalElement', modalElement);
+
+    const modalMasivoInstance = new bootstrap.Modal(modalElement);
+    modalMasivoInstance.show();
+}
+
+function guardarMasivo() {
+    const estado = document.querySelector('input[name="estado_masivo"]:checked').value;
+    const justificacion = document.getElementById('justificacion_masiva').value;
+    
+    if (!confirm(`¿Aplicar "${estado}" a todos los estudiantes del curso?`)) {
+        return;
+    }
+    
+    // Deshabilitar botón mientras se procesa
+    const btnGuardar = document.getElementById('btnGuardarMasivo');
+    const originalText = btnGuardar.innerHTML;
+    btnGuardar.disabled = true;
+    btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
+    
+    fetch('{% url "docentes:registrar_asistencia_masiva" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            fecha: fechaSeleccionada,
+            curso_id: cursoSeleccionado,
+            periodo_id: periodoSeleccionado,
+            estado: estado,
+            justificacion: justificacion
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            // Cerrar el modal
+            if (modalMasivoInstance) {
+                modalMasivoInstance.hide();
+            }
+            // Recargar estudiantes
+            setTimeout(() => {
+                cargarEstudiantes();
+            }, 300);
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al guardar el registro masivo.');
+    })
+    .finally(() => {
+        // Rehabilitar botón
+        btnGuardar.disabled = false;
+        btnGuardar.innerHTML = originalText;
+    });
+}
+
+// ========== FUNCIONES DE NAVEGACIÓN ==========
+function verCalendario() {
+    if (!cursoSeleccionado || !periodoSeleccionado) {
+        alert('Por favor seleccione un curso y periodo.');
+        return;
+    }
+    
+    window.location.href = `{% url 'docentes:asistencia_calendario' 0 0 %}`
+        .replace('/0/0/', `/${cursoSeleccionado}/${periodoSeleccionado}/`);
+}
+
+function generarReporte() {
+    if (!cursoSeleccionado || !periodoSeleccionado) {
+        alert('Por favor seleccione un curso y periodo.');
+        return;
+    }
+    
+    window.location.href = `{% url 'docentes:reporte_asistencia_curso' 0 0 %}`
+        .replace('/0/0/', `/${cursoSeleccionado}/${periodoSeleccionado}/`);
+}
+
+function verHistorial(estudianteId) {
+    window.location.href = `{% url 'docentes:asistencia_historico' 0 %}`
+        .replace('/0/', `/${estudianteId}/`);
+}
+
+function cancelarRegistro() {
+    document.getElementById('tabla-estudiantes-container').classList.add('d-none');
+    estudiantesActuales = [];
+}
+
+// ========== INICIALIZACIÓN ==========
+document.addEventListener('DOMContentLoaded', function() {
+    // Establecer fecha actual si no hay selección
+    if (!fechaSeleccionada) {
+        const hoy = new Date().toISOString().split('T')[0];
+        fechaSeleccionada = hoy;
+        document.getElementById('fecha_select').value = hoy;
+    }
+    
+    // Event listeners
+    document.getElementById('fecha_select').addEventListener('change', function() {
+        fechaSeleccionada = this.value;
+    });
+    
+    // Configurar evento para cerrar modal con escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modalElement = document.getElementById('modalMasivo');
+            if (modalElement && modalElement.classList.contains('show')) {
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            }
+        }
+    });
+});
+</script>
+
+<style>
+/* Estilos simples para modales */
+.modal {
+    z-index: 2000 !important;
+}
+
+.modal-backdrop {
+    z-index: 1900 !important;
+}
+
+/* Mejorar la apariencia de los botones de radio */
+.btn-check:checked + .btn-outline-success {
+    background-color: #198754;
+    color: white;
+}
+
+.btn-check:checked + .btn-outline-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-check:checked + .btn-outline-warning {
+    background-color: #ffc107;
+    color: black;
+}
+</style>
+{% endblock %}

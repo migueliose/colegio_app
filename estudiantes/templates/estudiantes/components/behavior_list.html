@@ -1,0 +1,250 @@
+<!--components/behavior_list.html-->
+{% load static estudiante_filters %}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 py-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-chat-left-text-fill text-warning me-2"></i>
+                Comportamiento
+            </h5>
+            {% if comportamientos_recientes %}
+            <div class="btn-group btn-group-sm behavior-filters">
+                <button class="btn btn-outline-warning active" data-filter="all">
+                    Todos <span class="badge bg-warning text-dark ms-1" id="filter-all">{{ comportamientos_recientes|length }}</span>
+                </button>
+                <button class="btn btn-outline-warning" data-filter="positive">
+                    Positivos <span class="badge bg-success ms-1" id="filter-positive">{{ comportamientos_recientes|filter_positive|length }}</span>
+                </button>
+                <button class="btn btn-outline-warning" data-filter="negative">
+                    A mejorar <span class="badge bg-danger ms-1" id="filter-negative">{{ comportamientos_recientes|filter_negative|length }}</span>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        {% if comportamientos_recientes %}
+            <div class="list-group list-group-flush behavior-list" id="behaviorList">
+                {% for comportamiento in comportamientos_recientes %}
+                <div class="list-group-item border-0 px-0 py-3 behavior-item 
+                            {% if comportamiento.tipo == 'Positivo' %}behavior-positive{% else %}behavior-negative{% endif %}"
+                     data-behavior-type="{% if comportamiento.tipo == 'Positivo' %}positive{% else %}negative{% endif %}">
+                    <div class="d-flex align-items-start">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-{% if comportamiento.tipo == 'Positivo' %}success{% else %}danger{% endif %} bg-opacity-10 p-2">
+                                <i class="bi bi-{% if comportamiento.tipo == 'Positivo' %}check-circle{% else %}exclamation-circle{% endif %} 
+                                          text-{% if comportamiento.tipo == 'Positivo' %}success{% else %}danger{% endif %}"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <div>
+                                    <h6 class="mb-0 fw-semibold">{{ comportamiento.categoria }}</h6>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        {{ comportamiento.fecha|date:"d/m/Y" }}
+                                    </small>
+                                </div>
+                                <span class="badge bg-{% if comportamiento.tipo == 'Positivo' %}success{% else %}danger{% endif %}">
+                                    {{ comportamiento.tipo }}
+                                </span>
+                            </div>
+                            <p class="mb-2">{{ comportamiento.descripcion }}</p>
+                            {% if comportamiento.docente and comportamiento.docente.usuario %}
+                            <div class="d-flex align-items-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-person me-1"></i>
+                                    Registrado por: {{ comportamiento.docente.usuario.get_full_name }}
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Contador de resultados -->
+            <div class="mt-3 text-center">
+                <small class="text-muted behavior-counter">
+                    Mostrando <span class="fw-bold text-warning" id="visible-count">{{ comportamientos_recientes|length }}</span> de 
+                    <span class="fw-bold" id="total-count">{{ comportamientos_recientes|length }}</span> registros
+                </small>
+            </div>
+        {% else %}
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-emoji-smile display-4 d-block mb-3 text-warning"></i>
+                <h6>¡Excelente comportamiento!</h6>
+                <p class="small mb-0">No hay observaciones recientes registradas</p>
+            </div>
+        {% endif %}
+        
+        <!-- Botón para ver más -->
+        <div class="text-center mt-4">
+            <a href="{% url 'estudiantes:estudiante_observador_pdf' %}" 
+               class="btn btn-warning btn-sm rounded-pill px-4">
+                <i class="bi bi-download me-2"></i>Descargar Reporte Completo
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .behavior-item {
+        border-left: 4px solid;
+        transition: all 0.3s ease;
+        opacity: 1;
+        transform: translateX(0);
+        margin-bottom: 8px;
+        border-radius: 0 8px 8px 0;
+    }
+    
+    .behavior-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .behavior-item.hidden {
+        opacity: 0;
+        transform: translateX(-10px);
+        display: none;
+    }
+    
+    .behavior-item:hover {
+        background-color: #f8f9fa;
+        transform: translateX(5px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .behavior-positive {
+        border-left-color: #28a745;
+        background: linear-gradient(135deg, #f8fff9 0%, #f0f9f1 100%);
+    }
+    
+    .behavior-negative {
+        border-left-color: #dc3545;
+        background: linear-gradient(135deg, #fff8f8 0%, #f9f0f0 100%);
+    }
+    
+    .behavior-filters .btn {
+        border-radius: 20px;
+        margin: 0 2px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .behavior-filters .btn.active {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #000;
+        box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+    }
+    
+    .behavior-counter {
+        font-size: 0.875rem;
+        background: #fff3cd;
+        padding: 4px 12px;
+        border-radius: 15px;
+        display: inline-block;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('.behavior-filters .btn');
+    const behaviorItems = document.querySelectorAll('.behavior-item');
+    const behaviorCounter = document.querySelector('.behavior-counter');
+    const visibleCountElement = document.getElementById('visible-count');
+    const totalCountElement = document.getElementById('total-count');
+    
+    console.log('🔍 Inicializando filtros de comportamiento...');
+    console.log(`📊 Total de items: ${behaviorItems.length}`);
+    
+    // Contar tipos de comportamiento
+    const positiveCount = document.querySelectorAll('.behavior-item[data-behavior-type="positive"]').length;
+    const negativeCount = document.querySelectorAll('.behavior-item[data-behavior-type="negative"]').length;
+    const totalCount = behaviorItems.length;
+    
+    console.log(`😊 Positivos: ${positiveCount}`);
+    console.log(`😟 Negativos: ${negativeCount}`);
+    
+    // Actualizar badges de filtros
+    if (filterButtons.length > 0) {
+        document.getElementById('filter-all').textContent = totalCount;
+        document.getElementById('filter-positive').textContent = positiveCount;
+        document.getElementById('filter-negative').textContent = negativeCount;
+    }
+    
+    function updateCounter(visibleCount, filterType = 'all') {
+        if (visibleCountElement && totalCountElement) {
+            visibleCountElement.textContent = visibleCount;
+            
+            let totalText = totalCount;
+            if (filterType === 'positive') {
+                totalText = positiveCount;
+            } else if (filterType === 'negative') {
+                totalText = negativeCount;
+            }
+            
+            totalCountElement.textContent = totalText;
+            
+            if (behaviorCounter) {
+                behaviorCounter.innerHTML = 
+                    `Mostrando <span class="fw-bold text-warning">${visibleCount}</span> de 
+                     <span class="fw-bold">${totalText}</span> registros`;
+            }
+        }
+    }
+    
+    function filterBehavior(filter) {
+        console.log(`🎯 Aplicando filtro: ${filter}`);
+        let visibleCount = 0;
+        
+        behaviorItems.forEach(item => {
+            const behaviorType = item.getAttribute('data-behavior-type');
+            console.log(`📝 Item tipo: ${behaviorType}`);
+            
+            if (filter === 'all' || behaviorType === filter) {
+                item.classList.remove('hidden');
+                visibleCount++;
+                console.log(`✅ Mostrando item: ${behaviorType}`);
+            } else {
+                item.classList.add('hidden');
+                console.log(`❌ Ocultando item: ${behaviorType}`);
+            }
+        });
+        
+        updateCounter(visibleCount, filter);
+        console.log(`📊 Items visibles: ${visibleCount}`);
+    }
+    
+    // Inicializar eventos de filtro
+    if (filterButtons.length > 0) {
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                console.log('🖱️ Botón clickeado:', this.textContent);
+                
+                // Remover clase active de todos los botones
+                filterButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.querySelector('.badge')?.classList.remove('bg-warning', 'text-dark');
+                });
+                
+                // Agregar clase active al botón clickeado
+                this.classList.add('active');
+                this.querySelector('.badge')?.classList.add('bg-warning', 'text-dark');
+                
+                // Aplicar filtro
+                const filter = this.getAttribute('data-filter');
+                filterBehavior(filter);
+            });
+        });
+    }
+    
+    // Inicializar contador
+    if (behaviorItems.length > 0) {
+        updateCounter(behaviorItems.length);
+    }
+    
+    console.log('✅ Filtros de comportamiento inicializados correctamente');
+});
+</script>

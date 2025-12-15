@@ -1,0 +1,129 @@
+<!-- templates/administrador/reportes/partials/grafico_barras.html -->
+<div class="chart-card">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">{{ titulo }}</h6>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-gear"></i>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="changeChartType('bar')">Barras</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="changeChartType('line')">Líneas</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="changeChartType('horizontalBar')">Barras Horizontales</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="chart-container" style="height: {{ altura|default:'300px' }};">
+                <canvas id="{{ id_canvas }}"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Inicializar gráfico de barras
+function initializeBarChart(canvasId, labels, datasets, options = {}) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    
+    const defaultOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false
+            }
+        }
+    };
+    
+    const mergedOptions = { ...defaultOptions, ...options };
+    
+    return new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+        options: mergedOptions
+    });
+}
+
+// Cambiar tipo de gráfico
+function changeChartType(type) {
+    if (window.currentChart) {
+        window.currentChart.destroy();
+    }
+    
+    const ctx = document.getElementById('{{ id_canvas }}').getContext('2d');
+    window.currentChart = new Chart(ctx, {
+        type: type,
+        data: {
+            labels: {{ labels|safe }},
+            datasets: {{ datasets|safe }}
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Exportar gráfico como imagen
+function exportChart(canvasId, filename) {
+    const canvas = document.getElementById(canvasId);
+    const link = document.createElement('a');
+    link.download = filename || 'grafico.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+// Inicializar cuando el DOM esté listo
+$(document).ready(function() {
+    {% if auto_initialize %}
+    const labels = {{ labels|safe }};
+    const datasets = {{ datasets|safe }};
+    
+    if (labels && datasets && labels.length > 0) {
+        window.currentChart = initializeBarChart('{{ id_canvas }}', labels, datasets);
+    }
+    {% endif %}
+});
+</script>
+
+<style>
+.chart-card {
+    margin-bottom: 1.5rem;
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+}
+
+.chart-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+}
+
+.chart-actions .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+</style>

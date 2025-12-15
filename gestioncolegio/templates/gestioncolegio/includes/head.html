@@ -1,0 +1,68 @@
+{% load static %}
+<!-- head-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="{% static 'web/images/favicon.ico' %}">
+<title>{% block title %}Sistema de Gestión - Colegio El Shadai{% endblock %}</title>
+
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+
+<!-- Font Awesome -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Estilos del sistema 
+
+<link rel="stylesheet" href="{% static 'gestioncolegio/css/styles.css' %}">
+-->
+
+
+    <link rel="stylesheet" href="{% static 'web/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/responsive.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/css-circular-prog-bar.css' %}">
+
+<!-- Estilos base -->
+<style>
+    :root {
+        --primary-color: #2c5aa0;
+        --secondary-color: #6c757d;
+        --success-color: #198754;
+        --info-color: #0dcaf0;
+        --warning-color: #ffc107;
+        --danger-color: #dc3545;
+        --light-color: #f8f9fa;
+        --dark-color: #212529;
+        --sidebar-width: 280px;
+        --header-height: 70px;
+    }
+    
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background-color: #f5f7fb;
+        min-height: 100vh;
+    }
+    
+    .main-content {
+        min-height: calc(100vh - var(--header-height));
+        padding-top: 20px;
+    }
+</style>
+
+<!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-GKP54L448G"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', 'G-GKP54L448G');
+    </script>

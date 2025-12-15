@@ -1,0 +1,627 @@
+/* navbar.css - Sistema de Gestión Colegial Colegio El Shadai */
+/* Versión: 1.1 | Navbar Mejorado con Submenús | Diciembre 2024 */
+
+/* ===== VARIABLES ESPECÍFICAS DE NAVBAR ===== */
+:root {
+    --navbar-height: 76px;
+    --navbar-bg: linear-gradient(135deg, rgba(44, 90, 160, 0.95) 0%, rgba(59, 113, 202, 0.95) 100%);
+    --navbar-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    --navbar-blur: blur(20px);
+    --dropdown-bg: rgba(255, 255, 255, 0.98);
+    --dropdown-dark-bg: rgba(45, 55, 72, 0.98);
+}
+
+/* ===== ESTILOS BASE NAVBAR ===== */
+.navbar {
+    height: var(--navbar-height);
+    background: var(--navbar-bg);
+    backdrop-filter: var(--navbar-blur);
+    box-shadow: var(--navbar-shadow);
+    padding: 0.5rem 0;
+    transition: all var(--transition-base);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+}
+
+.navbar-scrolled {
+    padding: 0.25rem 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== LOGO Y MARCA ===== */
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: white !important;
+    transition: transform var(--transition-base);
+}
+
+.navbar-brand:hover {
+    transform: scale(1.02);
+}
+
+.navbar-brand img {
+    height: 40px;
+    width: auto;
+    border-radius: 8px;
+}
+
+/* ===== NAV ITEMS PRINCIPALES ===== */
+.navbar-nav {
+    gap: 0.25rem;
+}
+
+.navbar-nav .nav-item {
+    position: relative;
+}
+
+.navbar-nav .nav-link {
+    position: relative;
+    padding: 0.625rem 1rem;
+    margin: 0 0.125rem;
+    border-radius: var(--border-radius-sm);
+    color: white;
+    font-weight: 500;
+    transition: all var(--transition-base);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar-nav .nav-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-nav .nav-link.active {
+    background: rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+    box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.1);
+}
+
+.navbar-nav .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
+}
+
+/* Íconos animados */
+.navbar-nav .nav-link i {
+    transition: transform var(--transition-base);
+    width: 20px;
+    text-align: center;
+}
+
+.navbar-nav .nav-link:hover i {
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* ===== DROPDOWNS MEJORADOS CON SUBMENÚS ===== */
+.navbar .dropdown-menu {
+    margin-top: 0.5rem;
+    border: none;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-xl);
+    background: var(--dropdown-bg);
+    backdrop-filter: blur(20px);
+    padding: 0.5rem;
+    min-width: 240px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    animation: fadeInDown 0.2s ease-out;
+}
+
+.navbar .dropdown-menu.dropdown-menu-end {
+    right: 0;
+    left: auto;
+}
+
+/* Items del dropdown */
+.navbar .dropdown-item {
+    padding: 0.35rem 1.25rem;
+    border-radius: var(--border-radius-sm);
+    margin: 0.125rem 0;
+    color: #2d3748;
+    font-weight: 500;
+    transition: all var(--transition-base);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    position: relative;
+    line-height: 1.2;
+}
+
+.navbar .dropdown-item i {
+    width: 20px;
+    text-align: center;
+    font-size: 1rem;
+    color: var(--primary-color);
+}
+
+.navbar .dropdown-item:hover {
+    background: var(--gradient-primary);
+    color: white;
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.navbar .dropdown-item:hover i {
+    color: white;
+}
+
+/* Submenús (dropdown dentro de dropdown) */
+.dropdown-submenu {
+    position: relative;
+}
+
+.dropdown-submenu > .dropdown-item::after {
+    content: '›';
+    position: absolute;
+    right: 1rem;
+    font-size: 1.2rem;
+    transition: transform var(--transition-base);
+}
+
+.dropdown-submenu:hover > .dropdown-item::after {
+    transform: translateX(3px);
+}
+
+.dropdown-submenu > .dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-top: -0.5rem;
+    margin-left: 0.125rem;
+    display: none;
+    animation: fadeInLeft 0.2s ease-out;
+}
+
+.dropdown-submenu:hover > .dropdown-menu {
+    display: block;
+}
+
+/* Divider mejorado */
+.navbar .dropdown-divider {
+    margin: 0.5rem;
+    border-color: rgba(0, 0, 0, 0.08);
+    border-width: 2px;
+}
+
+/* Header de dropdown */
+.navbar .dropdown-header {
+    padding: 0.75rem 1.25rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    margin-bottom: 0.5rem;
+}
+
+/* ===== AVATAR MEJORADO ===== */
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.navbar .user-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 15px;
+}
+
+.user-avatar:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.user-avatar.online::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    background: var(--success-color);
+    border-radius: 50%;
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 8px var(--success-color);
+}
+
+/* ===== NOTIFICACIONES MEJORADAS ===== */
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    border: 2px solid white;
+    animation: pulse 2s infinite;
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
+}
+
+.notification-wrapper {
+    position: relative;
+}
+
+/* ===== MOBILE MENU MEJORADO ===== */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        background: var(--dropdown-bg);
+        backdrop-filter: blur(30px);
+        border-radius: var(--border-radius);
+        margin-top: 1rem;
+        padding: 1rem;
+        box-shadow: var(--shadow-xl);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        position: absolute;
+        top: 100%;
+        left: 1rem;
+        right: 1rem;
+        z-index: 1000;
+        max-height: calc(100vh - var(--navbar-height) - 2rem);
+        overflow-y: auto;
+    }
+    
+    .navbar-nav {
+        gap: 0.5rem;
+    }
+    
+    .navbar-nav .nav-link {
+        color: #2d3748 !important;
+        margin: 0.125rem 0;
+        padding: 0.875rem 1rem;
+        border-radius: var(--border-radius-sm);
+    }
+    
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link.active {
+        background: var(--gradient-primary);
+        color: white !important;
+        transform: translateX(5px);
+    }
+    
+    .navbar-nav .nav-link.active::after {
+        display: none;
+    }
+    
+    /* Dropdowns en móvil */
+    .navbar .dropdown-menu {
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: none;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        margin: 0.5rem 0;
+        padding-left: 1.5rem;
+        animation: none;
+        position: static;
+        float: none;
+        width: auto;
+    }
+    
+    /* Submenús en móvil */
+    .dropdown-submenu > .dropdown-menu {
+        position: static;
+        margin-left: 1rem;
+        margin-top: 0.25rem;
+        border-left: 2px solid var(--primary-light);
+        display: block !important;
+        animation: fadeIn 0.3s ease-out;
+    }
+    
+    .dropdown-submenu > .dropdown-item::after {
+        transform: rotate(90deg);
+        right: 1.5rem;
+    }
+    
+    .user-avatar {
+        margin-left: auto;
+        margin-right: 1rem;
+    }
+}
+
+/* ===== SEARCH BAR ===== */
+.navbar-search {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 25px;
+    padding: 0.625rem 1.5rem;
+    color: white;
+    font-weight: 500;
+    transition: all var(--transition-base);
+    width: 280px;
+    backdrop-filter: blur(10px);
+}
+
+.navbar-search:focus {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+    width: 320px;
+    outline: none;
+}
+
+.navbar-search::placeholder {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.navbar-search-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    padding: 0.625rem 1rem;
+    transition: all var(--transition-base);
+}
+
+.navbar-search-btn:hover {
+    color: white;
+    transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+    .navbar-search {
+        width: 100%;
+        margin: 1rem 0;
+    }
+    
+    .navbar-search:focus {
+        width: 100%;
+    }
+}
+
+/* ===== MODO OSCURO ===== */
+@media (prefers-color-scheme: dark) {
+    .navbar {
+        background: linear-gradient(135deg, rgba(26, 32, 44, 0.95) 0%, rgba(45, 55, 72, 0.95) 100%);
+    }
+    
+    .navbar .dropdown-menu {
+        background: var(--dropdown-dark-bg);
+        color: #e2e8f0;
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .navbar .dropdown-item {
+        color: #e2e8f0;
+    }
+    
+    .navbar .dropdown-item:hover {
+        background: var(--gradient-primary);
+    }
+    
+    .navbar .dropdown-header {
+        color: #a0aec0;
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .navbar .dropdown-divider {
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .navbar-search {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .navbar-search:focus {
+        background: rgba(255, 255, 255, 0.12);
+    }
+    
+    @media (max-width: 991.98px) {
+        .navbar-collapse {
+            background: var(--dropdown-dark-bg);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .navbar-nav .nav-link {
+            color: #e2e8f0 !important;
+        }
+        
+        .navbar .dropdown-menu {
+            background: rgba(45, 55, 72, 0.95);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .dropdown-submenu > .dropdown-menu {
+            border-left-color: var(--primary-light);
+        }
+    }
+}
+
+/* ===== ANIMACIONES ESPECÍFICAS ===== */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translate3d(0, -10px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes fadeInLeft {
+    from {
+        opacity: 0;
+        transform: translate3d(10px, 0, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.navbar-collapse.show {
+    animation: slideDown 0.3s ease-out;
+}
+
+.dropdown-menu.show {
+    animation: fadeInDown 0.2s ease-out;
+}
+
+/* ===== MEJORAS DE ACCESIBILIDAD ===== */
+.navbar-toggler {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 0.5rem 0.75rem;
+    transition: all var(--transition-base);
+}
+
+.navbar-toggler:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.navbar-toggler:focus {
+    outline: 2px solid white;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+/* Indicador de navegación por teclado */
+.nav-link:focus-visible,
+.dropdown-item:focus-visible,
+.navbar-search:focus-visible {
+    outline: 3px solid white;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
+}
+
+/* ===== UTILIDADES ESPECÍFICAS ===== */
+.navbar-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 0 1rem;
+}
+
+/* Badges en nav items */
+.navbar-nav .nav-link .badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    margin-left: 0.25rem;
+    vertical-align: top;
+}
+
+/* Tooltips personalizados */
+.navbar [data-bs-toggle="tooltip"] {
+    position: relative;
+}
+
+/* ===== RESPONSIVE ADICIONAL ===== */
+@media (max-width: 576px) {
+    .navbar-brand span {
+        display: none;
+    }
+    
+    .navbar-brand {
+        padding: 0;
+    }
+    
+    .navbar-brand img {
+        height: 36px;
+    }
+    
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+    
+    .notification-badge {
+        width: 16px;
+        height: 16px;
+        font-size: 9px;
+        top: -6px;
+        right: -6px;
+    }
+}
+
+/* ===== SCROLLBAR PERSONALIZADO PARA MENÚ MÓVIL ===== */
+@media (max-width: 991.98px) {
+    .navbar-collapse::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .navbar-collapse::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 3px;
+    }
+    
+    .navbar-collapse::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+    }
+    
+    .navbar-collapse::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.3);
+    }
+}
+
+/* Modo oscuro scrollbar */
+@media (max-width: 991.98px) and (prefers-color-scheme: dark) {
+    .navbar-collapse::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .navbar-collapse::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .navbar-collapse::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+}

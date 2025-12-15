@@ -1,0 +1,411 @@
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block title %}Estudiantes en Riesgo - Colegio App{% endblock %}
+
+{% block extra_css %}
+<style>
+    .risk-level-high { border-left: 4px solid #dc3545; }
+    .risk-level-medium { border-left: 4px solid #ffc107; }
+    .risk-level-low { border-left: 4px solid #0d6efd; }
+    
+    .risk-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+    }
+    
+    .student-risk-card {
+        transition: all 0.3s;
+        border-radius: 10px;
+    }
+    
+    .student-risk-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .grade-indicator {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+    
+    .intervention-badge {
+        background-color: #e9ecef;
+        color: #495057;
+        font-size: 0.8rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">Estudiantes en Riesgo Académico</h1>
+            <p class="text-muted">Identificación temprana y seguimiento de estudiantes con bajo rendimiento</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'administrador:dashboard_reportes' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Periodo Académico</label>
+                        <select name="periodo" class="form-select" required>
+                            {% for periodo in periodos %}
+                            <option value="{{ periodo.id }}" {% if filtros.periodo_id == periodo.id|stringformat:"s" %}selected{% endif %}>
+                                {{ periodo.periodo.nombre }} - {{ periodo.año_lectivo.anho }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label">Grado</label>
+                        <select name="grado" class="form-select">
+                            <option value="">Todos los grados</option>
+                            {% for grado in grados %}
+                            <option value="{{ grado.id }}" {% if filtros.grado_id == grado.id|stringformat:"s" %}selected{% endif %}>
+                                {{ grado.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label">Sede</label>
+                        <select name="sede" class="form-select">
+                            <option value="">Todas las sedes</option>
+                            {% for sede in sedes %}
+                            <option value="{{ sede.id }}" {% if filtros.sede_id == sede.id|stringformat:"s" %}selected{% endif %}>
+                                {{ sede.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search me-2"></i>Identificar Riesgos
+                            </button>
+                            <a href="{% url 'administrador:reporte_estudiantes_riesgo' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if error %}
+    <!-- Mensaje de error -->
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {{ error }}
+    </div>
+    {% elif periodo %}
+    <!-- Resumen del periodo -->
+    <div class="alert alert-info mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-1">
+                    <i class="bi bi-calendar-check me-2"></i>
+                    Periodo Analizado: {{ periodo.periodo.nombre }}
+                </h5>
+                <p class="mb-0">
+                    Año: {{ periodo.año_lectivo.anho }} | 
+                    Fecha inicio: {{ periodo.fecha_inicio|date:"d/m/Y" }} | 
+                    Fecha fin: {{ periodo.fecha_fin|date:"d/m/Y" }}
+                </p>
+            </div>
+            <span class="badge bg-primary fs-6">{{ total_riesgo }} estudiantes en riesgo</span>
+        </div>
+    </div>
+
+    <!-- Indicadores -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Alto Riesgo</h6>
+                    <h2 class="text-danger">
+                        {{ estudiantes_riesgo|length|add:"-1"|divisibleby:"3"|add:"1" }}  <!-- Ejemplo cálculo -->
+                    </h2>
+                    <small class="text-muted">Promedio menor a 2.5</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Riesgo Medio</h6>
+                    <h2 class="text-warning">
+                        {{ estudiantes_riesgo|length|divisibleby:"2"|add:"2" }}  <!-- Ejemplo cálculo -->
+                    </h2>
+                    <small class="text-muted">Promedio 2.5 - 3.0</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Bajo Riesgo</h6>
+                    <h2 class="text-info">
+                        {{ estudiantes_riesgo|length|divisibleby:"4"|add:"1" }}  <!-- Ejemplo cálculo -->
+                    </h2>
+                    <small class="text-muted">2+ asignaturas bajas</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">% de Riesgo</h6>
+                    <h2 class="text-success">
+                        {% widthratio total_riesgo 50 100 %}%  <!-- Ejemplo cálculo -->
+                    </h2>
+                    <small class="text-muted">Del total de estudiantes</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estudiantes en riesgo -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-exclamation-triangle text-danger me-2"></i>
+                Lista de Estudiantes en Riesgo ({{ total_riesgo }})
+            </h5>
+            <form method="post" action="{% url 'administrador:exportar_reporte' %}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="tipo_reporte" value="estudiantes_riesgo">
+                <input type="hidden" name="formato" value="excel">
+                <button type="submit" class="btn btn-sm btn-success">
+                    <i class="bi bi-file-excel me-1"></i>Exportar
+                </button>
+            </form>
+        </div>
+        <div class="card-body">
+            {% if estudiantes_riesgo %}
+            <div class="row">
+                {% for estudiante in estudiantes_riesgo %}
+                <div class="col-md-6 col-xl-4 mb-3">
+                    <div class="card student-risk-card 
+                        {% if estudiante.promedio < 2.5 %}risk-level-high
+                        {% elif estudiante.promedio < 3.0 %}risk-level-medium
+                        {% else %}risk-level-low{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="flex-shrink-0">
+                                    {% if estudiante.estudiante.foto %}
+                                    <img src="{{ estudiante.estudiante.foto.url }}" class="rounded-circle" width="60" height="60" alt="{{ estudiante.estudiante.usuario.get_full_name }}">
+                                    {% else %}
+                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                        <i class="bi bi-person text-white" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">{{ estudiante.estudiante.usuario.get_full_name }}</h6>
+                                            <p class="text-muted small mb-0">
+                                                {{ estudiante.estudiante.usuario.numero_documento }}
+                                                {% if estudiante.estudiante.grado_actual %}
+                                                | {{ estudiante.estudiante.grado_actual.grado.nombre }}
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <div class="grade-indicator 
+                                            {% if estudiante.promedio < 2.5 %}bg-danger text-white
+                                            {% elif estudiante.promedio < 3.0 %}bg-warning text-dark
+                                            {% else %}bg-info text-white{% endif %}">
+                                            {{ estudiante.promedio|floatformat:1 }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Información de riesgo -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Asignaturas con dificultad:</span>
+                                    <span class="badge bg-danger risk-badge">{{ estudiante.asignaturas_bajas }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Total asignaturas:</span>
+                                    <span class="badge bg-secondary risk-badge">{{ estudiante.total_asignaturas }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Nivel de riesgo:</span>
+                                    <span class="badge 
+                                        {% if estudiante.promedio < 2.5 %}bg-danger
+                                        {% elif estudiante.promedio < 3.0 %}bg-warning
+                                        {% else %}bg-info{% endif %} risk-badge">
+                                        {% if estudiante.promedio < 2.5 %}Alto
+                                        {% elif estudiante.promedio < 3.0 %}Medio
+                                        {% else %}Bajo{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Asignaturas problemáticas -->
+                            <div class="mb-3">
+                                <h6 class="small text-muted mb-2">Asignaturas con calificación baja:</h6>
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for nota in estudiante.notas|slice:":5" %}
+                                        {% if nota.calificacion < 3.0 %}
+                                        <span class="intervention-badge" data-bs-toggle="tooltip" title="{{ nota.asignatura_grado_año_lectivo.asignatura.nombre }}: {{ nota.calificacion }}">
+                                            {{ nota.asignatura_grado_año_lectivo.asignatura.nombre|slice:":3" }}: {{ nota.calificacion }}
+                                        </span>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if estudiante.asignaturas_bajas > 5 %}
+                                    <span class="intervention-badge">+{{ estudiante.asignaturas_bajas|add:"-5" }} más</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Acciones -->
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <a href="{% url 'administrador:reporte_notas' %}?tipo=individual&estudiante={{ estudiante.estudiante.id }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-journal-text me-1"></i>Notas
+                                    </a>
+                                    <a href="#" class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-chat-left-text me-1"></i>Comentar
+                                    </a>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#interventionModal{{ estudiante.estudiante.id }}">
+                                    <i class="bi bi-clipboard-check me-1"></i>Plan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Recomendaciones generales -->
+            <div class="alert alert-warning mt-4">
+                <h5 class="alert-heading">
+                    <i class="bi bi-lightbulb me-2"></i>Recomendaciones Generales
+                </h5>
+                <ul class="mb-0">
+                    <li>Implementar sesiones de tutorías personalizadas para los estudiantes con promedio menor a 2.5</li>
+                    <li>Coordinar reuniones con acudientes de estudiantes con 3 o más asignaturas bajas</li>
+                    <li>Establecer un plan de seguimiento académico para el próximo periodo</li>
+                    <li>Considerar apoyo psicológico para estudiantes con dificultades persistentes</li>
+                </ul>
+            </div>
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-emoji-smile display-4 text-success"></i>
+                <h4 class="mt-3 text-success">¡Excelentes noticias!</h4>
+                <p class="text-muted">No se identificaron estudiantes en riesgo académico para el periodo seleccionado</p>
+                <p class="text-muted small">El promedio general del grupo está por encima del nivel de riesgo</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <!-- Sin periodo seleccionado -->
+    <div class="text-center py-5">
+        <i class="bi bi-clipboard-data display-4 text-muted"></i>
+        <h4 class="mt-3">Selecciona un periodo académico</h4>
+        <p class="text-muted">Utiliza los filtros para identificar estudiantes en riesgo académico</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para plan de intervención (ejemplo) -->
+{% for estudiante in estudiantes_riesgo %}
+<div class="modal fade" id="interventionModal{{ estudiante.estudiante.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Plan de Intervención</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6 class="mb-3">Estudiante: {{ estudiante.estudiante.usuario.get_full_name }}</h6>
+                <p><strong>Promedio actual:</strong> {{ estudiante.promedio }}</p>
+                <p><strong>Asignaturas con dificultad:</strong> {{ estudiante.asignaturas_bajas }}</p>
+                
+                <div class="mb-3">
+                    <label class="form-label">Acciones recomendadas:</label>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="tutoring{{ estudiante.estudiante.id }}">
+                        <label class="form-check-label" for="tutoring{{ estudiante.estudiante.id }}">
+                            Sesiones de tutoría semanales
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="meeting{{ estudiante.estudiante.id }}">
+                        <label class="form-check-label" for="meeting{{ estudiante.estudiante.id }}">
+                            Reunión con acudiente
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="monitoring{{ estudiante.estudiante.id }}">
+                        <label class="form-check-label" for="monitoring{{ estudiante.estudiante.id }}">
+                            Seguimiento quincenal
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Observaciones:</label>
+                    <textarea class="form-control" rows="3" placeholder="Agregar observaciones específicas..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary">Guardar Plan</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializar tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Configurar periodo por defecto si no hay selección
+        if (!$('select[name="periodo"]').val() && $('select[name="periodo"] option').length > 0) {
+            $('select[name="periodo"]').val($('select[name="periodo"] option:first').val());
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Eliminar Horario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-danger">
+                    <h5 class="mb-0 fw-bold text-white">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Confirmar Eliminación
+                    </h5>
+                </div>
+                
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-calendar-times fa-4x text-danger mb-3"></i>
+                        <h4 class="text-gray-800 fw-bold">¿Está seguro de eliminar este horario?</h4>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Horario a eliminar:</strong><br>
+                        <strong>Día:</strong> {{ object.get_dia_semana_display }}<br>
+                        <strong>Hora:</strong> {{ object.hora_inicio|time:"H:i" }} - {{ object.hora_fin|time:"H:i" }}<br>
+                        <strong>Asignatura:</strong> {{ object.asignatura_grado.asignatura.nombre }}<br>
+                        <strong>Grado:</strong> {{ object.asignatura_grado.grado_año_lectivo.grado.nombre }}<br>
+                        <strong>Docente:</strong> 
+                        {% if object.asignatura_grado.docente %}
+                        {{ object.asignatura_grado.docente.usuario.get_full_name }}
+                        {% else %}
+                        Sin asignar
+                        {% endif %}
+                    </div>
+                    
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer. El horario será eliminado permanentemente del sistema.
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-danger btn-block">
+                                    <i class="fas fa-trash me-2"></i> Sí, Eliminar
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{% url 'administrador:horario_list' %}" class="btn btn-secondary btn-block">
+                                    <i class="fas fa-times me-2"></i> Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

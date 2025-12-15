@@ -1,0 +1,144 @@
+<!-- gestioncolegio/components/teacher_menu_split.html -->
+<ul class="navbar-nav me-auto ">
+
+    <!-- Dropdown: Gestión Académica -->
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" 
+           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-graduation-cap me-2"></i>
+            <span>Académico</span>
+        </a>
+
+        <ul class="dropdown-menu shadow-sm">
+
+            <!-- Encabezado -->
+            <li>
+                <h6 class="dropdown-header">
+                    <i class="fas fa-graduation-cap me-2"></i>
+                    Gestión Académica
+                </h6>
+            </li>
+
+            <!-- Calificar -->
+            <li>
+                <a class="dropdown-item d-flex align-items-center" 
+                   href="{% url 'docentes:calificar_notas' %}">
+                    <i class="fas fa-edit text-success me-3"></i>
+                    <div>
+                        <span>Calificar Estudiantes</span><br>
+                        <small class="text-muted">Registrar calificaciones</small>
+                    </div>
+                </a>
+            </li>
+
+            <!-- Ver Notas -->
+            <li>
+                <a class="dropdown-item d-flex align-items-center" 
+                   href="{% url 'docentes:lista_notas_docente' %}">
+                    <i class="fas fa-list text-info me-3"></i>
+                    <div>
+                        <span>Ver Todas las Notas</span><br>
+                        <small class="text-muted">Historial de notas</small>
+                    </div>
+                </a>
+            </li>
+
+            <!-- Logros -->
+            <li>
+                <a class="dropdown-item d-flex align-items-center" 
+                   href="{% url 'docentes:lista_logros' %}">
+                    <i class="fas fa-trophy text-warning me-3"></i>
+                    <div>
+                        <span>Logros Académicos</span><br>
+                        <small class="text-muted">Gestionar logros</small>
+                    </div>
+                </a>
+            </li>
+
+            <!-- Asistencia -->
+            <li>
+                <a class="dropdown-item d-flex align-items-center" 
+                   href="{% url 'docentes:asistencia_principal' %}">
+                    <i class="fas fa-calendar-check text-primary me-3"></i>
+                    <div>
+                        <span>Asistencia</span><br>
+                        <small class="text-muted">Registrar asistencia</small>
+                    </div>
+                </a>
+            </li>
+        </ul>
+    </li>
+
+    <!-- Comportamiento -->
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center" 
+           href="{% url 'docentes:lista_comportamientos' %}">
+            <i class="fas fa-user-check me-2"></i>
+            <span>Comportamiento</span>
+        </a>
+    </li>
+
+    <!-- Dropdown: Información -->
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" 
+           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-info-circle me-2"></i>
+            <span>Información</span>
+        </a>
+
+        <ul class="dropdown-menu shadow-sm">
+
+            <li>
+                <h6 class="dropdown-header">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Información del Docente
+                </h6>
+            </li>
+
+            <!-- Mi Horario -->
+            <li>
+                <a class="dropdown-item d-flex align-items-center" 
+                   href="{% url 'academico:horarios_list' %}">
+                    <i class="fas fa-clock text-primary me-3"></i>
+                    <div>
+                        <span>Mi Horario</span><br>
+                        <small class="text-muted">Horario de clases</small>
+                    </div>
+                </a>
+            </li>
+
+            <!-- Mis Estudiantes -->
+            <li>
+                <a class="dropdown-item d-flex align-items-center" 
+                   href="{% url 'docentes:lista_estudiantes' %}">
+                    <i class="fas fa-user-graduate text-success me-3"></i>
+                    <div>
+                        <span>Mis Estudiantes</span><br>
+                        <small class="text-muted">Lista de estudiantes</small>
+                    </div>
+                </a>
+            </li>
+
+            <!-- Mis Asignaturas -->
+            <li>
+                <a class="dropdown-item d-flex align-items-center" 
+                   href="{% url 'docentes:asignaturas_list' %}">
+                    <i class="fas fa-book text-warning me-3"></i>
+                    <div>
+                        <span>Mis Asignaturas</span><br>
+                        <small class="text-muted">Asignaturas asignadas</small>
+                    </div>
+                </a>
+            </li>
+        </ul>
+    </li>
+
+    <!-- Ayuda -->
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center" href="#">
+            <i class="fas fa-question-circle me-2"></i>
+            <span>Ayuda</span>
+        </a>
+    </li>
+
+</ul>

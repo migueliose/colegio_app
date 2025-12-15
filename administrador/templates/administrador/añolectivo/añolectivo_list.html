@@ -1,0 +1,337 @@
+<!-- administrador/añolectivo/añolectivo_list.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static estudiante_filters %}
+
+{% block title %}Años Lectivos - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="fas fa-calendar-alt me-2"></i>Años Lectivos
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'administrador:añolectivo_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Nuevo Año Lectivo
+            </a>
+        </div>
+    </div>
+
+    <!-- Año actual activo -->
+    {% if año_lectivo_actual %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-star fa-2x me-3"></i>
+            <div>
+                <h5 class="alert-heading mb-1">
+                    <i class="fas fa-check-circle me-2"></i>Año Lectivo Activo Actual
+                </h5>
+                <p class="mb-0">
+                    <strong>{{ año_lectivo_actual.anho }}</strong> | 
+                    {{ año_lectivo_actual.sede.nombre }} | 
+                    {% if año_lectivo_actual.fecha_inicio and año_lectivo_actual.fecha_fin %}
+                    {{ año_lectivo_actual.fecha_inicio|date:"d/m/Y" }} - {{ año_lectivo_actual.fecha_fin|date:"d/m/Y" }}
+                    {% else %}
+                    Fechas no definidas
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Advertencia:</strong> No hay un año lectivo activo. Por favor active un año lectivo.
+    </div>
+    {% endif %}
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card border-start-primary shadow h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                Total Años
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ años_lectivos.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card border-start-success shadow h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                Activos
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">
+                                {{ años_lectivos_count }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card border-start-info shadow h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                Con Periodos
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">
+                                {{ años_con_periodos }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card border-start-warning shadow h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                Con Matrículas
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">
+                                {{ años_con_matriculas }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de años lectivos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>Lista de Años Lectivos
+                    </h5>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="exportarExcel()">
+                            <i class="fas fa-file-excel me-1"></i> Excel
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if años_lectivos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="añosTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="5%">ID</th>
+                                    <th width="15%">Año</th>
+                                    <th width="20%">Colegio / Sede</th>
+                                    <th width="15%">Periodos</th>
+                                    <th width="15%">Fechas</th>
+                                    <th width="10%">Estado</th>
+                                    <th width="20%" class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for año in años_lectivos %}
+                                <tr>
+                                    <td>{{ año.id }}</td>
+                                    <td>
+                                        <strong class="fs-5">{{ año.anho }}</strong>
+                                        {% if año.estado %}
+                                        <span class="badge bg-success ms-2">
+                                            <i class="fas fa-star me-1"></i>Activo
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="text-muted small">{{ año.colegio.nombre }}</div>
+                                        <div class="fw-bold">{{ año.sede.nombre }}</div>
+                                    </td>
+                                    <td>
+                                        {% with periodos=año.periodos_academicos.all %}
+                                        {% if periodos %}
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-info dropdown-toggle" 
+                                                    type="button" 
+                                                    data-bs-toggle="dropdown">
+                                                <i class="fas fa-clock me-1"></i>
+                                                {{ periodos|length }} periodo(s)
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                {% for periodo in periodos %}
+                                                <li>
+                                                    <a class="dropdown-item" href="#">
+                                                        <i class="fas fa-calendar me-2"></i>
+                                                        {{ periodo.periodo.nombre }}
+                                                        <small class="text-muted d-block">
+                                                            {{ periodo.fecha_inicio|date:"d/m" }} - 
+                                                            {{ periodo.fecha_fin|date:"d/m/Y" }}
+                                                        </small>
+                                                    </a>
+                                                </li>
+                                                {% endfor %}
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item text-primary" href="#">
+                                                        <i class="fas fa-plus me-2"></i>Agregar periodo
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        {% else %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            Sin periodos
+                                        </span>
+                                        {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                    <td>
+                                        {% if año.fecha_inicio and año.fecha_fin %}
+                                        <div class="small">
+                                            <i class="fas fa-play text-success me-1"></i>
+                                            {{ año.fecha_inicio|date:"d/m/Y" }}
+                                        </div>
+                                        <div class="small">
+                                            <i class="fas fa-stop text-danger me-1"></i>
+                                            {{ año.fecha_fin|date:"d/m/Y" }}
+                                        </div>
+                                        <div class="progress mt-1" style="height: 5px;">
+                                            {% with dias_total=año.fecha_fin|timeuntil:año.fecha_inicio %}
+                                            {% widthratio año.fecha_inicio|timesince:now 365 100 as progreso %}
+                                            <div class="progress-bar bg-success" 
+                                                 style="width: {% if año.estado %}50{% else %}100{% endif %}%">
+                                            </div>
+                                            {% endwith %}
+                                        </div>
+                                        {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-calendar-times me-1"></i>
+                                            Sin fechas
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if año.estado %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle me-1"></i>Activo
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-times-circle me-1"></i>Inactivo
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <!-- Botón Activar/Desactivar -->
+                                            <form method="post" action="{% url 'administrador:añolectivo_cambiar_estado' año.pk %}" 
+                                                class="d-inline" onsubmit="return confirmCambioEstado('{{ año.anho }}', {{ año.estado|yesno:'true,false' }})">
+                                                {% csrf_token %}
+                                                <button type="submit" 
+                                                        class="btn {% if año.estado %}btn-warning{% else %}btn-outline-success{% endif %}"
+                                                        title="{% if año.estado %}Desactivar{% else %}Activar{% endif %} este año">
+                                                    <i class="fas {% if año.estado %}fa-toggle-on{% else %}fa-toggle-off{% endif %}"></i>
+                                                </button>
+                                            </form>
+                                            
+                                            <!-- Ver periodos -->
+                                            <a href="{% url 'administrador:añolectivo_periodos' año.pk %}" 
+                                            class="btn btn-outline-info"
+                                            title="Ver periodos académicos">
+                                                <i class="fas fa-clock"></i>
+                                            </a>
+                                            
+                                            <!-- Editar -->
+                                            <a href="{% url 'administrador:añolectivo_update' año.pk %}" 
+                                            class="btn btn-outline-primary" 
+                                            title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            
+                                            <!-- Eliminar -->
+                                            <a href="{% url 'administrador:añolectivo_delete' año.pk %}" 
+                                            class="btn btn-outline-danger" 
+                                            title="Eliminar"
+                                            onclick="return confirmEliminar('{{ año.anho }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-alt fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">No hay años lectivos registrados</h4>
+                        <p class="text-muted">Comience creando un nuevo año lectivo</p>
+                        <a href="{% url 'administrador:añolectivo_create' %}" class="btn btn-primary mt-2">
+                            <i class="fas fa-plus me-1"></i> Crear Primer Año Lectivo
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Información importante -->
+                <div class="card-footer bg-light">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1 text-primary"></i>
+                                <strong>Nota:</strong> Solo puede haber un año lectivo activo a la vez.
+                            </small>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <small class="text-muted">
+                                <i class="fas fa-database me-1"></i>
+                                Total: {{ años_lectivos.count }} registro(s)
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmCambioEstado(año, estaActivo) {
+    if (estaActivo) {
+        return confirm(`¿Desactivar el año lectivo ${año}?\n\nLas funcionalidades del sistema usarán otro año activo.`);
+    } else {
+        return confirm(`¿Activar el año lectivo ${año}?\n\nEsto desactivará automáticamente cualquier otro año activo.`);
+    }
+}
+
+function confirmEliminar(año) {
+    return confirm(`¿Eliminar permanentemente el año lectivo ${año}?\n\nEsta acción no se puede deshacer.`);
+}
+</script>
+{% endblock %}

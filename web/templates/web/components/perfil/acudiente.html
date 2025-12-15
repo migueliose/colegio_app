@@ -1,0 +1,87 @@
+<!-- INFORMACIÓN PARA ACUDIENTES -->
+{% load gestion_extras %}
+{% if user|es_acudiente %}
+<div class="border-top pt-3 mb-4">
+    <h5 class="text-info mb-3">
+        <i class="fas fa-user-friends me-2"></i>Información de Acudiente
+    </h5>
+    <div class="row">
+        <div class="col-md-6">
+            {% if acudiente %}
+                <p><strong>Parentesco Principal:</strong> {{ acudiente.parentesco|default:"No especificado" }}</p>
+            {% endif %}
+            <p><strong>Estado:</strong> 
+                <span class="badge bg-success">Activo</span>
+            </p>
+        </div>
+        <div class="col-md-6">
+            <p><strong>Estudiantes a Cargo:</strong> {{ estudiantes_acargo|length|default:0 }}</p>
+        </div>
+    </div>
+    
+    <!-- Estudiantes a Cargo -->
+    {% if estudiantes_acargo %}
+    <div class="mt-3">
+        <p><strong>Estudiantes a Cargo:</strong></p>
+        <div class="row">
+            {% for acudiente_rel in estudiantes_acargo %}
+            <div class="col-md-6 mb-3">
+                <div class="card border-info">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="fas fa-user-graduate me-2"></i>
+                            {{ acudiente_rel.estudiante.usuario.get_full_name }}
+                        </h6>
+                        <p class="card-text small mb-1">
+                            <strong>Documento:</strong> 
+                            {{ acudiente_rel.estudiante.usuario.numero_documento|default:"No registrado" }}
+                        </p>
+                        <p class="card-text small mb-1">
+                            <strong>Parentesco:</strong> 
+                            <span class="badge bg-info">{{ acudiente_rel.parentesco|default:"Hijo(a)" }}</span>
+                        </p>
+                        {% with matricula=acudiente_rel.estudiante.matricula_actual %}
+                            {% if matricula %}
+                                <p class="card-text small mb-0">
+                                    <strong>Grado:</strong> 
+                                    <span class="badge bg-secondary">
+                                        {% if matricula.grado_año_lectivo and matricula.grado_año_lectivo.grado %}
+                                            {{ matricula.grado_año_lectivo.grado.nombre }}
+                                        {% else %}
+                                            Sin grado
+                                        {% endif %}
+                                    </span>
+                                </p>
+                                <p class="card-text small mb-0">
+                                    <strong>Sede:</strong> 
+                                    {% if matricula.sede %}
+                                        {{ matricula.sede.nombre }}
+                                    {% else %}
+                                        Sin sede
+                                    {% endif %}
+                                </p>
+                            {% else %}
+                                <p class="card-text small text-warning mb-0">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Sin matrícula activa
+                                </p>
+                            {% endif %}
+                        {% endwith %}
+                        <a href="{% url 'acudiente:detalle_estudiante' acudiente_rel.estudiante.id %}" 
+                           class="btn btn-sm btn-outline-info mt-2">
+                            <i class="fas fa-eye me-1"></i> Ver detalles
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning mt-3">
+        <i class="fas fa-user-slash me-2"></i>
+        No tiene estudiantes asignados como acudiente.
+    </div>
+    {% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,367 @@
+<!-- administrador/reportes/demograficas.html -->
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block title %}Estadísticas Demográficas{% endblock %}
+
+{% block extra_css %}
+<style>
+.density-low { background-color: #d4edda !important; }
+.density-medium { background-color: #fff3cd !important; }
+.density-high { background-color: #f8d7da !important; }
+.chart-container { height: 300px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="h3 mb-1">
+                                <i class="fas fa-chart-pie me-2 text-primary"></i>Estadísticas Demográficas
+                            </h1>
+                            <p class="text-muted mb-0">
+                                Año Lectivo: {{ año_lectivo.anho|default:"No especificado" }}
+                                • {{ estadisticas.total_estudiantes }} estudiantes
+                            </p>
+                        </div>
+                        <div>
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="formato" value="excel">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-download me-1"></i> Exportar Excel
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Año Lectivo</label>
+                            <select name="año_lectivo" class="form-select">
+                                <option value="">Seleccionar año...</option>
+                                {% for año in años_lectivos %}
+                                <option value="{{ año.id }}" 
+                                    {% if filtros.año_lectivo_id == año.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ año.anho }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Sede</label>
+                            <select name="sede" class="form-select">
+                                <option value="">Todas las sedes</option>
+                                {% for sede in sedes %}
+                                <option value="{{ sede.id }}" 
+                                    {% if filtros.sede_id == sede.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ sede.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Nivel Escolar</label>
+                            <select name="nivel_escolar" class="form-select">
+                                <option value="">Todos los niveles</option>
+                                {% for nivel in niveles_escolares %}
+                                <option value="{{ nivel.id }}" 
+                                    {% if filtros.nivel_escolar_id == nivel.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ nivel.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-1"></i> Aplicar Filtros
+                            </button>
+                            <a href="{% url 'administrador:reporte_demograficas' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Principales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Total Estudiantes</h6>
+                            <h2 class="mb-0">{{ estadisticas.total_estudiantes }}</h2>
+                        </div>
+                        <i class="fas fa-users fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Edad Promedio</h6>
+                            <h2 class="mb-0">{{ estadisticas.promedio_edad }} años</h2>
+                        </div>
+                        <i class="fas fa-chart-line fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Con Acudientes</h6>
+                            <h2 class="mb-0">{{ estadisticas.porcentaje_con_acudientes }}%</h2>
+                            <small>{{ estadisticas.estudiantes_con_acudientes }} estudiantes</small>
+                        </div>
+                        <i class="fas fa-user-friends fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Ratio H:M</h6>
+                            <h2 class="mb-0">{{ estadisticas.ratio_hombres_mujeres }}</h2>
+                        </div>
+                        <i class="fas fa-venus-mars fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <!-- Gráfico de Género -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-venus-mars me-2"></i>Distribución por Género</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="chartGenero"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfico de Edades -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user-clock me-2"></i>Distribución por Edad</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="chartEdad"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tablas Detalladas -->
+    <div class="row mb-4">
+        <!-- Por Género -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Detalle por Género</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Género</th>
+                                    <th>Total</th>
+                                    <th>Porcentaje</th>
+                                    <th>Edad Promedio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for genero in distribucion_genero %}
+                                <tr>
+                                    <td>{{ genero.genero }}</td>
+                                    <td><strong>{{ genero.total }}</strong></td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ genero.porcentaje }}%;"
+                                                 aria-valuenow="{{ genero.porcentaje }}" 
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                                {{ genero.porcentaje }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ genero.promedio_edad }} años</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Por Edad -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Detalle por Edad</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Rango</th>
+                                    <th>Total</th>
+                                    <th>Hombres</th>
+                                    <th>Mujeres</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key, rango in rangos_edad.items %}
+                                <tr>
+                                    <td>{{ rango.desc }}</td>
+                                    <td><strong>{{ rango.count }}</strong></td>
+                                    <td>{{ rango.hombres }}</td>
+                                    <td>{{ rango.mujeres }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Por Grado con Densidad -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-graduation-cap me-2"></i>Distribución por Grado</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Grado</th>
+                                    <th>Nivel</th>
+                                    <th>Total</th>
+                                    <th>Hombres</th>
+                                    <th>Mujeres</th>
+                                    <th>% Hombres</th>
+                                    <th>% Mujeres</th>
+                                    <th>Densidad</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grado in datos_por_grado %}
+                                <tr class="density-{{ grado.densidad.text|lower }}">
+                                    <td><strong>{{ grado.grado }}</strong></td>
+                                    <td>{{ grado.nivel }}</td>
+                                    <td>{{ grado.total }}</td>
+                                    <td>{{ grado.hombres }}</td>
+                                    <td>{{ grado.mujeres }}</td>
+                                    <td>{{ grado.porcentaje_hombres }}%</td>
+                                    <td>{{ grado.porcentaje_mujeres }}%</td>
+                                    <td>
+                                        <span class="badge bg-{{ grado.densidad.class }}">
+                                            {{ grado.densidad.text }} ({{ grado.densidad.valor }})
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Incluir Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Datos para gráficos (desde el contexto de Django)
+    const datosGenero = {{ datos_grafico_genero|safe }};
+    const datosEdad = {{ datos_grafico_edad|safe }};
+    
+    // Gráfico de Género
+    const ctxGenero = document.getElementById('chartGenero').getContext('2d');
+    new Chart(ctxGenero, {
+        type: 'pie',
+        data: datosGenero,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Gráfico de Edades
+    const ctxEdad = document.getElementById('chartEdad').getContext('2d');
+    new Chart(ctxEdad, {
+        type: 'bar',
+        data: datosEdad,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Cantidad de Estudiantes'
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

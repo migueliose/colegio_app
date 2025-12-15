@@ -1,0 +1,329 @@
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block title %}Reporte de Comportamiento - Colegio App{% endblock %}
+
+{% block extra_css %}
+<style>
+    .behavior-card {
+        border-radius: 10px;
+        transition: transform 0.2s;
+    }
+    
+    .behavior-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .positive-card {
+        border-left: 4px solid #198754;
+    }
+    
+    .negative-card {
+        border-left: 4px solid #dc3545;
+    }
+    
+    .behavior-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .positive-icon {
+        background-color: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+    
+    .negative-icon {
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+    
+    .category-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+    }
+    
+    .chart-container {
+        height: 300px;
+        position: relative;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">Reporte de Comportamiento</h1>
+            <p class="text-muted">Análisis de conducta estudiantil y reconocimientos</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'administrador:dashboard_reportes' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    {% include 'administrador/reportes/partials/filtros_comportamiento.html' %}
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Total Comportamientos</h6>
+                    <h2 class="text-primary">{{ estadisticas.total }}</h2>
+                    <div class="d-flex justify-content-center gap-3">
+                        <span class="text-success">{{ estadisticas.positivos }} positivos</span>
+                        <span class="text-danger">{{ estadisticas.negativos }} negativos</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Comportamientos Positivos</h6>
+                    <h2 class="text-success">{{ estadisticas.positivos }}</h2>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-success" style="width: {{ estadisticas.ratio_positivo }}%"></div>
+                    </div>
+                    <small class="text-muted">{{ estadisticas.ratio_positivo|floatformat:1 }}% del total</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Comportamientos Negativos</h6>
+                    <h2 class="text-danger">{{ estadisticas.negativos }}</h2>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-danger" style="width: {{ estadisticas.ratio_negativo }}%"></div>
+                    </div>
+                    <small class="text-muted">
+                        {% widthratio estadisticas.negativos estadisticas.total 100 %}% del total
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Ratio Positivo/Negativo</h6>
+                    <h2 class="text-warning">{{ estadisticas.ratio_positivo|floatformat:1 }}%</h2>
+                    <div class="d-flex justify-content-center">
+                        <span class="me-2">
+                            <i class="bi bi-emoji-smile text-success"></i> {{ estadisticas.ratio_positivo|floatformat:1 }}%
+                        </span>
+                        <span>
+                            <i class="bi bi-emoji-frown text-danger"></i> {{ estadisticas.ratio_negativo|floatformat:1 }}%
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribución por categoría -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Distribución por Categoría</h5>
+                    <form method="post" action="{% url 'administrador:exportar_reporte' %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="tipo_reporte" value="comportamiento">
+                        <input type="hidden" name="formato" value="excel">
+                        <button type="submit" class="btn btn-sm btn-success">
+                            <i class="bi bi-file-excel me-1"></i>Exportar
+                        </button>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Categoría</th>
+                                    <th>Total</th>
+                                    <th>Positivos</th>
+                                    <th>Negativos</th>
+                                    <th>% Positivos</th>
+                                    <th>% Negativos</th>
+                                    <th>Gráfico</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cat in por_categoria %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ cat.categoria }}</strong>
+                                    </td>
+                                    <td>{{ cat.total }}</td>
+                                    <td>
+                                        <span class="badge bg-success">{{ cat.positivos }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-danger">{{ cat.negativos }}</span>
+                                    </td>
+                                    <td>{{ cat.porcentaje_positivos|floatformat:1 }}%</td>
+                                    <td>{{ cat.porcentaje_negativos|floatformat:1 }}%</td>
+                                    <td>
+                                        <div class="d-flex">
+                                            <div class="progress flex-grow-1" style="height: 10px;">
+                                                <div class="progress-bar bg-success" style="width: {{ cat.porcentaje_positivos }}%"></div>
+                                                <div class="progress-bar bg-danger" style="width: {{ cat.porcentaje_negativos }}%"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Top Estudiantes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6 class="text-success mb-3">
+                            <i class="bi bi-trophy me-2"></i>Más Reconocimientos Positivos
+                        </h6>
+                        {% if top_positivos %}
+                            {% for estudiante in top_positivos %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>{{ estudiante.estudiante__usuario__apellidos }}, {{ estudiante.estudiante__usuario__nombres|slice:":1" }}.</span>
+                                <span class="badge bg-success">{{ estudiante.total }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center">No hay datos</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <h6 class="text-danger mb-3">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Más Incidencias Negativas
+                        </h6>
+                        {% if top_negativos %}
+                            {% for estudiante in top_negativos %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>{{ estudiante.estudiante__usuario__apellidos }}, {{ estudiante.estudiante__usuario__nombres|slice:":1" }}.</span>
+                                <span class="badge bg-danger">{{ estudiante.total }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center">No hay datos</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comportamientos recientes -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Registros de Comportamiento</h5>
+            <span class="badge bg-primary">{{ comportamientos.count }} registros</span>
+        </div>
+        <div class="card-body">
+            {% if comportamientos %}
+            <div class="row">
+                {% for comp in comportamientos %}
+                <div class="col-md-6 mb-3">
+                    <div class="card behavior-card {% if comp.tipo == 'Positivo' %}positive-card{% else %}negative-card{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex">
+                                <div class="behavior-icon {% if comp.tipo == 'Positivo' %}positive-icon{% else %}negative-icon{% endif %} me-3">
+                                    {% if comp.tipo == 'Positivo' %}
+                                    <i class="bi bi-emoji-smile"></i>
+                                    {% else %}
+                                    <i class="bi bi-emoji-frown"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h6 class="mb-1">{{ comp.estudiante.usuario.get_full_name }}</h6>
+                                            <span class="badge category-badge bg-{% if comp.tipo == 'Positivo' %}success{% else %}danger{% endif %}">
+                                                {{ comp.tipo }}
+                                            </span>
+                                            <span class="badge category-badge bg-secondary ms-1">
+                                                {{ comp.get_categoria_display }}
+                                            </span>
+                                        </div>
+                                        <small class="text-muted">{{ comp.fecha|date:"d/m/Y" }}</small>
+                                    </div>
+                                    <p class="mb-2">{{ comp.descripcion }}</p>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">
+                                            <i class="bi bi-person me-1"></i>
+                                            {% if comp.docente %}
+                                            {{ comp.docente.usuario.get_full_name }}
+                                            {% else %}
+                                            Sistema
+                                            {% endif %}
+                                        </small>
+                                        <small class="text-muted">
+                                            {{ comp.periodo_academico.periodo.nombre }} - {{ comp.periodo_academico.año_lectivo.anho }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-emoji-neutral display-4 text-muted"></i>
+                <h5 class="mt-3">No hay registros de comportamiento</h5>
+                <p class="text-muted">No se encontraron registros con los filtros aplicados</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Configurar fechas por defecto
+        const today = new Date();
+        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+        
+        if (!$('input[name="fecha_inicio"]').val()) {
+            $('input[name="fecha_inicio"]').val(lastMonth.toISOString().split('T')[0]);
+        }
+        
+        if (!$('input[name="fecha_fin"]').val()) {
+            $('input[name="fecha_fin"]').val(today.toISOString().split('T')[0]);
+        }
+        
+        // Inicializar gráficos (si se implementan)
+        // initializeBehaviorCharts();
+    });
+    
+    function initializeBehaviorCharts() {
+        // Implementar gráficos con Chart.js si es necesario
+        console.log('Inicializar gráficos de comportamiento');
+    }
+</script>
+{% endblock %}

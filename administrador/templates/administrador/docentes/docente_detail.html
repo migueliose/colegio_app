@@ -1,0 +1,777 @@
+{% extends 'gestioncolegio/base2.html' %}
+
+{% block title %}Detalle del Docente - {{ docente.usuario.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    .timeline:before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    .timeline-item:before {
+        content: '';
+        position: absolute;
+        left: -25px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #007bff;
+        border: 2px solid white;
+    }
+    .stat-card {
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .badge-assignature {
+        background-color: #e3f2fd;
+        color: #1565c0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="h3 mb-1">
+                                <i class="fas fa-chalkboard-teacher me-2"></i>Detalle del Docente
+                            </h1>
+                            <nav aria-label="breadcrumb" class="d-inline-block">
+                                <ol class="breadcrumb mb-0">
+                                    <li class="breadcrumb-item">
+                                        <a href="{% url 'gestioncolegio:dashboard_administrador' %}">
+                                            <i class="fas fa-home"></i> Dashboard
+                                        </a>
+                                    </li>
+                                    <li class="breadcrumb-item">
+                                        <a href="{% url 'administrador:docente_list' %}">
+                                            <i class="fas fa-users"></i> Docentes
+                                        </a>
+                                    </li>
+                                    <li class="breadcrumb-item active">{{ docente.usuario.get_full_name }}</li>
+                                </ol>
+                            </nav>
+                        </div>
+                        <div class="btn-group">
+                            <a href="{% url 'administrador:docente_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Volver
+                            </a>
+                            <a href="{% url 'administrador:docente_update' docente.pk %}" class="btn btn-warning">
+                                <i class="fas fa-edit me-1"></i> Editar
+                            </a>
+                            {% if docente.estado %}
+                            <a href="{% url 'administrador:docente_delete' docente.pk %}" class="btn btn-danger">
+                                <i class="fas fa-user-times me-1"></i> Desactivar
+                            </a>
+                            {% else %}
+                            <form method="post" action="{% url 'administrador:docente_activar' docente.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-user-check me-1"></i> Activar
+                                </button>
+                            </form>
+                            {% endif %}
+                            <div class="dropdown">
+                                <button class="btn btn-primary dropdown-toggle" type="button" 
+                                        data-bs-toggle="dropdown">
+                                    <i class="fas fa-download me-1"></i> Exportar
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="fas fa-file-pdf text-danger me-2"></i> PDF
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="fas fa-file-excel text-success me-2"></i> Excel
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtro por Año Lectivo -->
+    {% if años_lectivos %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-2">
+                        <div class="col-md-4">
+                            <label class="form-label">Filtrar por Año Lectivo</label>
+                            <select name="año_lectivo" class="form-select" onchange="this.form.submit()">
+                                <option value="">Todos los años</option>
+                                {% for año in años_lectivos %}
+                                <option value="{{ año.id }}" 
+                                    {% if request.GET.año_lectivo == año.id|stringformat:'i' %}selected{% endif %}>
+                                    {{ año.anho }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-8 d-flex align-items-end">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="solo_actual" 
+                                       id="solo_actual" {% if not request.GET.año_lectivo %}checked{% endif %}
+                                       onchange="this.form.submit()">
+                                <label class="form-check-label" for="solo_actual">
+                                    Mostrar solo año lectivo actual
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Estadísticas Rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Asignaturas</h6>
+                            <h2 class="mb-0">{{ asignaturas|length }}</h2>
+                            <small>{{ total_horas_semanales }} horas/semana</small>
+                        </div>
+                        <i class="fas fa-book fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Estudiantes</h6>
+                            <h2 class="mb-0">{{ estadisticas.estudiantes_actuales }}</h2>
+                            <small>bajo responsabilidad</small>
+                        </div>
+                        <i class="fas fa-users fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Experiencia</h6>
+                            <h2 class="mb-0">{{ estadisticas.años_experiencia }}</h2>
+                            <small>años en la institución</small>
+                        </div>
+                        <i class="fas fa-award fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Registros</h6>
+                            <h2 class="mb-0">{{ estadisticas.total_comportamientos }}</h2>
+                            <small>comportamientos registrados</small>
+                        </div>
+                        <i class="fas fa-clipboard-check fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Columna Izquierda: Información Personal -->
+        <div class="col-lg-4">
+            <!-- Tarjeta de Perfil -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-id-card me-2"></i>Perfil del Docente</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        {% if docente.foto %}
+                        <img src="{{ docente.foto.url }}" alt="{{ docente.usuario.get_full_name }}" 
+                             class="rounded-circle img-thumbnail" style="width: 180px; height: 180px; object-fit: cover;">
+                        {% else %}
+                        <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center" 
+                             style="width: 180px; height: 180px; border: 3px solid #dee2e6;">
+                            <i class="fas fa-user-tie fa-5x text-muted"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h4 class="mb-2">{{ docente.usuario.get_full_name }}</h4>
+                    <p class="text-muted mb-3">
+                        <i class="fas fa-chalkboard-teacher me-1"></i> Docente
+                        {% if docente.usuario.tipo_usuario %}
+                        • {{ docente.usuario.tipo_usuario.nombre }}
+                        {% endif %}
+                    </p>
+                    
+                    <div class="d-flex justify-content-center mb-3">
+                        <div class="mx-2">
+                            <span class="badge {% if docente.usuario.estado %}bg-success{% else %}bg-danger{% endif %}">
+                                {% if docente.usuario.estado %}Activo{% else %}Inactivo{% endif %}
+                            </span>
+                        </div>
+                        <div class="mx-2">
+                            <span class="badge bg-info">
+                                {{ docente.usuario.get_sexo_display|default:"No especificado" }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-light">
+                    <div class="row text-center">
+                        <div class="col-6 border-end">
+                            <small class="text-muted d-block">Último Acceso</small>
+                            <strong>
+                                {% if docente.usuario.last_login %}
+                                {{ docente.usuario.last_login|date:"d/m/Y" }}
+                                {% else %}
+                                Nunca
+                                {% endif %}
+                            </strong>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Miembro desde</small>
+                            <strong>{{ docente.created_at|date:"d/m/Y" }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de Contacto -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-address-book me-2"></i>Información de Contacto</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item px-0">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-id-card text-primary"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted d-block">Documento</small>
+                                    <strong>{{ docente.usuario.tipo_documento.nombre }}: {{ docente.usuario.numero_documento }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="list-group-item px-0">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-envelope text-primary"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted d-block">Email</small>
+                                    {% if docente.usuario.email %}
+                                    <a href="mailto:{{ docente.usuario.email }}" class="text-decoration-none">
+                                        <strong>{{ docente.usuario.email }}</strong>
+                                    </a>
+                                    {% else %}
+                                    <strong class="text-muted">No registrado</strong>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="list-group-item px-0">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-phone text-primary"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted d-block">Teléfono</small>
+                                    {% if docente.usuario.telefono %}
+                                    <a href="tel:{{ docente.usuario.telefono }}" class="text-decoration-none">
+                                        <strong>{{ docente.usuario.telefono }}</strong>
+                                    </a>
+                                    {% else %}
+                                    <strong class="text-muted">No registrado</strong>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="list-group-item px-0">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-map-marker-alt text-primary"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted d-block">Dirección</small>
+                                    <strong>{{ docente.usuario.direccion|default:"No registrada" }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="list-group-item px-0">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-birthday-cake text-primary"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted d-block">Fecha de Nacimiento</small>
+                                    <div class="d-flex justify-content-between">
+                                        <strong>{{ docente.usuario.fecha_nacimiento|date:"d/m/Y"|default:"No registrada" }}</strong>
+                                        {% if docente.usuario.edad %}
+                                        <span class="badge bg-info">{{ docente.usuario.edad }} años</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hoja de Vida -->
+            {% if docente.hdv %}
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-file-pdf me-2"></i>Hoja de Vida Digital</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-file-pdf fa-4x text-danger"></i>
+                    </div>
+                    <a href="{{ docente.hdv.url }}" target="_blank" class="btn btn-outline-danger w-100">
+                        <i class="fas fa-external-link-alt me-2"></i> Ver Hoja de Vida
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna Derecha: Información Académica -->
+        <div class="col-lg-8">
+            <!-- Pestañas de Información -->
+            <div class="card mb-4">
+                <div class="card-header bg-light p-0 border-0">
+                    <ul class="nav nav-tabs" id="docenteTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="asignaturas-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#asignaturas" type="button" role="tab">
+                                <i class="fas fa-book me-1"></i> Asignaturas
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="horarios-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#horarios" type="button" role="tab">
+                                <i class="fas fa-calendar-alt me-1"></i> Horarios
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="sedes-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#sedes" type="button" role="tab">
+                                <i class="fas fa-school me-1"></i> Sedes
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="comportamientos-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#comportamientos" type="button" role="tab">
+                                <i class="fas fa-clipboard-check me-1"></i> Comportamientos
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="docenteTabsContent">
+                        <!-- Pestaña de Asignaturas -->
+                        <div class="tab-pane fade show active" id="asignaturas" role="tabpanel">
+                            {% if asignaturas %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Asignatura</th>
+                                            <th>Grado</th>
+                                            <th>Sede</th>
+                                            <th>Año</th>
+                                            <th>Intensidad</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for asignatura in asignaturas %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ asignatura.asignatura.nombre }}</strong>
+                                                {% if asignatura.asignatura.area %}
+                                                <br><small class="text-muted">{{ asignatura.asignatura.area.nombre }}</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">
+                                                    {{ asignatura.grado_año_lectivo.grado.nombre }}
+                                                </span>
+                                            </td>
+                                            <td>{{ asignatura.sede.nombre }}</td>
+                                            <td>{{ asignatura.grado_año_lectivo.año_lectivo.anho }}</td>
+                                            <td>
+                                                <span class="badge bg-light text-dark">
+                                                    {{ asignatura.asignatura.ih|default:"-" }} H/S
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if asignatura.grado_año_lectivo.año_lectivo.estado %}
+                                                <span class="badge bg-success">Activo</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">Finalizado</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-book fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No tiene asignaturas asignadas</h5>
+                                <p class="text-muted">
+                                    {% if año_actual %}
+                                    Para el año lectivo {{ año_actual.anho }}
+                                    {% else %}
+                                    Actualmente
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Pestaña de Horarios -->
+                        <div class="tab-pane fade" id="horarios" role="tabpanel">
+                            {% if horarios %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Día</th>
+                                            <th>Hora</th>
+                                            <th>Asignatura</th>
+                                            <th>Grado</th>
+                                            <th>Salón</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for horario in horarios %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-primary">
+                                                    {{ horario.get_dia_semana_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <strong>{{ horario.hora_inicio|time:"H:i" }} - {{ horario.hora_fin|time:"H:i" }}</strong>
+                                            </td>
+                                            <td>{{ horario.asignatura_grado.asignatura.nombre }}</td>
+                                            <td>{{ horario.asignatura_grado.grado_año_lectivo.grado.nombre }}</td>
+                                            <td>{{ horario.salon|default:"Sin asignar" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No tiene horarios asignados</h5>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Pestaña de Sedes -->
+                        <div class="tab-pane fade" id="sedes" role="tabpanel">
+                            {% if sedes_asignadas %}
+                            <div class="row">
+                                {% for sede in sedes_asignadas %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card border">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="mb-0">{{ sede.sede.nombre }}</h6>
+                                                <span class="badge {% if sede.estado %}bg-success{% else %}bg-secondary{% endif %}">
+                                                    {% if sede.estado %}Activa{% else %}Inactiva{% endif %}
+                                                </span>
+                                            </div>
+                                            <p class="small text-muted mb-2">
+                                                <i class="fas fa-calendar me-1"></i> Año: {{ sede.año_lectivo.anho }}
+                                            </p>
+                                            <p class="small text-muted mb-0">
+                                                <i class="fas fa-map-marker-alt me-1"></i> {{ sede.sede.direccion|truncatechars:30 }}
+                                            </p>
+                                            <div class="mt-3">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar-plus me-1"></i> Asignado: {{ sede.fecha_asignacion|date:"d/m/Y" }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-school fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No tiene sedes asignadas</h5>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Pestaña de Comportamientos -->
+                        <div class="tab-pane fade" id="comportamientos" role="tabpanel">
+                            {% if comportamientos_registrados %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Estudiante</th>
+                                            <th>Tipo</th>
+                                            <th>Categoría</th>
+                                            <th>Descripción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for comp in comportamientos_registrados %}
+                                        <tr>
+                                            <td>{{ comp.fecha|date:"d/m/Y" }}</td>
+                                            <td>
+                                                <a href="{% url 'administrador:estudiante_detail' comp.estudiante.id %}" 
+                                                   class="text-decoration-none">
+                                                    {{ comp.estudiante.usuario.get_full_name }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <span class="badge {% if comp.tipo == 'Positivo' %}bg-success{% else %}bg-danger{% endif %}">
+                                                    {{ comp.tipo }}
+                                                </span>
+                                            </td>
+                                            <td>{{ comp.get_categoria_display }}</td>
+                                            <td>{{ comp.descripcion|truncatechars:50 }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                <div class="text-center mt-3">
+                                    <a href="#" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-list me-1"></i> Ver todos los registros
+                                    </a>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No ha registrado comportamientos</h5>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contactos de Emergencia -->
+            <div class="card mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-user-friends me-2"></i>Contactos de Emergencia</h5>
+                    <a href="#" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarContacto">
+                        <i class="fas fa-plus me-1"></i> Agregar
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if contactos %}
+                    <div class="row">
+                        {% for contacto in contactos %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="mb-0">{{ contacto.nombres }} {{ contacto.apellidos }}</h6>
+                                        <span class="badge bg-info">{{ contacto.relacion }}</span>
+                                    </div>
+                                    <p class="mb-1">
+                                        <i class="fas fa-phone text-muted me-2"></i>
+                                        <a href="tel:{{ contacto.telefono }}" class="text-decoration-none">
+                                            {{ contacto.telefono }}
+                                        </a>
+                                    </p>
+                                    {% if contacto.email %}
+                                    <p class="mb-0">
+                                        <i class="fas fa-envelope text-muted me-2"></i>
+                                        <a href="mailto:{{ contacto.email }}" class="text-decoration-none">
+                                            {{ contacto.email }}
+                                        </a>
+                                    </p>
+                                    {% endif %}
+                                </div>
+                                <div class="card-footer bg-light py-2 d-flex justify-content-end">
+                                    <a href="#" class="btn btn-sm btn-outline-warning me-2">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="#" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-address-book fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay contactos registrados</h5>
+                        <p class="text-muted mb-3">Agrega contactos de emergencia para este docente</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarContacto">
+                            <i class="fas fa-plus me-1"></i> Agregar Primer Contacto
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Información del Sistema -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información del Sistema</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <small class="text-muted d-block">Creado el</small>
+                                <strong>{{ docente.created_at|date:"d/m/Y H:i" }}</strong>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted d-block">Última actualización</small>
+                                <strong>{{ docente.updated_at|date:"d/m/Y H:i" }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <small class="text-muted d-block">Creado por</small>
+                                <strong>
+                                    {% if docente.created_by %}
+                                    {{ docente.created_by.get_full_name }}
+                                    {% else %}
+                                    Sistema
+                                    {% endif %}
+                                </strong>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted d-block">Estado en sistema</small>
+                                <span class="badge {% if not docente.is_deleted %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if not docente.is_deleted %}Activo{% else %}Eliminado{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar contacto -->
+<div class="modal fade" id="modalAgregarContacto" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar Contacto de Emergencia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAgregarContacto">
+                    <div class="mb-3">
+                        <label class="form-label">Nombres</label>
+                        <input type="text" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Apellidos</label>
+                        <input type="text" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Relación</label>
+                        <input type="text" class="form-control" placeholder="Ej: Padre, Madre, Hermano" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Teléfono</label>
+                        <input type="tel" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary">Guardar Contacto</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Activar pestañas
+    $('#docenteTabs a').on('click', function (e) {
+        e.preventDefault();
+        $(this).tab('show');
+    });
+
+    // Confirmación para acciones importantes
+    $('.btn-danger').on('click', function(e) {
+        if (!confirm('¿Está seguro de desactivar a este docente? No podrá acceder al sistema.')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,524 @@
+<!-- components/performance_chart.html -->
+{% load static estudiante_filters %}
+<div class="card border-0 shadow-sm performance-card">
+    <div class="card-header bg-white border-0 py-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-bar-chart-line-fill text-primary me-2"></i>
+                {% if periodo_actual %}
+                    Mi Progreso Académico - {{ periodo_actual.periodo.nombre }}
+                {% elif periodo_alternativo %}
+                    Información del Año Anterior - {{ periodo_alternativo.periodo.nombre }}
+                {% else %}
+                    Mi Progreso Académico
+                {% endif %}
+            </h5>
+            
+            <!-- Dropdown del período con indicador de tendencia -->
+            {% if periodos_academicos and periodos_academicos|length > 1 %}
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-primary dropdown-toggle d-flex align-items-center" 
+                        type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-calendar-range me-1"></i>
+                    {% if periodo_actual %}
+                        {{ periodo_actual.periodo.nombre }}
+                    {% elif periodo_alternativo %}
+                        {{ periodo_alternativo.periodo.nombre }} (Año anterior)
+                    {% else %}
+                        Seleccionar
+                    {% endif %}
+                    {% if periodos_comparativos %}
+                    {% with tendencia=periodos_comparativos|calcular_tendencia %}
+                    <span class="ms-2 badge bg-{% if tendencia == 'mejorando' %}success{% elif tendencia == 'bajando' %}danger{% else %}secondary{% endif %}">
+                        <i class="bi bi-arrow-{% if tendencia == 'mejorando' %}up{% elif tendencia == 'bajando' %}down{% else %}right{% endif %}"></i>
+                    </span>
+                    {% endwith %}
+                    {% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    {% for periodo in periodos_academicos %}
+                    <li>
+                        <a class="dropdown-item {% if periodo.id == periodo_actual.id %}active{% endif %}" 
+                           href="{% url 'estudiantes:estudiante_informe_periodo' periodo.id %}">
+                            <i class="bi bi-{% if periodo.id == periodo_actual.id %}check-circle-fill{% else %}circle{% endif %} me-2"></i>
+                            {{ periodo.periodo.nombre }}
+                            {% if periodo.notas %}
+                            <small class="text-muted ms-2">
+                                ({{ periodo.notas|calcular_promedio_seguro }})
+                            </small>
+                            {% endif %}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Información del período -->
+        <div class="d-flex align-items-center mt-2">
+            {% if periodo_actual %}
+            <small class="text-muted">
+                <i class="bi bi-calendar3 me-1"></i>
+                {{ periodo_actual.fecha_inicio|date:"d/m/Y" }} - {{ periodo_actual.fecha_fin|date:"d/m/Y" }}
+            </small>
+            
+            <!-- Indicador de progreso si hay datos anteriores -->
+            {% if notas_periodo_anterior and notas_periodo_actual %}
+            {% with progreso=notas_periodo_actual|calcular_progreso:notas_periodo_anterior %}
+            {% if progreso != 0 %}
+            <small class="ms-3 badge bg-{% if progreso > 0 %}success{% else %}danger{% endif %}">
+                <i class="bi bi-arrow-{% if progreso > 0 %}up{% else %}down{% endif %} me-1"></i>
+                {{ progreso|floatformat:1 }}%
+            </small>
+            {% endif %}
+            {% endwith %}
+            {% endif %}
+            
+            {% elif periodo_alternativo %}
+            <small class="text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                Año lectivo {{ año_lectivo_actual.anho }} aún no ha comenzado. Mostrando información de {{ año_lectivo_alternativo.anho }}
+            </small>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="card-body">
+        <!-- Mostrar información del período actual o alternativo -->
+        {% if notas_periodo_actual %}
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <!-- Gráfico de barras con más información -->
+                <div class="performance-bars">
+                    {% for asignatura in notas_periodo_actual %}
+                    <div class="performance-item mb-3" 
+                         data-grade="{{ asignatura.calificacion|default:0 }}"
+                         data-subject="{{ asignatura.nombre }}">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex align-items-center flex-grow-1 me-3">
+                                <span class="subject-icon me-2">
+                                    {% if asignatura.area %}
+                                    <i class="bi bi-{{ asignatura.area|lower|cut:' ' }}-text text-muted"></i>
+                                    {% else %}
+                                    <i class="bi bi-journal-text text-muted"></i>
+                                    {% endif %}
+                                </span>
+                                <span class="fw-semibold text-truncate" 
+                                      data-bs-toggle="tooltip" 
+                                      title="{{ asignatura.nombre }}">
+                                    {{ asignatura.nombre }}
+                                </span>
+                                
+                                <!-- Indicador de progreso por asignatura -->
+                                {% if asignatura.progreso %}
+                                <small class="ms-2 badge bg-{% if asignatura.progreso > 0 %}success{% elif asignatura.progreso < 0 %}danger{% else %}secondary{% endif %}">
+                                    {{ asignatura.progreso|floatformat:0 }}%
+                                </small>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                {% if asignatura.tiene_nota %}
+                                <span class="grade-badge bg-{{ asignatura.desempeno|color_desempeno }} text-white"
+                                      data-bs-toggle="tooltip"
+                                      title="Calificación: {{ asignatura.calificacion }}">
+                                    {{ asignatura.calificacion }}
+                                </span>
+                                <span class="badge bg-{{ asignatura.desempeno|color_desempeno }} performance-badge">
+                                    {{ asignatura.desempeno }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-clock me-1"></i>Pendiente
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="progress performance-progress" style="height: 10px;">
+                            {% if asignatura.tiene_nota %}
+                            <div class="progress-bar bg-{{ asignatura.desempeno|color_desempeno }}" 
+                                 role="progressbar" 
+                                 style="width: {{ asignatura.calificacion|multiply:20 }}%"
+                                 data-bs-toggle="tooltip"
+                                 title="{{ asignatura.nombre }}: {{ asignatura.calificacion }}">
+                            </div>
+                            {% else %}
+                            <div class="progress-bar bg-secondary progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" 
+                                 style="width: 100%"
+                                 data-bs-toggle="tooltip"
+                                 title="{{ asignatura.nombre }}: Sin calificar">
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Información adicional de la asignatura -->
+                        {% if asignatura.tiene_nota and asignatura.comentarios %}
+                        <small class="text-muted mt-1 d-block">
+                            <i class="bi bi-chat-left-text me-1"></i>
+                            {{ asignatura.comentarios|truncatechars:100 }}
+                        </small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Panel de estadísticas mejorado -->
+                <div class="performance-summary">
+                    <h6 class="text-muted mb-3 text-center">
+                        <i class="bi bi-graph-up me-2"></i>Estadísticas del Período
+                    </h6>
+                    
+                    <!-- Resumen numérico -->
+                    <div class="row g-2 mb-4">
+                        <div class="col-6">
+                            <div class="stat-card p-2 text-center bg-light rounded">
+                                <div class="h5 mb-0 fw-bold text-primary">{{ notas_periodo_actual|calcular_promedio_seguro }}</div>
+                                <small class="text-muted">Promedio</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card p-2 text-center bg-light rounded">
+                                <div class="h5 mb-0 fw-bold text-info">{{ notas_periodo_actual|calcular_mediana }}</div>
+                                <small class="text-muted">Mediana</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card p-2 text-center bg-light rounded">
+                                <div class="h5 mb-0 fw-bold text-success">{{ notas_periodo_actual|count_evaluated }}</div>
+                                <small class="text-muted">Evaluadas</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card p-2 text-center bg-light rounded">
+                                <div class="h5 mb-0 fw-bold text-warning">{{ notas_periodo_actual|count_pending }}</div>
+                                <small class="text-muted">Pendientes</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Distribución de desempeño -->
+                    <div class="distribution-chart mb-4">
+                        <h6 class="small text-muted mb-3">Distribución por Nivel</h6>
+                        {% with total=notas_periodo_actual|length %}
+                        {% with superior=notas_periodo_actual|count_performance:"Superior" alto=notas_periodo_actual|count_performance:"Alto" basico=notas_periodo_actual|count_performance:"Básico" bajo=notas_periodo_actual|count_performance:"Bajo" %}
+                        <div class="distribution-item d-flex justify-content-between align-items-center mb-2">
+                            <span class="small d-flex align-items-center">
+                                <span class="distribution-dot bg-success"></span>
+                                Superior
+                            </span>
+                            <span>
+                                <span class="fw-semibold">{{ superior }}</span>
+                                <small class="text-muted ms-1">({{ superior|percentage:total|floatformat:0 }}%)</small>
+                            </span>
+                        </div>
+                        <div class="distribution-item d-flex justify-content-between align-items-center mb-2">
+                            <span class="small d-flex align-items-center">
+                                <span class="distribution-dot bg-info"></span>
+                                Alto
+                            </span>
+                            <span>
+                                <span class="fw-semibold">{{ alto }}</span>
+                                <small class="text-muted ms-1">({{ alto|percentage:total|floatformat:0 }}%)</small>
+                            </span>
+                        </div>
+                        <div class="distribution-item d-flex justify-content-between align-items-center mb-2">
+                            <span class="small d-flex align-items-center">
+                                <span class="distribution-dot bg-warning"></span>
+                                Básico
+                            </span>
+                            <span>
+                                <span class="fw-semibold">{{ basico }}</span>
+                                <small class="text-muted ms-1">({{ basico|percentage:total|floatformat:0 }}%)</small>
+                            </span>
+                        </div>
+                        <div class="distribution-item d-flex justify-content-between align-items-center mb-2">
+                            <span class="small d-flex align-items-center">
+                                <span class="distribution-dot bg-danger"></span>
+                                Bajo
+                            </span>
+                            <span>
+                                <span class="fw-semibold">{{ bajo }}</span>
+                                <small class="text-muted ms-1">({{ bajo|percentage:total|floatformat:0 }}%)</small>
+                            </span>
+                        </div>
+                        {% endwith %}
+                        {% endwith %}
+                    </div>
+                    
+                    <!-- Recomendaciones basadas en el rendimiento -->
+                    <div class="recommendation-section mt-4 p-3 bg-light rounded">
+                        <h6 class="small text-muted mb-2">
+                            <i class="bi bi-lightbulb me-1"></i>Recomendación
+                        </h6>
+                        {% with promedio=notas_periodo_actual|calcular_promedio_seguro %}
+                        {% if promedio >= 4.5 %}
+                        <p class="small mb-0 text-success">¡Excelente trabajo! Sigue manteniendo ese nivel de dedicación.</p>
+                        {% elif promedio >= 4.0 %}
+                        <p class="small mb-0 text-primary">Buen rendimiento. Podrías mejorar en algunas áreas específicas.</p>
+                        {% elif promedio >= 3.0 %}
+                        <p class="small mb-0 text-warning">Rendimiento aceptable. Es recomendable repasar los temas con dificultad.</p>
+                        {% else %}
+                        <p class="small mb-0 text-danger">Necesitas mejorar. Considera solicitar apoyo académico adicional.</p>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer con acciones -->
+        <div class="card-footer bg-white border-0 pt-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Última actualización: {% now "d/m/Y H:i" %}
+                </small>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary" onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i>Imprimir
+                    </button>
+                    <button class="btn btn-sm btn-primary" id="exportChartBtn">
+                        <i class="bi bi-download me-1"></i>Exportar
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        {% elif periodo_alternativo and notas_periodo_alternativo %}
+        <!-- Mostrar información del año anterior cuando el actual no ha comenzado -->
+        <div class="alert alert-info mb-4">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            El año lectivo <strong>{{ año_lectivo_actual.anho }}</strong> aún no ha comenzado. 
+            Mostrando información del último período del año anterior.
+        </div>
+        
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <div class="performance-bars">
+                    {% for asignatura in notas_periodo_alternativo %}
+                    <div class="performance-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex align-items-center flex-grow-1 me-3">
+                                <span class="subject-icon me-2">
+                                    <i class="bi bi-journal-text text-muted"></i>
+                                </span>
+                                <span class="fw-semibold text-truncate">
+                                    {{ asignatura.nombre }}
+                                </span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                {% if asignatura.tiene_nota %}
+                                <span class="grade-badge bg-{{ asignatura.desempeno|color_desempeno }} text-white">
+                                    {{ asignatura.calificacion }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">
+                                    Sin calificar
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if asignatura.tiene_nota %}
+                        <div class="progress performance-progress" style="height: 8px;">
+                            <div class="progress-bar bg-{{ asignatura.desempeno|color_desempeno }}" 
+                                 style="width: {{ asignatura.calificacion|multiply:20 }}%">
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading mb-2">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Información histórica
+                    </h6>
+                    <p class="small mb-2">
+                        Estas son las calificaciones del año lectivo {{ año_lectivo_alternativo.anho }}.
+                        El nuevo año comenzará el {{ año_lectivo_actual.fecha_inicio|date:"d/m/Y"|default:"próximamente" }}.
+                    </p>
+                    <div class="mt-3">
+                        <a href="{% url 'estudiantes:seleccionar_año_lectivo' %}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-search me-1"></i>Ver otros años
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% else %}
+        <!-- Estado vacío con opciones de acción -->
+        <div class="text-center text-muted py-5 empty-state">
+            <div class="empty-icon mb-3">
+                <i class="bi bi-bar-chart display-1 text-light"></i>
+            </div>
+            
+            {% if periodo_actual %}
+            <h6 class="text-dark mb-2">No hay calificaciones registradas</h6>
+            <p class="small mb-4">
+                Las calificaciones del período {{ periodo_actual.periodo.nombre }} aparecerán aquí cuando sean registradas
+            </p>
+            {% else %}
+            <h6 class="text-dark mb-2">Información no disponible</h6>
+            <p class="small mb-4">
+                No hay información académica disponible para mostrar en este momento
+            </p>
+            {% endif %}
+            
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                {% if periodo_actual %}
+                <a href="{% url 'estudiantes:estudiante_informe' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-journal-text me-1"></i>Ver todos los informes
+                </a>
+                {% endif %}
+                
+                {% if periodos_academicos and periodos_academicos|length > 1 %}
+                {% with ultimo_periodo=periodos_academicos.last %}
+                <a href="{% url 'estudiantes:estudiante_informe_periodo' ultimo_periodo.id %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-clock-history me-1"></i>Ver último período
+                </a>
+                {% endwith %}
+                {% endif %}
+                
+                <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Estilos mejorados -->
+<style>
+.performance-card {
+    transition: transform 0.3s ease;
+}
+
+.performance-card:hover {
+    transform: translateY(-2px);
+}
+
+.performance-progress {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.performance-progress .progress-bar {
+    border-radius: 10px;
+    transition: all 0.6s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.performance-progress .progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+.stat-card {
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.stat-card:hover {
+    border-color: #dee2e6;
+    transform: translateY(-2px);
+}
+
+.distribution-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.empty-state .empty-icon {
+    opacity: 0.5;
+}
+
+.grade-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    min-width: 45px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+@media print {
+    .performance-card {
+        box-shadow: none !important;
+        border: 1px solid #dee2e6 !important;
+    }
+    
+    .btn, .dropdown {
+        display: none !important;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Animación de barras al cargar
+    const progressBars = document.querySelectorAll('.performance-progress .progress-bar');
+    progressBars.forEach((bar, index) => {
+        const originalWidth = bar.style.width;
+        bar.style.width = '0%';
+        
+        setTimeout(() => {
+            bar.style.transition = 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+            bar.style.width = originalWidth;
+        }, index * 100);
+    });
+    
+    // Exportar gráfico como imagen
+    const exportBtn = document.getElementById('exportChartBtn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            // Implementar exportación con html2canvas o similar
+            alert('Funcionalidad de exportación en desarrollo');
+        });
+    }
+    
+    // Resaltar asignaturas con bajo rendimiento
+    const lowPerformanceItems = document.querySelectorAll('.performance-item[data-grade]');
+    lowPerformanceItems.forEach(item => {
+        const grade = parseFloat(item.getAttribute('data-grade'));
+        if (grade < 3.0) {
+            item.classList.add('low-performance');
+            item.style.backgroundColor = 'rgba(220, 53, 69, 0.05)';
+        }
+    });
+});
+</script>

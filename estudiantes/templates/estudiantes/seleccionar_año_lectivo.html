@@ -1,0 +1,161 @@
+<!-- estudiantes/seleccionar_año_lectivo.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static estudiante_filters %}
+
+{% block title %}Seleccionar Año Lectivo{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h1 class="h3 mb-2">
+                        <i class="bi bi-calendar-check text-primary me-2"></i>
+                        Seleccionar Año Lectivo
+                    </h1>
+                    <p class="text-muted">
+                        {% if es_estudiante %}
+                        Selecciona el año lectivo que deseas consultar
+                        {% else %}
+                        Selecciona el año lectivo de {{ estudiante.usuario.get_full_name }}
+                        {% endif %}
+                    </p>
+                    
+                    <!-- Aviso si hay años inactivos -->
+                    {% if años_lectivos %}
+                        {% with años_inactivos=años_lectivos|length|subtract:años_lectivos|filter_activos %}
+                        {% if años_inactivos > 0 %}
+                        <div class="alert alert-info mt-3">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Tienes {{ años_inactivos }} año(s) lectivo(s) histórico(s) disponibles.
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                {{ error }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        {% for año in años_lectivos %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border {% if año.es_actual %}border-primary shadow{% endif %} 
+                {% if not año.es_año_activo_sistema %}border-secondary{% endif %}">
+                <div class="card-header 
+                    {% if año.es_actual %}bg-primary text-white
+                    {% elif not año.es_año_activo_sistema %}bg-secondary text-white
+                    {% else %}bg-light{% endif %}">
+                    <h5 class="mb-0">
+                        {{ año.anho }}
+                        {% if año.es_actual %}
+                        <span class="badge bg-success ms-2">Actual</span>
+                        {% elif not año.es_año_activo_sistema %}
+                        <span class="badge bg-secondary ms-2">Histórico</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        <strong>Grado:</strong> {{ año.grado }}<br>
+                        <strong>Sede:</strong> {{ año.sede }}<br>
+                        <strong>Estado matrícula:</strong> {{ año.estado_matricula }}<br>
+                        {% if año.fecha_inicio and año.fecha_fin %}
+                        <strong>Periodo:</strong> 
+                        {{ año.fecha_inicio|date:"d/m/Y" }} - {{ año.fecha_fin|date:"d/m/Y" }}
+                        {% endif %}
+                    </p>
+                    
+                    <!-- Períodos disponibles -->
+                    {% if año.periodos %}
+                    <div class="mt-3">
+                        <h6>Períodos académicos:</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for periodo in año.periodos %}
+                            <a href="{% if es_estudiante %}{% url 'estudiantes:estudiante_informe_periodo' periodo.id %}{% else %}{% url 'estudiantes:estudiante_informe_periodo_admin' estudiante_id=estudiante.id periodo_id=periodo.id %}{% endif %}" 
+                               class="btn btn-sm btn-outline-primary">
+                                {{ periodo.periodo.nombre }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning mt-3">
+                        <small><i class="bi bi-exclamation-triangle me-1"></i> No hay períodos registrados</small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-grid gap-2">
+                        <!-- Botón para ver documentos de este año -->
+                        <div class="btn-group" role="group">
+                            <a href="{% if es_estudiante %}{% url 'estudiantes:estudiante_constancia_pdf' %}?año_lectivo_id={{ año.id }}{% else %}{% url 'estudiantes:estudiante_constancia_pdf_admin' estudiante_id=estudiante.id %}?año_lectivo_id={{ año.id }}{% endif %}" 
+                               class="btn btn-outline-secondary" target="_blank">
+                                <i class="bi bi-file-text me-1"></i> Constancia
+                            </a>
+                            <a href="{% if es_estudiante %}{% url 'estudiantes:estudiante_observador_pdf_año' año_lectivo_id=año.id %}{% else %}{% url 'estudiantes:estudiante_observador_pdf_admin' estudiante_id=estudiante.id %}?año_lectivo_id={{ año.id }}{% endif %}" 
+                               class="btn btn-outline-secondary" target="_blank">
+                                <i class="bi bi-eye me-1"></i> Observador
+                            </a>
+                        </div>
+                        
+                        <!-- Botón para ver informe general del año -->
+                        {% if año.periodos %}
+                        <a href="{% if es_estudiante %}{% url 'estudiantes:estudiante_informe_periodo' año.periodos.first.id %}{% else %}{% url 'estudiantes:estudiante_informe_periodo_admin' estudiante_id=estudiante.id periodo_id=año.periodos.first.id %}{% endif %}" 
+                           class="btn btn-primary">
+                            <i class="bi bi-graph-up me-1"></i> Ver Informe Académico
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-calendar-x text-muted display-1"></i>
+                    <h4 class="mt-3">No hay años lectivos disponibles</h4>
+                    <p class="text-muted">
+                        {% if es_estudiante %}
+                        No tienes matrículas registradas en el sistema.
+                        {% else %}
+                        Este estudiante no tiene matrículas registradas.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Botón de volver -->
+    <div class="row mt-4">
+        <div class="col-12">
+            {% if es_estudiante %}
+            <a href="{% url 'estudiantes:estudiante_perfil' %}" 
+               class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Volver al Perfil
+            </a>
+            {% else %}
+            <a href="{% url 'estudiantes:estudiante_perfil_admin' estudiante_id=estudiante.id %}" 
+               class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Volver al Perfil
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

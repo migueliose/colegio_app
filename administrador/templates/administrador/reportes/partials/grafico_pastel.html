@@ -1,0 +1,196 @@
+<!-- templates/administrador/reportes/partials/grafico_pastel.html -->
+<div class="chart-card">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">{{ titulo }}</h6>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" onclick="exportChart('{{ id_canvas }}', '{{ titulo|slugify }}.png')">
+                    <i class="bi bi-download"></i>
+                </button>
+                <button class="btn btn-outline-secondary" onclick="toggleLegend()">
+                    <i class="bi bi-list"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="chart-container" style="height: {{ altura|default:'300px' }};">
+                        <canvas id="{{ id_canvas }}"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="chart-legend" id="legend-{{ id_canvas }}">
+                        {% if legend_data %}
+                            {% for item in legend_data %}
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="legend-color me-2" style="width: 15px; height: 15px; background-color: {{ item.color }}; border-radius: 3px;"></div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ item.label }}</span>
+                                        <span class="text-muted">{{ item.value }} ({{ item.percentage }}%)</span>
+                                    </div>
+                                    <div class="progress" style="height: 5px;">
+                                        <div class="progress-bar" style="width: {{ item.percentage }}%; background-color: {{ item.color }};"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center">La leyenda se generará automáticamente</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Inicializar gráfico de pastel/dona
+function initializePieChart(canvasId, labels, data, colors = null, options = {}) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    
+    // Generar colores si no se proporcionan
+    const defaultColors = [
+        '#0d6efd', '#198754', '#dc3545', '#ffc107', '#6c757d',
+        '#20c997', '#fd7e14', '#6610f2', '#e83e8c', '#6f42c1'
+    ];
+    
+    const chartColors = colors || defaultColors.slice(0, Math.min(data.length, defaultColors.length));
+    
+    const defaultOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false, // Ocultamos la leyenda de Chart.js porque usamos una personalizada
+                position: 'right',
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const label = context.label || '';
+                        const value = context.raw || 0;
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = Math.round((value / total) * 100);
+                        return `${label}: ${value} (${percentage}%)`;
+                    }
+                }
+            }
+        }
+    };
+    
+    const mergedOptions = { ...defaultOptions, ...options };
+    
+    const chart = new Chart(ctx, {
+        type: '{{ tipo|default:"doughnut" }}', // 'pie' o 'doughnut'
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: chartColors,
+                borderColor: '#fff',
+                borderWidth: 2,
+                hoverOffset: 15
+            }]
+        },
+        options: mergedOptions
+    });
+    
+    // Actualizar leyenda personalizada
+    updateCustomLegend(canvasId, labels, data, chartColors);
+    
+    return chart;
+}
+
+// Actualizar leyenda personalizada
+function updateCustomLegend(canvasId, labels, data, colors) {
+    const total = data.reduce((a, b) => a + b, 0);
+    const legendContainer = document.getElementById(`legend-${canvasId}`);
+    
+    let legendHtml = '';
+    
+    labels.forEach((label, index) => {
+        const value = data[index];
+        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+        const color = colors[index];
+        
+        legendHtml += `
+            <div class="d-flex align-items-center mb-2">
+                <div class="legend-color me-2" style="width: 15px; height: 15px; background-color: ${color}; border-radius: 3px;"></div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between">
+                        <span>${label}</span>
+                        <span class="text-muted">${value} (${percentage}%)</span>
+                    </div>
+                    <div class="progress" style="height: 5px;">
+                        <div class="progress-bar" style="width: ${percentage}%; background-color: ${color};"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    legendContainer.innerHTML = legendHtml;
+}
+
+// Alternar visibilidad de leyenda
+function toggleLegend() {
+    const legend = document.getElementById('legend-{{ id_canvas }}');
+    if (legend.style.display === 'none') {
+        legend.style.display = 'block';
+    } else {
+        legend.style.display = 'none';
+    }
+}
+
+// Exportar gráfico como imagen
+function exportChart(canvasId, filename) {
+    const canvas = document.getElementById(canvasId);
+    const link = document.createElement('a');
+    link.download = filename || 'grafico.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+// Inicializar cuando el DOM esté listo
+$(document).ready(function() {
+    {% if auto_initialize %}
+    const labels = {{ labels|safe }};
+    const data = {{ data|safe }};
+    const colors = {{ colors|safe|default:"null" }};
+    
+    if (labels && data && labels.length > 0) {
+        window.pieChart = initializePieChart('{{ id_canvas }}', labels, data, colors);
+    }
+    {% endif %}
+});
+</script>
+
+<style>
+.chart-card {
+    margin-bottom: 1.5rem;
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+}
+
+.legend-color {
+    min-width: 15px;
+}
+
+.chart-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+}
+
+.chart-actions .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+</style>

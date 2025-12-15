@@ -1,0 +1,92 @@
+<!-- templates/registration/login.html -->
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block title %}Iniciar Sesión - Colegio Cristiano El Shadai{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3 class="mb-0">
+                        <i class="fas fa-user-circle me-2"></i>
+                        Iniciar Sesión
+                    </h3>
+                    <p class="mb-0 mt-2 small">Sistema Escolar El Shadai</p>
+                </div>
+                
+                <div class="card-body p-4">
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Usuario o contraseña incorrectos. Por favor intenta nuevamente.
+                    </div>
+                    {% endif %}
+
+                    {% if next %}
+                        {% if user.is_authenticated %}
+                        <div class="alert alert-warning">
+                            Tu cuenta no tiene acceso a esta página.
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            Por favor inicia sesión para acceder a esta página.
+                        </div>
+                        {% endif %}
+                    {% endif %}
+
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_username" class="form-label">
+                                <i class="fas fa-user me-2"></i>Usuario
+                            </label>
+                            <input type="text" name="username" class="form-control" 
+                                   id="id_username" required autofocus>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_password" class="form-label">
+                                <i class="fas fa-lock me-2"></i>Contraseña
+                            </label>
+                            <input type="password" name="password" class="form-control" 
+                                   id="id_password" required>
+                        </div>
+
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                Iniciar Sesión
+                            </button>
+                        </div>
+
+                        <input type="hidden" name="next" value="{{ next }}">
+                    </form>
+
+                    <div class="text-center">
+                        <p class="text-muted small mb-0">
+                            ¿Problemas para acceder? 
+                            <a href="{% url 'web:contact' %}">Contacta al administrador</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info para diferentes roles -->
+            <div class="mt-4">
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">Información de Acceso:</h6>
+                    <ul class="mb-0 small">
+                        <li><strong>Administradores:</strong> Acceso completo al sistema</li>
+                        <li><strong>Docentes:</strong> Gestión de cursos y calificaciones</li>
+                        <li><strong>Estudiantes:</strong> Consulta de notas y perfil</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

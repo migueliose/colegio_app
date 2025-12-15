@@ -1,0 +1,32 @@
+<!-- Información del Perfil Extendido -->
+{% load gestion_extras %}
+<div class="border-top pt-3 mb-4">
+    <h5 class="text-primary mb-3">
+        <i class="fas fa-id-card me-2"></i>Información del Perfil Académico
+    </h5>
+    <div class="row">
+        <div class="col-md-6">
+            <p><strong>Tipo de Usuario:</strong> 
+                <span class="badge bg-info">{{ user|get_tipo_usuario }}</span>
+            </p>
+            {% if user.tipo_documento %}
+            <p><strong>Documento:</strong> 
+                {{ user.numero_documento }}
+            </p>
+            {% endif %}
+            <p><strong>Nombres Completos:</strong> {{ user.nombres }}</p>
+            <p><strong>Apellidos Completos:</strong> {{ user.apellidos }}</p>
+        </div>
+        <div class="col-md-6">
+            <p><strong>Teléfono:</strong> {{ user.telefono|default:"No registrado" }}</p>
+            <p><strong>Dirección:</strong> {{ user.direccion|default:"No registrada" }}</p>
+            {% if user.sexo %}
+            <p><strong>Sexo:</strong> {{ user.get_sexo_display }}</p>
+            {% endif %}
+            {% if user.fecha_nacimiento %}
+                <p><strong>Fecha Nacimiento:</strong> {{ user.fecha_nacimiento|date:"d M Y" }}</p>
+                <p><strong>Edad:</strong> {{ user.edad }} años</p>
+            {% endif %}
+        </div>
+    </div>
+</div>

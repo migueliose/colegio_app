@@ -1,0 +1,234 @@
+<!-- components/stats_cards.html -->
+{% load static estudiante_filters %}
+<div class="row g-3">
+    <!-- Promedio General -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card card-hover border-0 shadow-sm h-100 stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="avatar avatar-lg bg-gradient-primary text-white rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="fas fa-chart-line fs-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-0 fw-bold text-primary stat-number">
+                            {{ notas_estudiante|calcular_promedio }}
+                        </h4>
+                        <p class="text-muted mb-0">Promedio General</p>
+                        <small class="text-muted">
+                            {% with promedio=notas_estudiante|calcular_promedio %}
+                                {% if promedio >= 4.5 %}
+                                    <span class="text-success">• Excelente</span>
+                                {% elif promedio >= 4.0 %}
+                                    <span class="text-info">• Bueno</span>
+                                {% elif promedio >= 3.0 %}
+                                    <span class="text-warning">• Aceptable</span>
+                                {% else %}
+                                    <span class="text-danger">• Necesita mejorar</span>
+                                {% endif %}
+                            {% endwith %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asistencia -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card card-hover border-0 shadow-sm h-100 stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="avatar avatar-lg bg-gradient-success text-white rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="fas fa-calendar-check fs-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-0 fw-bold text-success stat-number">
+                            {{ porcentaje_asistencia|default:100 }}%
+                        </h4>
+                        <p class="text-muted mb-0">Asistencia</p>
+                        <small class="text-muted">
+                            {{ asistencias_positivas|default:0 }} de {{ total_asistencias|default:0 }} días
+                        </small>
+                        {% with porcentaje=porcentaje_asistencia|default:100 %}
+                            {% if porcentaje >= 95 %}
+                                <small class="text-success d-block">• Asistencia perfecta</small>
+                            {% elif porcentaje >= 90 %}
+                                <small class="text-success d-block">• Excelente asistencia</small>
+                            {% elif porcentaje >= 85 %}
+                                <small class="text-info d-block">• Buena asistencia</small>
+                            {% elif porcentaje >= 80 %}
+                                <small class="text-warning d-block">• Asistencia regular</small>
+                            {% else %}
+                                <small class="text-danger d-block">• Baja asistencia</small>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comportamiento Positivo -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card card-hover border-0 shadow-sm h-100 stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="avatar avatar-lg bg-gradient-info text-white rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="fas fa-star fs-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-0 fw-bold text-info stat-number">
+                            {{ comportamientos_recientes|count_by_tipo:"Positivo"|default:0 }}
+                        </h4>
+                        <p class="text-muted mb-0">Conductas Positivas</p>
+                        <small class="text-muted">
+                            {% with positivos=comportamientos_recientes|count_by_tipo:"Positivo"|default:0 negativos=comportamientos_recientes|count_by_tipo:"Negativo"|default:0 %}
+                                {% if positivos > negativos %}
+                                    <span class="text-success">• Excelente conducta</span>
+                                {% elif positivos == negativos %}
+                                    <span class="text-warning">• Conducta regular</span>
+                                {% else %}
+                                    <span class="text-danger">• Mejorar conducta</span>
+                                {% endif %}
+                            {% endwith %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asignaturas Evaluadas -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card card-hover border-0 shadow-sm h-100 stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="avatar avatar-lg bg-gradient-warning text-white rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="fas fa-book fs-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-0 fw-bold text-warning stat-number">
+                            {{ notas_estudiante|count_evaluated|default:0 }}
+                        </h4>
+                        <p class="text-muted mb-0">Asignaturas Evaluadas</p>
+                        <small class="text-muted">
+                            {{ notas_estudiante|count_evaluated|default:0 }}/{{ notas_estudiante|length|default:0 }} completas
+                        </small>
+                        {% with evaluadas=notas_estudiante|count_evaluated|default:0 total=notas_estudiante|length|default:0 %}
+                            {% if evaluadas == total and total > 0 %}
+                                <small class="text-success d-block">• Todas evaluadas</small>
+                            {% elif evaluadas >= total|multiply:0.7 and total > 0 %}
+                                <small class="text-info d-block">• Mayoría evaluada</small>
+                            {% else %}
+                                <small class="text-warning d-block">• En evaluación</small>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stats-card {
+        transition: all 0.3s ease;
+        border-radius: 15px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .stats-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--card-color-1), var(--card-color-2));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .stats-card:hover::before {
+        opacity: 1;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    
+    .avatar {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover .avatar {
+        transform: scale(1.1);
+    }
+    
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    }
+    
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+    }
+    
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%) !important;
+    }
+    
+    .bg-gradient-warning {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%) !important;
+    }
+    
+    .stat-number {
+        font-size: 1.75rem;
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover .stat-number {
+        transform: scale(1.05);
+    }
+    
+    /* Colores para las barras superiores en hover */
+    .stats-card:nth-child(1) {
+        --card-color-1: #667eea;
+        --card-color-2: #764ba2;
+    }
+    
+    .stats-card:nth-child(2) {
+        --card-color-1: #4facfe;
+        --card-color-2: #00f2fe;
+    }
+    
+    .stats-card:nth-child(3) {
+        --card-color-1: #43e97b;
+        --card-color-2: #38f9d7;
+    }
+    
+    .stats-card:nth-child(4) {
+        --card-color-1: #fa709a;
+        --card-color-2: #fee140;
+    }
+
+    /* Asegurar que los iconos de FontAwesome se muestren correctamente */
+    .fas {
+        font-family: "Font Awesome 6 Free" !important;
+        font-weight: 900;
+    }
+</style>

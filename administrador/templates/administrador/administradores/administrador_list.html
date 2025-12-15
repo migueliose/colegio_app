@@ -1,0 +1,227 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Administradores y Rectores{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-shield mr-2"></i>Administradores y Rectores
+        </h1>
+        <a href="{% url 'administrador:administrador_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Nuevo Administrador/Rector
+        </a>
+    </div>
+
+    <!-- Cards de Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Administradores
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_administradores }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-cog fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Rectores
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_rectores }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-tie fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Activos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_activos }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Usuarios del Sistema
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ administradores.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Administradores/Rectores -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Listado de Usuarios Administrativos</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Tipo</th>
+                            <th>Documento</th>
+                            <th>Email</th>
+                            <th>Estado</th>
+                            <th>Último Login</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for admin in administradores %}
+                        <tr>
+                            <td>{{ admin.id }}</td>
+                            <td>
+                                <strong>{{ admin.get_full_name }}</strong>
+                                <br>
+                                <small class="text-muted">@{{ admin.username }}</small>
+                            </td>
+                            <td>
+                                <span class="badge {% if admin.tipo_usuario.nombre == 'Administrador' %}badge-primary{% else %}badge-success{% endif %}">
+                                    {{ admin.tipo_usuario.nombre }}
+                                </span>
+                            </td>
+                            <td>{{ admin.numero_documento }}</td>
+                            <td>{{ admin.email|default:"Sin email" }}</td>
+                            <td>
+                                {% if admin.estado %}
+                                <span class="badge badge-success">Activo</span>
+                                {% else %}
+                                <span class="badge badge-danger">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if admin.last_login %}
+                                {{ admin.last_login|date:"d/m/Y H:i" }}
+                                {% else %}
+                                <span class="text-muted">Nunca</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'administrador:administrador_update' admin.pk %}" 
+                                       class="btn btn-sm btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    {% if admin != user and admin.estado %}
+                                    <a href="{% url 'administrador:administrador_delete' admin.pk %}" 
+                                       class="btn btn-sm btn-danger" title="Desactivar">
+                                        <i class="fas fa-user-slash"></i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if not admin.estado %}
+                                    <button class="btn btn-sm btn-info" 
+                                            title="Usuario inactivo"
+                                            disabled>
+                                        <i class="fas fa-user-times"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">No hay administradores/rectores registrados</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información Importante -->
+    <div class="card border-left-info shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-info">
+                <i class="fas fa-info-circle mr-2"></i>Información Importante
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="font-weight-bold text-primary">Administradores</h6>
+                    <ul class="text-muted">
+                        <li>Tienen acceso completo al sistema</li>
+                        <li>Pueden gestionar todos los usuarios</li>
+                        <li>Configuran parámetros del sistema</li>
+                        <li>Realizan asignaciones académicas</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="font-weight-bold text-success">Rectores</h6>
+                    <ul class="text-muted">
+                        <li>Acceso a informes y reportes</li>
+                        <li>Gestión académica general</li>
+                        <li>Supervisión de docentes</li>
+                        <li>Aprobación de certificados</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="alert alert-warning mt-3">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                <strong>Precaución:</strong> Solo usuarios con rol "Administrador" pueden crear o modificar otros administradores/rectores.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+$(document).ready(function() {
+    $('#dataTable').DataTable({
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
+        },
+        "order": [[0, "desc"]],
+        "pageLength": 25
+    });
+});
+</script>
+{% endblock %}

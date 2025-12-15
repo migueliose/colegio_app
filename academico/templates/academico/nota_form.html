@@ -1,0 +1,253 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{% if object %}Editar{% else %}Nueva{% endif %} Nota - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-graduation-cap me-2"></i>
+        {% if object %}Editar Nota{% else %}Registrar Nueva Nota{% endif %}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'academico:notas_list' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Volver a la lista
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Información de la Calificación
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <!-- Estudiante -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.estudiante.id_for_label }}" class="form-label">
+                                    Estudiante <span class="text-danger">*</span>
+                                </label>
+                                {% render_field form.estudiante class="form-control" %}
+                                {% if form.estudiante.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.estudiante.errors.0 }}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Seleccione el estudiante al que se le asignará la nota.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Asignatura -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.asignatura_grado_año_lectivo.id_for_label }}" class="form-label">
+                                    Asignatura <span class="text-danger">*</span>
+                                </label>
+                                {% render_field form.asignatura_grado_año_lectivo class="form-control" %}
+                                {% if form.asignatura_grado_año_lectivo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.asignatura_grado_año_lectivo.errors.0 }}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Seleccione la asignatura y grupo.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Periodo Académico -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.periodo_academico.id_for_label }}" class="form-label">
+                                    Periodo Académico <span class="text-danger">*</span>
+                                </label>
+                                {% render_field form.periodo_academico class="form-control" %}
+                                {% if form.periodo_academico.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.periodo_academico.errors.0 }}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Seleccione el periodo académico.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Calificación -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.calificacion.id_for_label }}" class="form-label">
+                                    Calificación <span class="text-danger">*</span>
+                                </label>
+                                {% render_field form.calificacion class="form-control" type="number" step="0.01" min="0" max="5" %}
+                                {% if form.calificacion.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.calificacion.errors.0 }}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Calificación entre 0.0 y 5.0
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Observaciones -->
+                    <div class="mb-3">
+                        <label for="{{ form.observaciones.id_for_label }}" class="form-label">
+                            Observaciones
+                        </label>
+                        {% render_field form.observaciones class="form-control" rows="4" placeholder="Observaciones adicionales sobre la calificación..." %}
+                        {% if form.observaciones.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.observaciones.errors.0 }}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Comentarios, observaciones o retroalimentación sobre el desempeño del estudiante.
+                        </div>
+                    </div>
+                    
+                    <!-- Información de validación -->
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle me-2"></i>Información importante
+                        </h6>
+                        <ul class="mb-0">
+                            <li>La calificación debe estar entre 0.0 y 5.0</li>
+                            <li>Una calificación de 3.0 o superior se considera aprobatoria</li>
+                            <li>El sistema validará que no exista una nota duplicada para el mismo estudiante, asignatura y periodo</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="{% url 'academico:notas_list' %}" class="btn btn-secondary me-md-2">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>
+                                    {% if object %}Actualizar{% else %}Registrar{% endif %} Nota
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Información adicional para docentes -->
+        {% if user.tipo_usuario.nombre == 'Docente' %}
+        <div class="card shadow mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chalkboard-teacher me-2"></i>
+                    Mis Asignaturas Actuales
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Asignatura</th>
+                                <th>Grado</th>
+                                <th>Sede</th>
+                                <th>Estudiantes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for asignatura in mis_asignaturas %}
+                            <tr>
+                                <td>{{ asignatura.asignatura.nombre }}</td>
+                                <td>{{ asignatura.grado_año_lectivo.grado.nombre }}</td>
+                                <td>{{ asignatura.sede.nombre }}</td>
+                                <td>
+                                    <span class="badge bg-primary">{{ asignatura.estudiantes_count }}</span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">
+                                    No tiene asignaturas asignadas actualmente.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación de calificación en tiempo real
+    const calificacionInput = document.getElementById('{{ form.calificacion.id_for_label }}');
+    
+    if (calificacionInput) {
+        calificacionInput.addEventListener('input', function() {
+            const value = parseFloat(this.value);
+            
+            if (value < 0) {
+                this.value = 0;
+            } else if (value > 5) {
+                this.value = 5;
+            }
+            
+            // Cambiar color del borde según la calificación
+            if (value >= 3.0) {
+                this.classList.remove('border-danger');
+                this.classList.add('border-success');
+            } else {
+                this.classList.remove('border-success');
+                this.classList.add('border-danger');
+            }
+        });
+        
+        // Aplicar estilo inicial
+        const initialValue = parseFloat(calificacionInput.value);
+        if (!isNaN(initialValue)) {
+            if (initialValue >= 3.0) {
+                calificacionInput.classList.add('border-success');
+            } else {
+                calificacionInput.classList.add('border-danger');
+            }
+        }
+    }
+    
+    // Mejorar la experiencia de selección
+    const selects = document.querySelectorAll('select.form-control');
+    selects.forEach(select => {
+        select.classList.add('form-select');
+    });
+});
+</script>
+{% endblock %}

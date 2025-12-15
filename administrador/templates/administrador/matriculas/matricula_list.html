@@ -1,0 +1,618 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Matrículas{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0">Gestión de Matrículas</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_administrador' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Matrículas</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'administrador:matricula_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Nueva Matrícula
+            </a>
+            <a href="{% url 'administrador:matricula_bulk' %}" class="btn btn-success">
+                <i class="fas fa-users me-1"></i> Matrícula Masiva
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-body py-3">
+                    <form method="get" class="row g-3" id="filters-form">
+                        <!-- 🔍 Búsqueda -->
+                        <div class="col-md-3">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" class="form-control" name="search"
+                                    placeholder="Buscar por nombre, documento..."
+                                    value="{{ request.GET.search|default:'' }}">
+                            </div>
+                        </div>
+
+                        <!-- 📝 Estado -->
+                        <div class="col-md-2">
+                            <select class="form-control form-control-sm" name="estado">
+                                <option value="">Todos los estados</option>
+                                <option value="ACT" {% if request.GET.estado == 'ACT' %}selected{% endif %}>Activa</option>
+                                <option value="PRE" {% if request.GET.estado == 'PRE' %}selected{% endif %}>Pre-matrícula</option>
+                                <option value="PEN" {% if request.GET.estado == 'PEN' %}selected{% endif %}>Pendiente</option>
+                                <option value="INA" {% if request.GET.estado == 'INA' %}selected{% endif %}>Inactiva</option>
+                                <option value="RET" {% if request.GET.estado == 'RET' %}selected{% endif %}>Retirada</option>
+                            </select>
+                        </div>
+
+                        <!-- 🎓 Nivel -->
+                        <div class="col-md-2">
+                            <select class="form-control form-control-sm" name="grado">
+                                <option value="">Todos los grados</option>
+                                <option value="preescolar" {% if request.GET.grado == 'preescolar' %}selected{% endif %}>Preescolar</option>
+                                <option value="primaria" {% if request.GET.grado == 'primaria' %}selected{% endif %}>Primaria</option>
+                            </select>
+                        </div>
+
+                        <!-- 📅 Año Lectivo -->
+                        <div class="col-md-2">
+                            <select class="form-control form-control-sm" name="año_lectivo">
+                                <option value="">Todos los años</option>
+                                {% for año in años_lectivos %}
+                                <option value="{{ año.id }}" {% if request.GET.año_lectivo == año.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ año.anho }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- 🏫 Sede -->
+                        <div class="col-md-2">
+                            <select class="form-control form-control-sm" name="sede">
+                                <option value="">Todas las sedes</option>
+                                {% for sede in sedes %}
+                                <option value="{{ sede.id }}" {% if request.GET.sede == sede.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ sede.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- 🔘 Botones -->
+                        <div class="col-md-1 text-end">
+                            <div class="btn-group">
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-filter me-1"></i> Filtrar
+                                </button>
+                                <a href="{% url 'administrador:matricula_list' %}" class="btn btn-sm btn-secondary">
+                                    <i class="fas fa-redo"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-start border-primary border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                Total Matrículas
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ total_matriculas }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-graduate fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-start border-success border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                Preescolar
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ preescolar_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-baby fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-start border-info border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                Primaria
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ primaria_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-school fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-start border-warning border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                Sin Matrícula
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ estudiantes_sin_matricula|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Estudiantes sin Matrícula
+    {% if estudiantes_sin_matricula_list and año_lectivo_actual and estudiantes_sin_matricula %}
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Estudiantes sin Matrícula ({{ año_lectivo_actual.anho }})
+                    <span class="badge bg-light text-warning ms-2">{{ total_sin_matricula }}</span>
+                </h5>
+                <a href="{% url 'administrador:matricula_bulk' %}" class="btn btn-sm btn-light">
+                    <i class="fas fa-users me-1"></i> Matricular Todos
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Estudiante</th>
+                            <th>Documento</th>
+                            <th>Edad</th>
+                            <th>Última Matrícula</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for estudiante in estudiantes_sin_matricula_list %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if estudiante.usuario.foto %}
+                                    <img src="{{ estudiante.usuario.foto.url }}" 
+                                        alt="{{ estudiante.usuario.get_full_name }}"
+                                        class="rounded-circle me-2" 
+                                        style="width: 32px; height: 32px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center me-2" 
+                                        style="width: 32px; height: 32px;">
+                                        <i class="fas fa-user text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong class="d-block">{{ estudiante.usuario.get_full_name }}</strong>
+                                        <small class="text-muted">
+                                            {{ estudiante.usuario.get_sexo_display|default:"" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ estudiante.usuario.numero_documento }}</td>
+                            <td>{{ estudiante.usuario.edad|default:"-" }} años</td>
+                            <td>
+                                {% with ultima_matricula=estudiante.matriculas.first %}
+                                {% if ultima_matricula %}
+                                <span class="badge bg-info">
+                                    {{ ultima_matricula.año_lectivo.anho }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">Nunca</span>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td class="text-center">
+                                <a href="{% url 'administrador:matricula_create' %}?estudiante_id={{ estudiante.pk }}&año_lectivo_id={{ año_lectivo_actual.id }}"
+                                   class="btn btn-sm btn-success">
+                                    <i class="fas fa-school me-1"></i> Matricular
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if total_sin_matricula > 10 %}
+            <div class="text-center mt-3">
+                <a href="{% url 'administrador:matricula_bulk' %}" class="btn btn-warning">
+                    <i class="fas fa-users me-1"></i> Ver todos ({{ total_sin_matricula }} estudiantes)
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+-->
+    <!-- Listado de Matrículas -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i> Listado de Matrículas
+                    <span class="badge bg-primary ms-2">{{ page_obj.paginator.count }}</span>
+                </h5>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            {% if matriculas %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="matriculas-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Código</th>
+                            <th>Estudiante</th>
+                            <th>Documento</th>
+                            <th>Grado</th>
+                            <th>Sede</th>
+                            <th>Año Lectivo</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for matricula in matriculas %}
+                        <tr class="matricula-row">
+                            <td>
+                                <strong>{{ matricula.codigo_matricula|default:"Sin código" }}</strong>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if matricula.estudiante.usuario.foto %}
+                                    <img src="{{ matricula.estudiante.usuario.foto.url }}" 
+                                         alt="{{ matricula.estudiante.usuario.get_full_name }}" 
+                                         class="rounded-circle me-2" 
+                                         style="width: 36px; height: 36px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center me-2" 
+                                         style="width: 36px; height: 36px;">
+                                        <i class="fas fa-user text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong class="d-block">{{ matricula.estudiante.usuario.get_full_name }}</strong>
+                                        <small class="text-muted">
+                                            {% if matricula.estudiante.usuario.sexo %}
+                                            {{ matricula.estudiante.usuario.get_sexo_display }}
+                                            {% endif %}
+                                            {% if matricula.estudiante.usuario.edad %}
+                                            · {{ matricula.estudiante.usuario.edad }} años
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ matricula.estudiante.usuario.numero_documento }}</td>
+                            <td>
+                                <span class="badge bg-info">
+                                    {{ matricula.grado_año_lectivo.grado.nombre }}
+                                </span>
+                            </td>
+                            <td>{{ matricula.sede.nombre }}</td>
+                            <td>{{ matricula.año_lectivo.anho }}</td>
+                            <td>
+                                {% if matricula.estado == 'ACT' %}
+                                <span class="badge bg-success">Activa</span>
+                                {% elif matricula.estado == 'PRE' %}
+                                <span class="badge bg-warning">Pre-matrícula</span>
+                                {% elif matricula.estado == 'PEN' %}
+                                <span class="badge bg-info">Pendiente</span>
+                                {% elif matricula.estado == 'INA' %}
+                                <span class="badge bg-secondary">Inactiva</span>
+                                {% elif matricula.estado == 'RET' %}
+                                <span class="badge bg-danger">Retirada</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ matricula.fecha_matricula|date:"d/m/Y" }}</td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'administrador:matricula_detail' matricula.pk %}" 
+                                       class="btn btn-outline-info" title="Ver detalle"
+                                       data-bs-toggle="tooltip" data-bs-placement="top">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'administrador:matricula_update' matricula.pk %}" 
+                                       class="btn btn-outline-warning" title="Editar"
+                                       data-bs-toggle="tooltip" data-bs-placement="top">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'administrador:matricula_delete' matricula.pk %}" 
+                                       class="btn btn-outline-danger" title="Eliminar"
+                                       data-bs-toggle="tooltip" data-bs-placement="top">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if page_obj.has_other_pages %}
+            <div class="border-top p-3">
+                <nav aria-label="Page navigation">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">
+                                Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} 
+                                de {{ page_obj.paginator.count }} matrículas
+                                {% if request.GET.search or request.GET.estado or request.GET.grado or request.GET.año_lectivo or request.GET.sede %}
+                                (filtradas)
+                                {% endif %}
+                            </small>
+                        </div>
+                        <ul class="pagination mb-0">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <!-- Estado vacío -->
+            <div class="text-center py-5">
+                <i class="fas fa-user-graduate fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No se encontraron matrículas</h4>
+                <p class="text-muted mb-4">
+                    {% if request.GET.search or request.GET.estado or request.GET.grado or request.GET.año_lectivo or request.GET.sede %}
+                    No hay matrículas que coincidan con los filtros aplicados
+                    {% else %}
+                    No hay matrículas registradas en el sistema
+                    {% endif %}
+                </p>
+                {% if request.GET.search or request.GET.estado or request.GET.grado or request.GET.año_lectivo or request.GET.sede %}
+                <a href="{% url 'administrador:matricula_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-redo me-2"></i> Limpiar Filtros
+                </a>
+                {% else %}
+                <a href="{% url 'administrador:matricula_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i> Crear primera matrícula
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="card-footer text-muted small">
+            <div class="row">
+                <div class="col">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Última actualización: {% now "d/m/Y H:i" %}
+                    {% if request.GET.search or request.GET.estado or request.GET.grado or request.GET.año_lectivo or request.GET.sede %}
+                    <span class="badge bg-info ms-2">Filtrado</span>
+                    {% endif %}
+                </div>
+                <div class="col text-end">
+                    <i class="fas fa-database me-1"></i>
+                    {{ page_obj.paginator.count }} registros
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reportes por Estado -->
+    <div class="card mt-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="fas fa-chart-bar me-2"></i> Distribución por Estado
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-2 col-6 mb-3">
+                    <div class="card border-start border-success border-4 shadow-sm h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                        Activas
+                                    </div>
+                                    <div class="h5 mb-0 fw-bold text-gray-800">
+                                        {{ estadisticas_estado.ACT|default:0 }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-2 col-6 mb-3">
+                    <div class="card border-start border-warning border-4 shadow-sm h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                        Pre-matrícula
+                                    </div>
+                                    <div class="h5 mb-0 fw-bold text-gray-800">
+                                        {{ estadisticas_estado.PRE|default:0 }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-clock fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-2 col-6 mb-3">
+                    <div class="card border-start border-info border-4 shadow-sm h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                        Pendientes
+                                    </div>
+                                    <div class="h5 mb-0 fw-bold text-gray-800">
+                                        {{ estadisticas_estado.PEN|default:0 }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-hourglass-half fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-2 col-6 mb-3">
+                    <div class="card border-start border-secondary border-4 shadow-sm h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs fw-bold text-secondary text-uppercase mb-1">
+                                        Inactivas
+                                    </div>
+                                    <div class="h5 mb-0 fw-bold text-gray-800">
+                                        {{ estadisticas_estado.INA|default:0 }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-pause-circle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-2 col-6 mb-3">
+                    <div class="card border-start border-danger border-4 shadow-sm h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs fw-bold text-danger text-uppercase mb-1">
+                                        Retiradas
+                                    </div>
+                                    <div class="h5 mb-0 fw-bold text-gray-800">
+                                        {{ estadisticas_estado.RET|default:0 }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Auto-submit para filtros rápidos cuando cambian
+    $('select[name="estado"], select[name="grado"], select[name="año_lectivo"], select[name="sede"]').change(function() {
+        $('#filters-form').submit();
+    });
+
+    // Búsqueda en tiempo real con debounce
+    var searchTimer;
+    $('input[name="search"]').on('input', function() {
+        clearTimeout(searchTimer);
+        var $this = $(this);
+        searchTimer = setTimeout(function() {
+            $this.closest('form').submit();
+        }, 500);
+    });
+});
+</script>
+{% endblock %}

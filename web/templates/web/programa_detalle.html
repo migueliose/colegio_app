@@ -1,0 +1,455 @@
+<!-- templates/web/programa_detalle.html -->
+{% extends 'web/base.html' %}
+{% load static %}
+
+{% block title %}{{ programa.nombre }} - Colegio Cristiano El Shadai{% endblock %}
+
+{% block content %}
+
+<!-- ========================= -->
+<!--         HERO AREA         -->
+<!-- ========================= -->
+<section class="programa-hero-detail py-5 position-relative">
+
+  <!-- Imagen de fondo -->
+  {% if programa.imagen_principal %}
+    <div class="hero-bg" style="background-image: url('{{ programa.imagen_principal.url }}');"></div>
+  {% else %}
+    <div class="hero-bg" style="background-image: url('/media/projects/carousel/1-.JPG');"></div>
+  {% endif %}
+
+  <!-- Capa oscura para mejor contraste -->
+  <div class="hero-overlay"></div>
+
+  <!-- Capa de gradiente para texto -->
+  <div class="hero-gradient"></div>
+
+  <div class="container position-relative z-3">
+    <div class="row">
+      <div class="col-lg-8 hero-text">
+        <h1 class="display-4 fw-bold mb-3 text-white">{{ programa.nombre }}</h1>
+        <p class="lead mb-4 text-white">{{ programa.descripcion_corta }}</p>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ========================= -->
+<!--   INFORMACIÓN DEL PROGRAMA -->
+<!-- ========================= -->
+<section class="programa-detalle py-5">
+  <div class="container">
+    <div class="row">
+
+      <!-- Columna principal -->
+      <div class="col-lg-8">
+        <div class="programa-content">
+          <h3 class="mb-4 text-primary">Descripción del Programa</h3>
+
+          <div class="programa-descripcion">
+            {{ programa.descripcion_completa|linebreaks }}
+          </div>
+
+          {% if programa.caracteristicas.all %}
+          <div class="caracteristicas mt-5">
+            <h3 class="mb-4 text-primary">Características del Programa</h3>
+
+            <div class="row g-4">
+              {% for caracteristica in programa.caracteristicas.all %}
+              <div class="col-md-6">
+                <div class="feature-card p-4 rounded shadow-sm h-100">
+                  <div class="d-flex">
+                    <div class="flex-shrink-0">
+                      <i class="{{ caracteristica.icono }} text-primary fs-4"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                      <h5 class="text-dark mb-2">{{ caracteristica.titulo }}</h5>
+                      <p class="text-muted mb-0">{{ caracteristica.descripcion }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+
+
+      <!-- Sidebar -->
+      <div class="col-lg-4">
+        <div class="programa-sidebar card border-0 shadow-sm">
+
+          <div class="card-header bg-primary text-white">
+            <h5 class="text-white mb-0">Información del Programa</h5>
+          </div>
+
+          <div class="card-body">
+
+            <ul class="list-group list-group-flush">
+              {% if programa.grados %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-graduation-cap me-2 text-primary"></i> Grados</span>
+                <strong class="text-dark">{{ programa.grados }}</strong>
+              </li>
+              {% endif %}
+
+              {% if programa.horario %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-clock me-2 text-primary"></i> Horario</span>
+                <strong class="text-dark">{{ programa.horario }}</strong>
+              </li>
+              {% endif %}
+
+              {% if programa.edad_minima and programa.edad_maxima %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-child me-2 text-primary"></i> Edad</span>
+                <strong class="text-dark">{{ programa.edad_minima }} - {{ programa.edad_maxima }} años</strong>
+              </li>
+              {% endif %}
+
+              {% if programa.costo_matricula %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-dollar-sign me-2 text-primary"></i> Matrícula</span>
+                <strong class="text-dark">${{ programa.costo_matricula }}</strong>
+              </li>
+              {% endif %}
+
+              {% if programa.costo_pension %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-dollar-sign me-2 text-primary"></i> Pensión</span>
+                <strong class="text-dark">${{ programa.costo_pension }}</strong>
+              </li>
+              {% endif %}
+            </ul>
+
+            <div class="mt-4">
+              <a href="{% url 'web:admision' %}" class="btn btn-primary w-100 mb-2">
+                <i class="fas fa-clipboard-list me-2"></i>Solicitar Admisión
+              </a>
+              <a href="{% url 'web:contact' %}" class="btn btn-outline-primary w-100">
+                <i class="fas fa-envelope me-2"></i>Contactar para Más Info
+              </a>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+
+{% block extra_css %}
+<style>
+/* ============================================
+   ESTILOS ESPECÍFICOS PARA DETALLE DE PROGRAMA
+   ============================================ */
+
+/* HERO DEL PROGRAMA */
+.programa-hero-detail {
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 1;
+    filter: brightness(0.8);
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2;
+}
+
+.hero-gradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, 
+                rgba(8, 36, 101, 0.7) 0%, 
+                rgba(29, 107, 253, 0.5) 100%);
+    z-index: 2;
+    mix-blend-mode: multiply;
+}
+
+.hero-text {
+    position: relative;
+    z-index: 3;
+}
+
+/* Breadcrumb personalizado */
+.programa-hero-detail .breadcrumb {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    display: inline-block;
+}
+
+.programa-hero-detail .breadcrumb-item a {
+    color: rgba(255, 255, 255, 0.9) !important;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.programa-hero-detail .breadcrumb-item a:hover {
+    color: #ffffff !important;
+}
+
+.programa-hero-detail .breadcrumb-item.active {
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.programa-hero-detail .breadcrumb-item + .breadcrumb-item::before {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Badge del programa */
+.program-badge {
+    background: linear-gradient(135deg, var(--secondary-color), #ffc107) !important;
+    color: var(--primary-color) !important;
+    font-weight: 600;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+}
+
+/* Título principal */
+.programa-hero-detail h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+    .programa-hero-detail h1 {
+        font-size: 3rem;
+    }
+}
+
+/* Subtítulo */
+.programa-hero-detail .lead {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    opacity: 0.95;
+}
+
+/* CONTENIDO PRINCIPAL */
+.programa-content h3 {
+    color: var(--primary-color);
+    font-weight: 700;
+    position: relative;
+    padding-bottom: 10px;
+    margin-bottom: 25px;
+}
+
+.programa-content h3:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: var(--secondary-color);
+}
+
+.programa-descripcion {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text-color);
+}
+
+.programa-descripcion p {
+    margin-bottom: 1.5rem;
+}
+
+/* CARACTERÍSTICAS */
+.feature-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+}
+
+.feature-card i {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    margin-top: 5px;
+}
+
+.feature-card h5 {
+    color: var(--text-color);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.feature-card p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+/* SIDEBAR */
+.programa-sidebar {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    position: sticky;
+    top: 100px;
+}
+
+.programa-sidebar .card-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    border-bottom: 3px solid var(--secondary-color);
+    padding: 20px;
+}
+
+.programa-sidebar .list-group-item {
+    background: transparent;
+    border-color: var(--border-color);
+    padding: 15px 0;
+    color: var(--text-color);
+}
+
+.programa-sidebar .list-group-item i {
+    width: 20px;
+    text-align: center;
+}
+
+.programa-sidebar .list-group-item strong {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+/* Botones en sidebar */
+.programa-sidebar .btn {
+    font-weight: 500;
+    padding: 12px;
+    transition: all 0.3s ease;
+}
+
+.programa-sidebar .btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    border: none;
+}
+
+.programa-sidebar .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(8, 36, 101, 0.3);
+}
+
+.programa-sidebar .btn-outline-primary:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* MODO OSCURO */
+[data-theme="dark"] .programa-hero-detail .hero-overlay {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="dark"] .hero-gradient {
+    background: linear-gradient(135deg, 
+                rgba(8, 36, 101, 0.8) 0%, 
+                rgba(29, 107, 253, 0.6) 100%);
+}
+
+[data-theme="dark"] .feature-card {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .feature-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .programa-sidebar {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .programa-hero-detail {
+        min-height: 350px;
+        padding-top: 80px;
+        padding-bottom: 50px;
+        text-align: center;
+    }
+    
+    .programa-hero-detail h1 {
+        font-size: 2rem;
+    }
+    
+    .programa-hero-detail .lead {
+        font-size: 1.1rem;
+    }
+    
+    .programa-hero-detail .breadcrumb {
+        justify-content: center;
+    }
+    
+    .caracteristicas .row > div {
+        margin-bottom: 20px;
+    }
+    
+    .programa-sidebar {
+        margin-top: 40px;
+        position: static;
+    }
+}
+
+@media (max-width: 576px) {
+    .programa-hero-detail {
+        min-height: 300px;
+        padding: 60px 0 40px;
+    }
+    
+    .programa-hero-detail h1 {
+        font-size: 1.75rem;
+    }
+    
+    .program-badge {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static docente_filters %}
+
+{% block title %}Dashboard Docente - {{ user.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header del Dashboard -->
+    {% include 'docentes/components/header.html' %}
+    
+    <!-- Tarjetas de Estadísticas -->
+    {% include 'docentes/components/stats_cards.html' %}
+    
+    <div class="row g-4 mt-2">
+        <!-- Mis Asignaturas y Próximas Clases -->
+        <div class="col-lg-8">
+            {% include 'docentes/components/mis_asignaturas.html' %}
+        </div>
+        
+        <div class="col-lg-4">
+            {% include 'docentes/components/proximas_clases.html' %}
+        </div>
+    </div>
+
+    <div class="row g-4 mt-2">
+        <!-- Acciones Rápidas -->        
+        <div class="col-lg-12">
+            {% include 'docentes/components/quick_actions.html' %}
+        </div>
+    </div>
+
+    <div class="row g-4 mt-2">
+        <!-- Recordatorios y Tareas Pendientes -->
+        <div class="col-lg-6">
+            {% include 'docentes/components/recordatorios.html' %}
+        </div>
+        
+        <!-- Calificaciones Pendientes -->
+        <div class="col-lg-6">
+            {% include 'docentes/components/calificaciones_pendientes.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animación de conteo para estadísticas
+        const stats = document.querySelectorAll('.stat-number');
+        stats.forEach(stat => {
+            const originalText = stat.textContent.trim();
+            const finalValue = parseFloat(originalText);
+            
+            if (!isNaN(finalValue)) {
+                let current = 0;
+                const duration = 1500;
+                const steps = 60;
+                const increment = finalValue / steps;
+                const stepTime = duration / steps;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= finalValue) {
+                        stat.textContent = originalText;
+                        clearInterval(timer);
+                    } else {
+                        stat.textContent = Math.round(current);
+                    }
+                }, stepTime);
+            }
+        });
+
+        // Efectos de hover para tarjetas
+        const cards = document.querySelectorAll('.card-hover');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Inicializar tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

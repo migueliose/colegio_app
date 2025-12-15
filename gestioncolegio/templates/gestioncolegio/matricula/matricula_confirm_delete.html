@@ -1,0 +1,128 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Anular Matrícula - {{ object.codigo_matricula }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger shadow-lg">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Anulación de Matrícula
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Información de la matrícula -->
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-clipboard-list me-2"></i>
+                            Matrícula: {{ object.codigo_matricula }}
+                        </h5>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <strong>Estudiante:</strong><br>
+                                {{ object.estudiante.usuario.get_full_name }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Documento:</strong><br>
+                                {{ object.estudiante.usuario.numero_documento }}
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6">
+                                <strong>Grado:</strong><br>
+                                {{ object.grado_año_lectivo.grado.nombre }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Año Lectivo:</strong><br>
+                                {{ object.año_lectivo.anho }}
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6">
+                                <strong>Sede:</strong><br>
+                                {{ object.sede.nombre }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Fecha de Matrícula:</strong><br>
+                                {{ object.fecha_matricula|date:"d/m/Y" }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advertencias -->
+                    <div class="alert alert-danger">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            ¡Atención! Esta acción tiene consecuencias importantes:
+                        </h6>
+                        <ul class="mb-0">
+                            <li>El estudiante perderá el acceso al sistema académico</li>
+                            <li>No podrá registrar notas para este estudiante</li>
+                            <li>Se perderán los horarios asignados</li>
+                            <li>Esta acción se registrará en el historial del estudiante</li>
+                            <li>La matrícula no podrá reactivarse automáticamente</li>
+                        </ul>
+                    </div>
+
+                    <!-- Razones de anulación -->
+                    <div class="mb-4">
+                        <label for="razon_anulacion" class="form-label">
+                            <strong>Razón de la anulación (opcional):</strong>
+                        </label>
+                        <textarea class="form-control" id="razon_anulacion" rows="3" 
+                                  placeholder="Describa brevemente la razón por la cual se anula esta matrícula..."></textarea>
+                    </div>
+
+                    <!-- Formulario de confirmación -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <a href="{% url 'gestioncolegio:matricula_list' %}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-ban me-1"></i>Sí, Anular Matrícula
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Alternativas -->
+                    <div class="mt-4">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-lightbulb me-2"></i>Alternativas Recomendadas
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-3">
+                                    En lugar de anular la matrícula, considere estas opciones:
+                                </p>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="d-grid">
+                                            <a href="#" class="btn btn-outline-warning btn-sm mb-2">
+                                                <i class="fas fa-pause me-1"></i>Suspender Temporalmente
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-grid">
+                                            <a href="{% url 'gestioncolegio:matricula_update' object.pk %}" 
+                                               class="btn btn-outline-info btn-sm mb-2">
+                                                <i class="fas fa-edit me-1"></i>Cambiar Estado
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

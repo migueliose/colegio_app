@@ -1,0 +1,239 @@
+<!-- gestioncolegio/components/admin_menu.html -->
+<!-- Gestión de Usuarios -->
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" 
+       data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-users me-2"></i>
+        <span>Usuarios</span>
+    </a>
+    <ul class="dropdown-menu">
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:estudiante_list' %}">
+                <i class="fas fa-user-graduate text-success me-2"></i>
+                <div>
+                    <div>Estudiantes</div>
+                    <small class="text-muted">Gestión de estudiantes</small>
+                </div>
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:docente_list' %}">
+                <i class="fas fa-chalkboard-teacher text-info me-2"></i>
+                <div>
+                    <div>Docentes</div>
+                    <small class="text-muted">Gestión de docentes</small>
+                </div>
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:administrador_list' %}">
+                <i class="fas fa-user-shield text-warning me-2"></i>
+                <div>
+                    <div>Administradores</div>
+                    <small class="text-muted">Gestión administrativa</small>
+                </div>
+            </a>
+        </li>
+    </ul>
+</li>
+
+<!-- Gestión Académica -->
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" 
+       data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-book me-2"></i>
+        <span>Académico</span>
+    </a>
+    <ul class="dropdown-menu">
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:grado_list' %}">
+                <i class="fas fa-graduation-cap me-2"></i>
+                <div>
+                    <div>Grados</div>
+                    <small class="text-muted">Gestión de grados</small>
+                </div>
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:area_list' %}">
+                <i class="fas fa-book me-2"></i>
+                <div>
+                    <div>Areas</div>
+                    <small class="text-muted">Gestión de Areas</small>
+                </div>
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:asignatura_list' %}">
+                <i class="fas fa-book-open me-2"></i>
+                <div>
+                    <div>Asignaturas</div>
+                    <small class="text-muted">Gestión de asignaturas</small>
+                </div>
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:horario_list' %}">
+                <i class="fas fa-clock me-2"></i>
+                <div>
+                    <div>Horarios</div>
+                    <small class="text-muted">Gestión de horarios</small>
+                </div>
+            </a>
+        </li>
+        <li><hr class="dropdown-divider"></li>        
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:añolectivo_list' %}">
+                <i class="fas fa-calendar me-2"></i>
+                <div>
+                    <div>Año lectivo</div>
+                    <small class="text-muted">Gestión de Año lectivo</small>
+                </div>
+            </a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:gestion_calificaciones' %}">
+                <i class="fas fa-graduation-cap me-2"></i>
+                <div>
+                    <div>Sistema de Notas</div>
+                    <small class="text-muted">Gestión de calificaciones</small>
+                </div>
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:gestion_logros' %}">
+                <i class="fas fa-trophy me-2"></i>
+                <div>
+                    <div>Sistema de Logros</div>
+                    <small class="text-muted">Gestión de Logros/Dificultades</small>
+                </div>
+            </a>
+        </li>
+    </ul>
+</li>
+
+<!-- Matrículas -->
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" 
+       data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-clipboard-list me-2"></i>
+        <span>Matrículas</span>
+    </a>
+    <ul class="dropdown-menu">
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:matricula_list' %}">
+                <i class="fas fa-list me-2"></i>
+                <div>
+                    <div>Lista de Matrículas</div>
+                    <small class="text-muted">Ver todas las matrículas</small>
+                </div>
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:matricula_create' %}">
+                <i class="fas fa-plus me-2"></i>
+                <div>
+                    <div>Nueva Matrícula</div>
+                    <small class="text-muted">Registrar nueva matrícula</small>
+                </div>
+            </a>
+        </li>
+    </ul>
+</li>
+
+<!-- Reportes -->
+<li class="nav-item">
+    <a class="nav-link d-flex align-items-center" href="{% url 'administrador:dashboard_reportes' %}">
+        <i class="fas fa-chart-bar me-2"></i>
+        <span>Reportes</span>
+    </a>
+</li>
+
+<!-- Configuración - MENÚ ACTUALIZADO CON TODAS LAS OPCIONES -->
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" 
+       data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-cog me-2"></i>
+        <span>Configuración</span>
+    </a>
+    <ul class="dropdown-menu">
+        <!-- Datos Institucionales -->
+        <li>
+            <h6 class="dropdown-header">
+                <i class="fas fa-school me-1"></i> Datos Institucionales
+            </h6>
+        </li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:colegio_list' %}">
+                <i class="fas fa-university me-2"></i>
+                <div>
+                    <div>Colegios</div>
+                    <small class="text-muted">Gestión de colegios</small>
+                </div>
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:sede_list' %}">
+                <i class="fas fa-building me-2"></i>
+                <div>
+                    <div>Sedes</div>
+                    <small class="text-muted">Gestión de sedes</small>
+                </div>
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:grado_anho_list' %}">
+                <i class="fas fa-calendar-alt me-2"></i>
+                <div>
+                    <div>Grados por Año Lectivo</div>
+                    <small class="text-muted">Gestión de años académicos</small>
+                </div>
+            </a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        
+        <!-- Ajustes del Sistema -->
+        <li>
+            <h6 class="dropdown-header">
+                <i class="fas fa-sliders-h me-1"></i> Ajustes del Sistema
+            </h6>
+        </li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:configuracion_general' %}">
+                <i class="fas fa-cogs me-2"></i>
+                <div>
+                    <div>Configuración General</div>
+                    <small class="text-muted">Ajustes principales</small>
+                </div>
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="{% url 'administrador:parametro_list' %}">
+                <i class="fas fa-database me-2"></i>
+                <div>
+                    <div>Parámetros del Sistema</div>
+                    <small class="text-muted">Variables configurables</small>
+                </div>
+            </a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        
+        <!-- Certificaciones -->
+        <li>
+            <h6 class="dropdown-header">
+                <i class="fas fa-certificate me-1"></i> Certificaciones
+            </h6>
+        </li>        
+        <!-- Acceso Administrativo -->
+        <li>
+            <a class="dropdown-item d-flex align-items-center" href="/admin/" target="_blank">
+                <i class="fas fa-user-shield me-2"></i>
+                <div>
+                    <div>Admin Django</div>
+                    <small class="text-muted">Panel administrativo completo</small>
+                </div>
+            </a>
+        </li>
+    </ul>
+</li>

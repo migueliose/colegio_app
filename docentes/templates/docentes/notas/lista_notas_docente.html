@@ -1,0 +1,195 @@
+<!-- notas/lista_notas_docente.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Mis Calificaciones - Sistema Docente{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="card-title mb-1">
+                                <i class="fas fa-list text-primary me-2"></i>
+                                Mis Calificaciones Registradas
+                            </h4>
+                            <p class="text-muted mb-0">Historial de todas las calificaciones que ha registrado</p>
+                        </div>
+                        <a href="{% url 'docentes:calificar_notas' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Nueva Calificación
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <div class="card filter-card mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">
+                                <i class="fas fa-filter me-2 text-primary"></i>
+                                Filtros de Búsqueda
+                            </h6>
+                            <form method="get" class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="gradoFilter" class="form-label fw-semibold">Grado</label>
+                                    <select class="form-select" id="gradoFilter" name="grado_id">
+                                        <option value="">Todos los grados</option>
+                                        {% for grado in grados %}
+                                        <option value="{{ grado.id }}" 
+                                                {% if request.GET.grado_id == grado.id|stringformat:"i" %}selected{% endif %}>
+                                            {{ grado.nombre }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <label for="asignaturaFilter" class="form-label fw-semibold">Asignatura</label>
+                                    <select class="form-select" id="asignaturaFilter" name="asignatura_id">
+                                        <option value="">Todas las asignaturas</option>
+                                        {% for asignatura in asignaturas %}
+                                        <option value="{{ asignatura.id }}"
+                                                {% if request.GET.asignatura_id == asignatura.id|stringformat:"i" %}selected{% endif %}>
+                                            {{ asignatura.nombre }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <label for="periodoFilter" class="form-label fw-semibold">Período</label>
+                                    <select class="form-select" id="periodoFilter" name="periodo_id">
+                                        <option value="">Todos los períodos</option>
+                                        {% for periodo in periodos %}
+                                        <option value="{{ periodo.id }}"
+                                                {% if request.GET.periodo_id == periodo.id|stringformat:"i" %}selected{% endif %}>
+                                            {{ periodo.periodo.nombre }} - {{ periodo.año_lectivo.anho }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-3 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-search me-1"></i>Filtrar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Lista de notas -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Estudiante</th>
+                                    <th>Grado</th>
+                                    <th>Asignatura</th>
+                                    <th>Período</th>
+                                    <th class="text-center">Calificación</th>
+                                    <th>Observaciones</th>
+                                    <th class="text-center">Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for nota in notas %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if nota.estudiante.foto %}
+                                            <img src="{{ nota.estudiante.foto.url }}" 
+                                                 alt="{{ nota.estudiante.usuario.get_full_name }}"
+                                                 class="rounded-circle me-2" width="32" height="32">
+                                            {% endif %}
+                                            <div>
+                                                <div class="fw-semibold">{{ nota.estudiante.usuario.get_full_name }}</div>
+                                                <small class="text-muted">{{ nota.estudiante.usuario.numero_documento }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ nota.asignatura_grado_año_lectivo.grado_año_lectivo.grado.nombre }}</td>
+                                    <td>{{ nota.asignatura_grado_año_lectivo.asignatura.nombre }}</td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ nota.periodo_academico.periodo.nombre }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge {% if nota.calificacion >= 3.5 %}bg-success{% elif nota.calificacion >= 3.0 %}bg-warning{% else %}bg-danger{% endif %} fs-6">
+                                            {{ nota.calificacion }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if nota.observaciones %}
+                                        <span class="text-muted small" title="{{ nota.observaciones }}">
+                                            {{ nota.observaciones|truncatechars:30 }}
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted small">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <small class="text-muted">{{ nota.updated_at|date:"d/m/Y" }}</small>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox display-4 d-block mb-2"></i>
+                                        <h6>No hay calificaciones registradas</h6>
+                                        <p class="mb-0">Comience a calificar estudiantes para ver el historial aquí</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Paginación -->
+                    {% if is_paginated %}
+                    <nav aria-label="Paginación de notas" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

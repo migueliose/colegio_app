@@ -1,0 +1,409 @@
+<!-- gestioncolegio/templates/gestioncolegio/areas/area_list.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static estudiante_filters %}
+
+{% block title %}Áreas Académicas - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="fas fa-sitemap me-2"></i>Áreas Académicas
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'administrador:area_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Nueva Área
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-filter me-2"></i>Filtrar Áreas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="nivel" class="form-label">Nivel Escolar</label>
+                            <select name="nivel" id="nivel" class="form-select">
+                                <option value="">Todos los niveles</option>
+                                {% for nivel in niveles_escolares %}
+                                <option value="{{ nivel.id }}" {% if request.GET.nivel == nivel.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ nivel.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="search" class="form-label">Buscar por nombre</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ request.GET.search }}" placeholder="Nombre del área...">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search me-1"></i> Buscar
+                            </button>
+                            <a href="{% url 'administrador:area_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-redo me-1"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de áreas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>Lista de Áreas
+                        <span class="badge bg-primary ms-2">{{ areas.count }}</span>
+                    </h5>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="exportToExcel()">
+                            <i class="fas fa-file-excel me-1"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if areas %}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="areasTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="5%">ID</th>
+                                    <th width="35%">Nombre</th>
+                                    <th width="25%">Nivel Escolar</th>
+                                    <th width="15%">Asignaturas</th>
+                                    <th width="10%">Creado</th>
+                                    <th width="10%" class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for area in areas %}
+                                <tr>
+                                    <td>{{ area.id }}</td>
+                                    <td>
+                                        <strong>{{ area.nombre }}</strong>
+                                        {% if area.asignaturas.exists %}
+                                        <small class="text-muted d-block mt-1">
+                                            <i class="fas fa-book me-1"></i>
+                                            {{ area.asignaturas.count }} asignatura(s)
+                                        </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if area.nivel_escolar.nombre == 'Preescolar' %}bg-info{% else %}bg-success{% endif %}">
+                                            {{ area.nivel_escolar.nombre }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 8px;">
+                                            {% with count=area.asignaturas.count %}
+                                            <div class="progress-bar {% if count > 5 %}bg-success{% elif count > 0 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                 role="progressbar" 
+                                                 style="width: {% widthratio count 10 100 %}%"
+                                                 aria-valuenow="{{ count }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="10">
+                                            </div>
+                                            {% endwith %}
+                                        </div>
+                                        <small class="text-muted">{{ area.asignaturas.count }} asignatura(s)</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ area.created_at|date:"d/m/y" }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'administrador:area_update' area.pk %}" 
+                                               class="btn btn-outline-primary" 
+                                               title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'administrador:area_delete' area.pk %}" 
+                                               class="btn btn-outline-danger" 
+                                               title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                            <button type="button" 
+                                                    class="btn btn-outline-info"
+                                                    title="Ver detalles"
+                                                    onclick="showAreaDetails({{ area.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Paginación -->
+                    {% if is_paginated %}
+                    <nav aria-label="Paginación de áreas">
+                        <ul class="pagination justify-content-center mt-4">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.nivel %}&nivel={{ request.GET.nivel }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if request.GET.nivel %}&nivel={{ request.GET.nivel }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.nivel %}&nivel={{ request.GET.nivel }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-sitemap fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">No hay áreas registradas</h4>
+                        <p class="text-muted">Comience creando una nueva área académica</p>
+                        <a href="{% url 'administrador:area_create' %}" class="btn btn-primary mt-2">
+                            <i class="fas fa-plus me-1"></i> Crear Primera Área
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Pie con estadísticas -->
+                {% if areas %}
+                <div class="card-footer bg-light">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <small class="text-muted">
+                                <i class="fas fa-sitemap text-primary me-1"></i>
+                                <strong>Total:</strong> {{ areas.count }} área(s)
+                            </small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <small class="text-muted">
+                                <i class="fas fa-school text-info me-1"></i>
+                                <strong>Preescolar:</strong> {{ areas_preescolar }}
+                            </small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <small class="text-muted">
+                                <i class="fas fa-university text-success me-1"></i>                                
+                                <strong>Primaria:</strong> {{ areas_primaria }}
+                            </small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <small class="text-muted">
+                                <i class="fas fa-book text-warning me-1"></i>
+                                <strong>Con asignaturas:</strong> 
+                                {{ areas_with_subjects }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para detalles del área -->
+<div class="modal fade" id="areaDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Detalles del Área
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="areaDetailsContent">
+                <!-- Los detalles se cargarán aquí via AJAX -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    cursor: pointer;
+}
+
+.progress {
+    background-color: #e9ecef;
+    border-radius: 4px;
+}
+
+.badge {
+    font-size: 0.8em;
+    padding: 0.4em 0.8em;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+</style>
+
+<script>
+// Función para mostrar detalles del área
+function showAreaDetails(areaId) {
+    
+    fetch(`/api/areas/${areaId}/detalles/`)
+        .then(response => response.json())
+        .then(data => {
+            const modalContent = document.getElementById('areaDetailsContent');
+            modalContent.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">
+                            <i class="fas fa-info-circle me-2"></i>Información General
+                        </h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>ID:</strong></td>
+                                <td>${data.id}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Nombre:</strong></td>
+                                <td>${data.nombre}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Nivel Escolar:</strong></td>
+                                <td>
+                                    <span class="badge ${data.nivel_escolar_nombre === 'Preescolar' ? 'bg-info' : 'bg-success'}">
+                                        ${data.nivel_escolar_nombre}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Creado:</strong></td>
+                                <td>${data.created_at}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary">
+                            <i class="fas fa-book me-2"></i>Asignaturas
+                        </h6>
+                        ${data.asignaturas.length > 0 ? `
+                            <ul class="list-group list-group-flush">
+                                ${data.asignaturas.map(asignatura => `
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        ${asignatura.nombre}
+                                        <span class="badge bg-secondary">
+                                            ${asignatura.ih || 'N/A'}h
+                                        </span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        ` : `
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                No hay asignaturas asociadas a esta área.
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+            
+            const modal = new bootstrap.Modal(document.getElementById('areaDetailsModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar los detalles del área');
+        });
+}
+
+// Exportar a Excel
+function exportToExcel() {
+    // Implementación básica - puedes usar una librería como SheetJS para una solución completa
+    const table = document.getElementById('areasTable');
+    const rows = table.querySelectorAll('tr');
+    let csv = [];
+    
+    rows.forEach(row => {
+        const rowData = [];
+        const cells = row.querySelectorAll('td, th');
+        cells.forEach(cell => {
+            // Limpiar el texto de iconos y elementos HTML
+            const text = cell.innerText.replace(/\n/g, ' ').trim();
+            rowData.push(`"${text}"`);
+        });
+        csv.push(rowData.join(','));
+    });
+    
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'areas_academicas.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+// Filtrar por nivel escolar
+document.getElementById('nivel').addEventListener('change', function() {
+    const nivelId = this.value;
+    const searchTerm = document.getElementById('search').value;
+    
+    let url = `{% url 'administrador:area_list' %}?`;
+    if (nivelId) {
+        url += `nivel=${nivelId}&`;
+    }
+    if (searchTerm) {
+        url += `search=${encodeURIComponent(searchTerm)}`;
+    }
+    
+    window.location.href = url;
+});
+
+// Búsqueda en tiempo real (opcional)
+let searchTimeout;
+document.getElementById('search').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        this.form.submit();
+    }, 500);
+});
+</script>
+{% endblock %}

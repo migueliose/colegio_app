@@ -1,0 +1,19 @@
+{% comment %} Sidebar para navegación en gestión académica {% endcomment %}
+<div class="list-group mb-4">
+    <a href="{% url 'administrador:grado_anho_list' %}" 
+       class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'grado_anho_list' or request.resolver_match.url_name == 'grado_anho_create' or request.resolver_match.url_name == 'grado_anho_update' %}active{% endif %}">
+        <i class="fas fa-graduation-cap me-2"></i>Grados por Año
+    </a>
+    <a href="{% url 'administrador:asignatura_grado_list' %}" 
+       class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'asignatura_grado_list' or request.resolver_match.url_name == 'asignatura_grado_create' or request.resolver_match.url_name == 'asignatura_grado_update' %}active{% endif %}">
+        <i class="fas fa-book me-2"></i>Asignaturas por Grado
+    </a>
+    <a href="{% url 'administrador:asignatura_grado_bulk' %}" 
+       class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'asignatura_grado_bulk' %}active{% endif %}">
+        <i class="fas fa-layer-group me-2"></i>Asignación Masiva
+    </a>
+    <a href="{% url 'administrador:asignatura_grado_copy' %}" 
+       class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'asignatura_grado_copy' %}active{% endif %}">
+        <i class="fas fa-copy me-2"></i>Copiar Asignaturas
+    </a>
+</div>

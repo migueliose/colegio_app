@@ -1,0 +1,242 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}{% if object %}Editar Comportamiento{% else %}Registrar Comportamiento{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4">
+            <i class="fas fa-user-check me-2"></i>
+            {% if object %}Editar Comportamiento{% else %}Registrar Comportamiento{% endif %}
+        </h1>
+        <a href="{% url 'docentes:lista_comportamientos' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver a la lista
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-info-circle me-2"></i>
+            Información del Comportamiento
+        </div>
+        <div class="card-body">
+            <form method="post" id="comportamiento-form">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.periodo_academico|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.estudiante|as_crispy_field }}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-3">
+                        {{ form.tipo|as_crispy_field }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.categoria|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.fecha|as_crispy_field }}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-12">
+                        {{ form.descripcion|as_crispy_field }}
+                        <small class="text-muted">Describa detalladamente el comportamiento observado.</small>
+                    </div>
+                </div>
+                
+                <!-- Información del estudiante seleccionado (se llenará con AJAX) -->
+                <div id="info-estudiante" class="card mt-3" style="display: none;">
+                    <div class="card-header bg-info text-white">
+                        <i class="fas fa-user-graduate me-2"></i>Información del Estudiante
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Nombre:</strong> <span id="est-nombre"></span></p>
+                                <p><strong>Documento:</strong> <span id="est-documento"></span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Grado actual:</strong> <span id="est-grado"></span></p>
+                                <p><strong>Resumen comportamiento:</strong> 
+                                    <span id="est-resumen" class="badge bg-secondary">Cargando...</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" id="submit-btn">
+                        <i class="fas fa-save me-2"></i>
+                        {% if object %}Actualizar{% else %}Registrar{% endif %} Comportamiento
+                    </button>
+                    <a href="{% url 'docentes:lista_comportamientos' %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // URLs para AJAX
+    var estudiantesUrl = '{% url "docentes:ajax_estudiantes_por_periodo" %}';
+    var resumenUrl = '{% url "docentes:ajax_resumen_comportamiento" %}';
+    
+    // Elementos
+    var $periodoSelect = $('#id_periodo_academico');
+    var $estudianteSelect = $('#id_estudiante');
+    var $infoEstudiante = $('#info-estudiante');
+    
+    // Manejar cambio de periodo
+    $periodoSelect.change(function() {
+        var periodoId = $(this).val();
+        
+        if (periodoId) {
+            // Mostrar cargando
+            $estudianteSelect.prop('disabled', true);
+            $estudianteSelect.html('<option value="">Cargando estudiantes...</option>');
+            
+            $.ajax({
+                url: estudiantesUrl,
+                data: {
+                    'periodo_id': periodoId
+                },
+                success: function(data) {
+                    if (data.success && data.estudiantes && data.estudiantes.length > 0) {
+                        $estudianteSelect.empty();
+                        $estudianteSelect.append('<option value="">---------</option>');
+                        
+                        $.each(data.estudiantes, function(index, estudiante) {
+                            $estudianteSelect.append(
+                                '<option value="' + estudiante.id + '">' + 
+                                estudiante.nombre_completo + ' (' + estudiante.documento + ')' +
+                                '</option>'
+                            );
+                        });
+                        
+                        $estudianteSelect.prop('disabled', false);
+                        
+                        // Si estamos editando, seleccionar el estudiante actual
+                        {% if object %}
+                        var currentEstudianteId = '{{ object.estudiante.id }}';
+                        if (currentEstudianteId) {
+                            $estudianteSelect.val(currentEstudianteId);
+                            // Cargar información del estudiante
+                            cargarInfoEstudiante(currentEstudianteId, periodoId);
+                        }
+                        {% endif %}
+                    } else {
+                        $estudianteSelect.empty();
+                        $estudianteSelect.append('<option value="">No hay estudiantes para este periodo</option>');
+                        $estudianteSelect.prop('disabled', true);
+                    }
+                },
+                error: function() {
+                    $estudianteSelect.empty();
+                    $estudianteSelect.append('<option value="">Error al cargar estudiantes</option>');
+                    $estudianteSelect.prop('disabled', true);
+                }
+            });
+        } else {
+            $estudianteSelect.empty();
+            $estudianteSelect.append('<option value="">---------</option>');
+            $estudianteSelect.prop('disabled', true);
+            $infoEstudiante.hide();
+        }
+    });
+    
+    // Manejar cambio de estudiante
+    $estudianteSelect.change(function() {
+        var estudianteId = $(this).val();
+        var periodoId = $periodoSelect.val();
+        
+        if (estudianteId && periodoId) {
+            cargarInfoEstudiante(estudianteId, periodoId);
+        } else {
+            $infoEstudiante.hide();
+        }
+    });
+    
+    // Función para cargar información del estudiante
+    function cargarInfoEstudiante(estudianteId, periodoId) {
+        $.ajax({
+            url: resumenUrl,
+            data: {
+                'estudiante_id': estudianteId,
+                'periodo_id': periodoId
+            },
+            success: function(data) {
+                if (data.success) {
+                    // Mostrar información básica
+                    $('#est-nombre').text(data.estudiante.nombre);
+                    $('#est-documento').text(data.estudiante.documento);
+                    
+                    // Mostrar resumen de comportamiento
+                    var balance = data.estadisticas.balance;
+                    var badgeClass = 'bg-success';
+                    var badgeText = '+' + data.estadisticas.positivos;
+                    
+                    if (balance < 0) {
+                        badgeClass = 'bg-danger';
+                        badgeText = '-' + data.estadisticas.negativos;
+                    } else if (balance == 0) {
+                        badgeClass = 'bg-warning text-dark';
+                        badgeText = '0';
+                    }
+                    
+                    $('#est-resumen').removeClass().addClass('badge ' + badgeClass);
+                    $('#est-resumen').text(badgeText + ' (' + data.estadisticas.total + ' registros)');
+                    
+                    // Mostrar grado (necesitarías agregar esta info en la respuesta AJAX)
+                    $('#est-grado').text('-');
+                    
+                    // Mostrar card de información
+                    $infoEstudiante.show();
+                }
+            }
+        });
+    }
+    
+    // Establecer fecha por defecto si no hay valor
+    if (!$('#id_fecha').val()) {
+        var today = new Date().toISOString().split('T')[0];
+        $('#id_fecha').val(today);
+    }
+    
+    // Inicializar selects
+    $periodoSelect.select2({
+        placeholder: "Seleccione un periodo...",
+        allowClear: true,
+        width: '100%'
+    });
+    
+    $estudianteSelect.select2({
+        placeholder: "Seleccione un estudiante...",
+        allowClear: true,
+        width: '100%'
+    });
+    
+    // Si hay un periodo seleccionado, cargar estudiantes automáticamente
+    {% if object and object.periodo_academico %}
+    $(document).ready(function() {
+        $periodoSelect.val('{{ object.periodo_academico.id }}');
+        $periodoSelect.trigger('change');
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

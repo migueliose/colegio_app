@@ -1,0 +1,57 @@
+<!-- templates/administrador/reportes/partials/mensajes.html -->
+{% if messages %}
+<div class="messages-container">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {% if message.tags == 'success' %}
+        <i class="bi bi-check-circle-fill me-2"></i>
+        {% elif message.tags == 'error' or message.tags == 'danger' %}
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {% elif message.tags == 'warning' %}
+        <i class="bi bi-exclamation-circle-fill me-2"></i>
+        {% elif message.tags == 'info' %}
+        <i class="bi bi-info-circle-fill me-2"></i>
+        {% endif %}
+        
+        {{ message }}
+        
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+// Auto cerrar mensajes después de 5 segundos
+$(document).ready(function() {
+    setTimeout(function() {
+        $('.alert').alert('close');
+    }, 5000);
+});
+</script>
+
+<style>
+.messages-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1050;
+    max-width: 400px;
+}
+
+.alert {
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+</style>
+{% endif %}

@@ -1,0 +1,336 @@
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block title %}Reporte de Estudiantes - Colegio App{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">Reporte de Estudiantes</h1>
+            <p class="text-muted">Listado completo de estudiantes con filtros avanzados</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'administrador:dashboard_reportes' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+    {% if año_lectivo_filtrado %}
+        <div class="alert alert-info mb-4">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle me-2"></i>
+                <div>
+                    <strong>Filtro aplicado:</strong> Mostrando estudiantes matriculados en el año lectivo 
+                    <strong>{{ año_lectivo_filtrado.anho }}</strong> - {{ año_lectivo_filtrado.sede.nombre }}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <!-- Filtros -->
+    {% include 'administrador/reportes/partials/filtros_estudiantes.html' %}
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Estudiantes</h6>
+                    <h2 class="mb-0">{{ estadisticas.total }}</h2>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Masculino</h6>
+                    <h2 class="mb-0">{{ estadisticas.masculinos }}</h2>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Femenino</h6>
+                    <h2 class="mb-0">{{ estadisticas.femeninos }}</h2>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Distribución</h6>
+                    <h6 class="mb-0">{{ distribucion_grado|length }} grados</h6>
+                    <small>{{ filtros.sede|default:"Todas las sedes" }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de exportación -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Resultados: {{ estudiantes_con_datos|length }} estudiantes</h5>
+        <div class="export-buttons d-flex gap-2">
+            <form method="post" action="{% url 'administrador:exportar_reporte' %}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="tipo_reporte" value="estudiantes">
+                <input type="hidden" name="formato" value="excel">
+
+                <input type="hidden" name="sede" value="{{ filtros.sede }}">
+                <input type="hidden" name="grado" value="{{ filtros.grado }}">
+                <input type="hidden" name="año_lectivo" value="{{ filtros.año_lectivo }}">
+                <input type="hidden" name="estado" value="{{ filtros.estado }}">
+                <input type="hidden" name="genero" value="{{ filtros.genero }}">
+                <input type="hidden" name="edad_min" value="{{ filtros.edad_min }}">
+                <input type="hidden" name="edad_max" value="{{ filtros.edad_max }}">
+                
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-file-excel me-2"></i>Excel
+                </button>
+            </form>
+            
+            <form method="post" action="{% url 'administrador:exportar_reporte' %}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="tipo_reporte" value="estudiantes">
+                <input type="hidden" name="formato" value="pdf">
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-file-pdf me-2"></i>PDF
+                </button>
+            </form>
+            
+            <form method="post" action="{% url 'administrador:exportar_reporte' %}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="tipo_reporte" value="estudiantes">
+                <input type="hidden" name="formato" value="csv">
+                <button type="submit" class="btn btn-secondary">
+                    <i class="bi bi-file-text me-2"></i>CSV
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de estudiantes -->
+    <div class="card">
+        <div class="card-body">
+            {% include 'administrador/reportes/partials/tabla_estudiantes.html' %}
+        </div>
+    </div>
+
+    <!-- Gráfico de distribución -->
+    {% if estadisticas.total > 0 %}
+        <div class="row mt-4">
+            <!-- Gráfico de distribución por grado -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Distribución por Grado</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if distribucion_grado %}
+                        <canvas id="distribucionGradoChart" height="250"></canvas>
+                        {% else %}
+                        <p class="text-muted text-center">No hay datos de distribución por grado</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gráfico de distribución por género -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Distribución por Género</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="distribucionGeneroChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Script para los gráficos -->
+        <script>
+        $(document).ready(function() {
+            // Verificar si Chart.js está disponible
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js no está cargado. Cargando ahora...');
+                // Opcional: cargar Chart.js dinámicamente
+                var script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+                script.onload = function() {
+                    initializeCharts();
+                };
+                document.head.appendChild(script);
+            } else {
+                initializeCharts();
+            }
+            
+            function initializeCharts() {
+                // 1. Gráfico de barras - Distribución por grado
+                const gradoCanvas = document.getElementById('distribucionGradoChart');
+                if (gradoCanvas && {{ distribucion_grado|length }} > 0) {
+                    try {
+                        // Intentar usar datos JSON
+                        const gradoLabels = {{ distribucion_grado_labels|safe }};
+                        const gradoDatasets = {{ distribucion_grado_datasets|safe }};
+                        
+                        if (gradoLabels.length > 0) {
+                            new Chart(gradoCanvas.getContext('2d'), {
+                                type: 'bar',
+                                data: {
+                                    labels: gradoLabels,
+                                    datasets: gradoDatasets
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: {
+                                                stepSize: 1
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Error con datos JSON, usando datos directos:', e);
+                        // Fallback: usar datos directos
+                        const gradoLabels = [
+                            {% for item in distribucion_grado %}
+                            '{{ item.grado_año_lectivo__grado__nombre }}',
+                            {% endfor %}
+                        ];
+                        
+                        const gradoData = [
+                            {% for item in distribucion_grado %}
+                            {{ item.total }},
+                            {% endfor %}
+                        ];
+                        
+                        new Chart(gradoCanvas.getContext('2d'), {
+                            type: 'bar',
+                            data: {
+                                labels: gradoLabels,
+                                datasets: [{
+                                    label: 'Estudiantes',
+                                    data: gradoData,
+                                    backgroundColor: '#0d6efd',
+                                    borderColor: '#0a58ca',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            stepSize: 1
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+                
+                // 2. Gráfico de pastel - Distribución por género
+                const generoCanvas = document.getElementById('distribucionGeneroChart');
+                if (generoCanvas) {
+                    try {
+                        // Intentar usar datos JSON
+                        const generoLabels = {{ distribucion_genero_labels|safe }};
+                        const generoData = {{ distribucion_genero_data|safe }};
+                        const generoColors = {{ distribucion_genero_colors|safe }};
+                        
+                        if (generoLabels.length > 0) {
+                            new Chart(generoCanvas.getContext('2d'), {
+                                type: 'pie',
+                                data: {
+                                    labels: generoLabels,
+                                    datasets: [{
+                                        data: generoData,
+                                        backgroundColor: generoColors,
+                                        borderColor: '#fff',
+                                        borderWidth: 2
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'bottom'
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Error con datos JSON de género, usando datos directos:', e);
+                        // Fallback: usar datos directos
+                        const generoLabels = ['Masculino', 'Femenino', 'No especificado'];
+                        const generoData = [
+                            {{ estadisticas.masculinos }},
+                            {{ estadisticas.femeninos }},
+                            {{ estadisticas.otros }}
+                        ];
+                        
+                        new Chart(generoCanvas.getContext('2d'), {
+                            type: 'pie',
+                            data: {
+                                labels: generoLabels,
+                                datasets: [{
+                                    data: generoData,
+                                    backgroundColor: ['#0d6efd', '#d63384', '#6c757d'],
+                                    borderColor: '#fff',
+                                    borderWidth: 2
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom'
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        });
+        </script>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Formato automático de números
+        $('input[type="number"]').on('input', function() {
+            if ($(this).val() < 0) $(this).val(0);
+            if ($(this).val() > 100) $(this).val(100);
+        });
+        
+        // Exportación rápida
+        $('.export-buttons form').on('submit', function(e) {
+            // Puedes agregar lógica adicional aquí, como mostrar un loader
+            console.log('Exportando reporte...');
+        });
+    });
+</script>
+
+{% endblock %}

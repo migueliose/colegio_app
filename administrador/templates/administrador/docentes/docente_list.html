@@ -1,0 +1,494 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Gestión de Docentes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0">Gestión de Docentes</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_administrador' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Docentes</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group">
+                <a href="{% url 'administrador:docente_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo Docente
+                </a>                
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-primary border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                Total Docentes
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ total_docentes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-success border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                Activos
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ docentes_activos }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-info border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                Masculino
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ docentes_masculino }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-male fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-warning border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                Femenino
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ docentes_femenino }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-female fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y Búsqueda -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-filter me-2"></i>Filtros de Búsqueda
+                </h5>
+                <button class="btn btn-sm btn-outline-secondary" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#filtersCollapse">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+            </div>
+        </div>
+        <div class="collapse show" id="filtersCollapse">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <!-- Búsqueda por texto -->
+                    <div class="col-md-4">
+                        <label class="form-label">Búsqueda General</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" name="search" class="form-control" 
+                                   placeholder="Nombre, apellido, documento..." 
+                                   value="{{ request.GET.search }}">
+                        </div>
+                    </div>
+
+                    <!-- Filtro por tipo de usuario -->
+                    <div class="col-md-3">
+                        <label class="form-label">Tipo de Usuario</label>
+                        <select name="tipo_usuario" class="form-control">
+                            <option value="">Todos</option>
+                            {% for tipo in tipos_usuario %}
+                            <option value="{{ tipo.id }}" 
+                                    {% if request.GET.tipo_usuario == tipo.id|stringformat:"s" %}selected{% endif %}>
+                                {{ tipo.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Filtro por estado -->
+                    <div class="col-md-3">
+                        <label class="form-label">Estado</label>
+                        <select name="estado" class="form-control">
+                            <option value="">Todos</option>
+                            <option value="activo" {% if request.GET.estado == 'activo' %}selected{% endif %}>
+                                Activos
+                            </option>
+                            <option value="inactivo" {% if request.GET.estado == 'inactivo' %}selected{% endif %}>
+                                Inactivos
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="d-grid gap-2 w-100">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter me-1"></i> Filtrar
+                            </button>
+                            <a href="{% url 'administrador:docente_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-redo me-1"></i> Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listado de Docentes -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Listado de Docentes
+                    <span class="badge bg-primary ms-2">{{ page_obj.paginator.count }}</span>
+                </h5>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" 
+                            onclick="window.print()">
+                        <i class="fas fa-print"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" 
+                            id="export-btn">
+                        <i class="fas fa-download"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            {% if docentes %}
+            <div class="table-responsive">
+                <table class="table table-hover table-striped" id="docentes-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="60">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="select-all">
+                                </div>
+                            </th>
+                            <th>Documento</th>
+                            <th>Nombre Completo</th>
+                            <th>Contacto</th>
+                            <th>Información</th>
+                            <th>Estado</th>
+                            <th width="150" class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for docente in docentes %}
+                        <tr>
+                            <td>
+                                <div class="form-check">
+                                    <input class="form-check-input select-item" type="checkbox" 
+                                           value="{{ docente.pk }}">
+                                </div>
+                            </td>
+                            <td>
+                                <strong>{{ docente.usuario.numero_documento }}</strong>
+                                <br>
+                                <small class="text-muted">
+                                    {{ docente.usuario.tipo_documento.nombre }}
+                                </small>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if docente.foto %}
+                                    <img src="{{ docente.foto.url }}" alt="{{ docente.usuario.get_full_name }}" 
+                                         class="rounded-circle me-2" 
+                                         style="width: 32px; height: 32px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center me-2" 
+                                         style="width: 32px; height: 32px;">
+                                        <i class="fas fa-user text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ docente.usuario.get_full_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            {{ docente.usuario.tipo_usuario.nombre }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if docente.usuario.email %}
+                                <div><i class="fas fa-envelope me-1"></i> {{ docente.usuario.email }}</div>
+                                {% endif %}
+                                {% if docente.usuario.telefono %}
+                                <div><i class="fas fa-phone me-1"></i> {{ docente.usuario.telefono }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if docente.usuario.fecha_nacimiento %}
+                                <div><i class="fas fa-birthday-cake me-1"></i> {{ docente.usuario.edad }} años</div>
+                                {% endif %}
+                                <div>
+                                    <i class="fas fa-venus-mars me-1"></i>
+                                    {% if docente.usuario.sexo == 'M' %}
+                                    Masculino
+                                    {% elif docente.usuario.sexo == 'F' %}
+                                    Femenino
+                                    {% else %}
+                                    No especificado
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                {% if docente.usuario.estado %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i> Activo
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times-circle me-1"></i> Inactivo
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'administrador:docente_detail' docente.pk %}" 
+                                       class="btn btn-info" title="Ver detalle"
+                                       data-bs-toggle="tooltip" data-bs-placement="top">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'administrador:docente_update' docente.pk %}" 
+                                       class="btn btn-warning" title="Editar"
+                                       data-bs-toggle="tooltip" data-bs-placement="top">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'administrador:docente_delete' docente.pk %}" 
+                                       class="btn btn-danger" title="Desactivar"
+                                       data-bs-toggle="tooltip" data-bs-placement="top">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <div class="text-center text-muted small mt-2">
+                    Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ page_obj.paginator.count }} docentes
+                </div>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <!-- Estado vacío -->
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No se encontraron docentes</h4>
+                <p class="text-muted mb-4">
+                    {% if request.GET %}
+                    Intente con otros criterios de búsqueda
+                    {% else %}
+                    No hay docentes registrados en el sistema
+                    {% endif %}
+                </p>
+                <a href="{% url 'administrador:docente_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i> Agregar el primer docente
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="card-footer text-muted small">
+            <div class="row">
+                <div class="col">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Mostrando {{ docentes|length }} registros
+                </div>
+                <div class="col text-end">
+                    <i class="fas fa-sync-alt me-1"></i>
+                    Actualizado: {% now "d/m/Y H:i" %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Selección múltiple
+    $('#select-all').change(function() {
+        $('.select-item').prop('checked', this.checked);
+        updateSelectedCount();
+    });
+
+    $('.select-item').change(function() {
+        if (!this.checked) {
+            $('#select-all').prop('checked', false);
+        } else {
+            var allChecked = $('.select-item:checked').length === $('.select-item').length;
+            $('#select-all').prop('checked', allChecked);
+        }
+        updateSelectedCount();
+    });
+
+    function updateSelectedCount() {
+        var count = $('.select-item:checked').length;
+        $('#count').text(count);
+        $('#selected-count').prop('disabled', count === 0);
+        $('#batch-delete').prop('disabled', count === 0);
+        $('#batch-activate').prop('disabled', count === 0);
+        $('#batch-export').prop('disabled', count === 0);
+        
+        if (count > 0) {
+            $('#selected-count').removeClass('btn-outline-secondary').addClass('btn-primary');
+        } else {
+            $('#selected-count').removeClass('btn-primary').addClass('btn-outline-secondary');
+        }
+    }
+
+    // Acciones en lote
+    $('#batch-delete').click(function() {
+        var selected = [];
+        $('.select-item:checked').each(function() {
+            selected.push($(this).val());
+        });
+        
+        if (selected.length > 0) {
+            if (confirm(`¿Está seguro de desactivar ${selected.length} docente(s) seleccionado(s)?`)) {
+                // Aquí iría la lógica AJAX para desactivar múltiples docentes
+                alert('Funcionalidad de desactivación múltiple en desarrollo');
+            }
+        }
+    });
+
+    $('#batch-activate').click(function() {
+        var selected = [];
+        $('.select-item:checked').each(function() {
+            selected.push($(this).val());
+        });
+        
+        if (selected.length > 0) {
+            if (confirm(`¿Está seguro de activar ${selected.length} docente(s) seleccionado(s)?`)) {
+                // Aquí iría la lógica AJAX para activar múltiples docentes
+                alert('Funcionalidad de activación múltiple en desarrollo');
+            }
+        }
+    });
+
+    $('#batch-export').click(function() {
+        var selected = [];
+        $('.select-item:checked').each(function() {
+            selected.push($(this).val());
+        });
+        
+        if (selected.length > 0) {
+            // Aquí iría la lógica para exportar seleccionados
+            alert(`Exportando ${selected.length} docente(s) seleccionado(s)...`);
+        }
+    });
+
+    // Exportar a Excel
+    $('#export-btn').click(function() {
+        // Aquí iría la lógica para exportar toda la tabla
+        alert('Exportando listado completo...');
+    });
+
+    // Búsqueda en tiempo real (opcional)
+    $('#search-input').on('keyup', function() {
+        var value = $(this).val().toLowerCase();
+        $('#docentes-table tbody tr').filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
+    });
+});
+</script>
+{% endblock %}

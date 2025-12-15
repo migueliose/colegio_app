@@ -1,0 +1,216 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Logros - Docentes{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4"><i class="fas fa-trophy me-2"></i>Gestión de Logros</h1>
+        <div>
+            <a href="{% url 'docentes:logros_filtrados' %}" class="btn btn-info me-2">
+                <i class="fas fa-filter me-2"></i>Vista Filtrada
+            </a>
+            <a href="{% url 'docentes:crear_logro' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Nuevo Logro
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-filter me-2"></i>Filtros
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="periodo" class="form-label">Periodo</label>
+                    <select name="periodo" id="periodo" class="form-select">
+                        <option value="">Todos los periodos</option>
+                        {% for periodo in periodos %}
+                        <option value="{{ periodo.id }}" 
+                            {% if filtro_periodo == periodo.id|stringformat:"s" %}selected{% endif %}>
+                            {{ periodo.periodo.nombre }} ({{ periodo.fecha_inicio|date:"d/m" }} - {{ periodo.fecha_fin|date:"d/m/Y" }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="grado" class="form-label">Grado</label>
+                    <select name="grado" id="grado" class="form-select">
+                        <option value="">Todos los grados</option>
+                        {% for grado in grados %}
+                        <option value="{{ grado.id }}"
+                            {% if filtro_grado == grado.id|stringformat:"s" %}selected{% endif %}>
+                            {{ grado.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="asignatura" class="form-label">Asignatura</label>
+                    <select name="asignatura" id="asignatura" class="form-select">
+                        <option value="">Todas las asignaturas</option>
+                        {% for asignatura in asignaturas %}
+                        <option value="{{ asignatura.id }}"
+                            {% if filtro_asignatura == asignatura.id|stringformat:"s" %}selected{% endif %}>
+                            {{ asignatura.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Buscar en temas</label>
+                    <input type="text" name="search" id="search" class="form-control" 
+                           placeholder="Buscar en temas..." value="{{ filtro_search }}">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>Filtrar
+                    </button>
+                    <a href="{% url 'docentes:lista_logros' %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Logros agrupados -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-trophy me-2"></i>Logros Registrados
+            <span class="badge bg-primary ms-2">{{ page_obj.paginator.count }} grupos</span>
+        </div>
+        <div class="card-body">
+            {% if grupos_logros %}
+                {% for grupo in grupos_logros %}
+                <div class="card mb-4 border-secondary">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-graduation-cap me-2"></i>{{ grupo.grado.nombre }} - 
+                            <i class="fas fa-book me-2"></i>{{ grupo.asignatura.nombre }}
+                            <span class="badge bg-light text-dark ms-2">{{ grupo.logros|length }} logros</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Periodo</th>
+                                        <th>Tema</th>
+                                        <th>Superior</th>
+                                        <th>Alto</th>
+                                        <th>Básico</th>
+                                        <th>Bajo</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for logro in grupo.logros %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-info">{{ logro.nombre_periodo }}</span>
+                                        </td>
+                                        <td>
+                                            <strong>{{ logro.tema|truncatechars:60 }}</strong>
+                                            {% if logro.tema|length > 60 %}
+                                            <small class="text-muted d-block">({{ logro.tema }})</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ logro.descripcion_superior|truncatechars:30|default:"-" }}</td>
+                                        <td>{{ logro.descripcion_alto|truncatechars:30|default:"-" }}</td>
+                                        <td>{{ logro.descripcion_basico|truncatechars:30|default:"-" }}</td>
+                                        <td>{{ logro.descripcion_bajo|truncatechars:30|default:"-" }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'docentes:detalle_logro' logro.id %}" 
+                                                   class="btn btn-info" title="Ver">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'docentes:editar_logro' logro.id %}" 
+                                                   class="btn btn-warning" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{% url 'docentes:eliminar_logro' logro.id %}" 
+                                                   class="btn btn-danger" title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            
+            <!-- Paginación -->
+            {% if is_paginated %}
+            <nav aria-label="Paginación">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Primera</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Siguiente</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Última</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle me-2"></i>
+                No hay logros registrados con los filtros actuales.
+                {% if not grados %}
+                <div class="mt-2">
+                    <small>No tiene asignaturas asignadas para el año lectivo actual.</small>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Mejorar experiencia de usuario en filtros
+    $('#grado, #asignatura, #periodo').select2({
+        placeholder: "Seleccione...",
+        allowClear: true,
+        width: '100%'
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,355 @@
+<!-- acudiente/templates/acudiente/detalle_estudiante.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static estudiante_filters %}
+
+{% block title %}{{ estudiante.usuario.get_full_name }} - Detalles{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <!-- Foto del estudiante -->
+                        <div class="me-3">
+                            {% if estudiante.foto %}
+                            <img src="{{ estudiante.foto.url }}" 
+                                 alt="{{ estudiante.usuario.get_full_name }}"
+                                 class="rounded-circle" width="100" height="100">
+                            {% else %}
+                            <div class="avatar-placeholder bg-primary rounded-circle d-flex align-items-center justify-content-center text-white"
+                                 style="width: 100px; height: 100px; font-size: 40px;">
+                                {{ estudiante.usuario.nombres|first|upper }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Información del estudiante -->
+                        <div class="flex-grow-1">
+                            <h1 class="h3 mb-1">{{ estudiante.usuario.get_full_name }}</h1>
+                            <p class="text-muted mb-2">
+                                <i class="fas fa-user-graduate me-1"></i>
+                                Estudiante
+                                {% if acudiente_rel %}
+                                <span class="ms-3">
+                                    <i class="fas fa-users me-1"></i>
+                                    {{ acudiente_rel.parentesco }}
+                                </span>
+                                {% endif %}
+                            </p>
+                            
+                            <div class="d-flex flex-wrap gap-3">
+                                {% if estudiante.usuario.sexo %}
+                                <span class="badge bg-info">
+                                    <i class="fas fa-venus-mars me-1"></i>
+                                    {{ estudiante.usuario.get_sexo_display }}
+                                </span>
+                                {% endif %}
+                                
+                                {% if estudiante.usuario.edad %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-birthday-cake me-1"></i>
+                                    {{ estudiante.usuario.edad }} años
+                                </span>
+                                {% endif %}
+                                
+                                {% if estudiante.usuario.fecha_nacimiento %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    Nacimiento: {{ estudiante.usuario.fecha_nacimiento|date:"d/m/Y" }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Estado de matrícula -->
+                        <div class="text-end">
+                            {% if matricula_actual %}
+                            <div class="mb-2">
+                                <span class="badge {% if matricula_actual.estado == 'ACT' %}bg-success{% else %}bg-warning{% endif %} fs-6">
+                                    {{ matricula_actual.get_estado_display }}
+                                </span>
+                            </div>
+                            <p class="mb-0">
+                                <i class="fas fa-graduation-cap me-1"></i>
+                                {{ matricula_actual.grado_año_lectivo.grado.nombre }}
+                                <br>
+                                <small class="text-muted">
+                                    {{ matricula_actual.año_lectivo.anho }}
+                                </small>
+                            </p>
+                            {% else %}
+                            <div class="alert alert-warning mb-0">
+                                <small>
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Sin matrícula activa
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información General -->
+    <div class="row">
+        <!-- Información Personal -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-id-card me-2"></i>Información Personal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th width="40%"><i class="fas fa-id-badge me-2 text-muted"></i>Tipo Documento:</th>
+                                <td>{{ estudiante.usuario.tipo_documento.nombre|default:"No registrado" }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-hashtag me-2 text-muted"></i>Número Documento:</th>
+                                <td>{{ estudiante.usuario.numero_documento|default:"No registrado" }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-envelope me-2 text-muted"></i>Email:</th>
+                                <td>
+                                    {% if estudiante.usuario.email %}
+                                    <a href="mailto:{{ estudiante.usuario.email }}">{{ estudiante.usuario.email }}</a>
+                                    {% else %}
+                                    No registrado
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-phone me-2 text-muted"></i>Teléfono:</th>
+                                <td>{{ estudiante.usuario.telefono|default:"No registrado" }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-map-marker-alt me-2 text-muted"></i>Dirección:</th>
+                                <td>{{ estudiante.usuario.direccion|default:"No registrado" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información Académica -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-graduation-cap me-2"></i>Información Académica
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if matricula_actual %}
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th width="40%"><i class="fas fa-school me-2 text-muted"></i>Sede:</th>
+                                <td>{{ matricula_actual.sede.nombre }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-calendar-alt me-2 text-muted"></i>Año Lectivo:</th>
+                                <td>{{ matricula_actual.año_lectivo.anho }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-layer-group me-2 text-muted"></i>Grado:</th>
+                                <td>{{ matricula_actual.grado_año_lectivo.grado.nombre }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-calendar-day me-2 text-muted"></i>Fecha Matrícula:</th>
+                                <td>{{ matricula_actual.fecha_matricula|date:"d/m/Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-barcode me-2 text-muted"></i>Código Matrícula:</th>
+                                <td><code>{{ matricula_actual.codigo_matricula }}</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-circle fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No hay información académica disponible</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial de Matrículas -->
+    {% if historial_matriculas %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Historial de Matrículas
+                    </h5>
+                    <span class="badge bg-secondary">{{ historial_matriculas.count }} años</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Año Lectivo</th>
+                                    <th>Grado</th>
+                                    <th>Sede</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Matrícula</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for matricula in historial_matriculas %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ matricula.año_lectivo.anho }}</strong>
+                                        {% if matricula.año_lectivo.estado %}
+                                        <span class="badge bg-success ms-1">Actual</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ matricula.grado_año_lectivo.grado.nombre }}</td>
+                                    <td>{{ matricula.sede.nombre }}</td>
+                                    <td>
+                                        <span class="badge {% if matricula.estado == 'ACT' %}bg-success{% elif matricula.estado == 'RET' %}bg-danger{% else %}bg-warning{% endif %}">
+                                            {{ matricula.get_estado_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ matricula.fecha_matricula|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a target="_blank" href="{% url 'acudiente:boletin_pdf' estudiante.id matricula.año_lectivo.id %}" class="btn btn-outline-primary" title="Ver boletín">
+                                                <i class="fas fa-file-pdf"></i>
+                                            </a>
+                                            <a target="_blank"  href="{% url 'acudiente:observador_pdf' estudiante.id matricula.año_lectivo.id %}" class="btn btn-outline-info" title="Ver observador">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Acciones Rápidas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3 col-sm-6">
+                            <a href="{% url 'acudiente:notas_estudiante' estudiante.id %}" 
+                               class="card text-decoration-none text-center h-100 border hover-card">
+                                <div class="card-body">
+                                    <div class="text-primary mb-2">
+                                        <i class="fas fa-chart-bar fa-2x"></i>
+                                    </div>
+                                    <h6 class="card-title mb-1">Notas y Calificaciones</h6>
+                                    <p class="card-text small text-muted mb-2">
+                                        Ver rendimiento académico
+                                    </p>
+                                    <span class="badge bg-primary">
+                                        <i class="fas fa-eye"></i> Ver
+                                    </span>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-md-3 col-sm-6">
+                            <a href="{% url 'acudiente:comportamiento_estudiante' estudiante.id %}" 
+                               class="card text-decoration-none text-center h-100 border hover-card">
+                                <div class="card-body">
+                                    <div class="text-warning mb-2">
+                                        <i class="fas fa-user-check fa-2x"></i>
+                                    </div>
+                                    <h6 class="card-title mb-1">Comportamiento</h6>
+                                    <p class="card-text small text-muted mb-2">
+                                        Observaciones y conducta
+                                    </p>
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-clipboard-list"></i> Ver
+                                    </span>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-md-3 col-sm-6">
+                            <a href="{% url 'acudiente:asistencia_estudiante' estudiante.id %}" 
+                               class="card text-decoration-none text-center h-100 border hover-card">
+                                <div class="card-body">
+                                    <div class="text-info mb-2">
+                                        <i class="fas fa-calendar-check fa-2x"></i>
+                                    </div>
+                                    <h6 class="card-title mb-1">Asistencia</h6>
+                                    <p class="card-text small text-muted mb-2">
+                                        Registro de asistencia
+                                    </p>
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-chart-pie"></i> Ver
+                                    </span>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-md-3 col-sm-6">
+                            <a href="{% url 'acudiente:documentos_estudiante' estudiante.id %}" 
+                               class="card text-decoration-none text-center h-100 border hover-card">
+                                <div class="card-body">
+                                    <div class="text-success mb-2">
+                                        <i class="fas fa-file-pdf fa-2x"></i>
+                                    </div>
+                                    <h6 class="card-title mb-1">Documentos</h6>
+                                    <p class="card-text small text-muted mb-2">
+                                        Reportes y certificados
+                                    </p>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-download"></i> Descargar
+                                    </span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-card {
+    transition: all 0.3s ease;
+}
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    border-color: var(--bs-primary);
+}
+.avatar-placeholder {
+    font-weight: bold;
+}
+.table th {
+    font-weight: 600;
+}
+</style>
+{% endblock %}

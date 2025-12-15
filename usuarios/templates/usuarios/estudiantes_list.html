@@ -1,0 +1,170 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Estudiantes - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="fas fa-user-graduate me-2"></i>Gestión de Estudiantes
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'usuarios:estudiante_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Nuevo Estudiante
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros y Búsqueda -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="Buscar estudiantes..." value="{{ request.GET.search }}">
+                        <button class="btn btn-outline-primary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <a href="{% url 'usuarios:estudiantes_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-refresh me-1"></i>Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Estudiantes -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list me-2"></i>Lista de Estudiantes
+                <span class="badge bg-primary ms-2">{{ estudiantes.count }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if estudiantes %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Foto</th>
+                            <th>Nombre Completo</th>
+                            <th>Documento</th>
+                            <th>Email</th>
+                            <th>Teléfono</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for estudiante in estudiantes %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                {% if estudiante.foto %}
+                                <img src="{{ estudiante.foto.url }}" alt="Foto" class="rounded-circle" width="40" height="40">
+                                {% else %}
+                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ estudiante.usuario.get_full_name }}</strong>
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ estudiante.usuario.tipo_documento.nombre }}</small><br>
+                                {{ estudiante.usuario.numero_documento }}
+                            </td>
+                            <td>{{ estudiante.usuario.email|default:"-" }}</td>
+                            <td>{{ estudiante.usuario.telefono|default:"-" }}</td>
+                            <td>
+                                {% if estudiante.estado %}
+                                <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'usuarios:estudiante_detail' estudiante.pk %}" 
+                                       class="btn btn-outline-primary" title="Ver detalle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'usuarios:estudiante_update' estudiante.pk %}" 
+                                       class="btn btn-outline-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if estudiante.estado %}
+                                    <a href="{% url 'usuarios:estudiante_delete' estudiante.pk %}" 
+                                       class="btn btn-outline-danger" title="Desactivar">
+                                        <i class="fas fa-user-slash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if is_paginated %}
+            <nav aria-label="Paginación">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            Primera
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            Siguiente
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            Última
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-user-graduate fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No se encontraron estudiantes</h4>
+                <p class="text-muted">No hay estudiantes registrados en el sistema.</p>
+                <a href="{% url 'usuarios:estudiante_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Registrar Primer Estudiante
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

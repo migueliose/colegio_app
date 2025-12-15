@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Matrículas de {{ estudiante.usuario.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4">
+            <i class="fas fa-history me-2"></i>
+            Historial de Matrículas - {{ estudiante.usuario.get_full_name }}
+        </h1>
+        <div>
+            <a href="{% url 'administrador:estudiante_detail' estudiante.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver al Estudiante
+            </a>
+            
+            {% if años_disponibles %}
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fas fa-plus me-1"></i>Nueva Matrícula
+                </button>
+                <ul class="dropdown-menu">
+                    {% for año in años_disponibles %}
+                    <li>
+                        <a class="dropdown-item" href="{% url 'administrador:matricula_create_con_año' estudiante.pk año.pk %}">
+                            <i class="fas fa-calendar-alt me-1"></i> {{ año.anho }} - {{ año.sede.nombre }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Información del Estudiante -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <h4>{{ estudiante.usuario.get_full_name }}</h4>
+                    <p class="mb-1">
+                        <i class="fas fa-id-card me-1"></i>
+                        {{ estudiante.usuario.tipo_documento }}: {{ estudiante.usuario.numero_documento }}
+                    </p>
+                    {% if estudiante.usuario.edad %}
+                    <p class="mb-0">
+                        <i class="fas fa-birthday-cake me-1"></i>
+                        {{ estudiante.usuario.edad }} años
+                    </p>
+                    {% endif %}
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="badge bg-info fs-6">
+                        <i class="fas fa-graduation-cap me-1"></i>
+                        {% if estudiante.grado_actual %}
+                        {{ estudiante.grado_actual.grado.nombre }}
+                        {% else %}
+                        Sin matrícula activa
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Matrículas Existentes -->
+    <div class="card mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-1"></i>Matrículas Registradas
+            </h5>
+            <span class="badge bg-primary">{{ matriculas.count }} matrículas</span>
+        </div>
+        <div class="card-body">
+            {% if matriculas %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Año Lectivo</th>
+                            <th>Grado</th>
+                            <th>Sede</th>
+                            <th>Estado</th>
+                            <th>Fecha Matrícula</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for matricula in matriculas %}
+                        <tr>
+                            <td>
+                                <strong>{{ matricula.año_lectivo.anho }}</strong>
+                                {% if matricula.año_lectivo.estado %}
+                                <span class="badge bg-success ms-1">Activo</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ matricula.grado_año_lectivo.grado.nombre }}</td>
+                            <td>{{ matricula.sede.nombre }}</td>
+                            <td>
+                                {% if matricula.estado == 'ACT' %}
+                                <span class="badge bg-success">Activa</span>
+                                {% elif matricula.estado == 'PRE' %}
+                                <span class="badge bg-warning">Pre-matrícula</span>
+                                {% elif matricula.estado == 'PEN' %}
+                                <span class="badge bg-info">Pendiente</span>
+                                {% elif matricula.estado == 'INA' %}
+                                <span class="badge bg-secondary">Inactiva</span>
+                                {% elif matricula.estado == 'RET' %}
+                                <span class="badge bg-danger">Retirada</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ matricula.fecha_matricula|date:"d/m/Y" }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'administrador:matricula_detail' matricula.pk %}" 
+                                       class="btn btn-outline-primary" title="Ver">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'administrador:matricula_update' matricula.pk %}" 
+                                       class="btn btn-outline-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-user-graduate fa-3x text-muted mb-3"></i>
+                <p class="text-muted">El estudiante no tiene matrículas registradas</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Años Disponibles para Nueva Matrícula -->
+    {% if años_disponibles %}
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <i class="fas fa-calendar-plus me-1"></i>Años Disponibles para Nueva Matrícula
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for año in años_disponibles %}
+                <div class="col-md-4 mb-3">
+                    <div class="card border-success h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ año.anho }}</h5>
+                            <p class="card-text">
+                                <i class="fas fa-school me-1"></i> {{ año.sede.nombre }}
+                            </p>
+                            {% if año.estado %}
+                            <span class="badge bg-success">Año Activo</span>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <a href="{% url 'administrador:matricula_create_con_año' estudiante.pk año.pk %}" 
+                               class="btn btn-success w-100">
+                                <i class="fas fa-plus me-1"></i>Matricular en este año
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

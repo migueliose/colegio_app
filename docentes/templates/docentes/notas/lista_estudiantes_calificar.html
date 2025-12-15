@@ -1,0 +1,124 @@
+<!-- notas/lista_estudiantes_calificar.html -->
+{% if error %}
+<div class="alert alert-danger">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    {{ error }}
+</div>
+{% else %}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-light border-0 py-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="card-title mb-1">
+                    <i class="fas fa-users me-2"></i>
+                    Estudiantes de {{ grado_seleccionado.nombre }} - {{ asignatura_seleccionada.nombre }}
+                </h5>
+                <small class="text-muted">
+                    Período: {{ periodo_seleccionado.periodo.nombre }} | 
+                    {{ estudiantes_data|length }} estudiante{{ estudiantes_data|length|pluralize }}
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card-body p-0">
+        <form id="formCalificaciones" method="post" action="{% url 'docentes:guardar_notas' %}">
+            {% csrf_token %}
+            <input type="hidden" name="grado_id" value="{{ grado_seleccionado.id }}">
+            <input type="hidden" name="asignatura_id" value="{{ asignatura_seleccionada.id }}">
+            <input type="hidden" name="periodo_id" value="{{ periodo_seleccionado.id }}">
+            
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-primary">
+                        <tr>
+                            <th width="5%" class="text-center">#</th>
+                            <th width="25%">Estudiante</th>
+                            <th width="15%" class="text-center">Documento</th>
+                            <th width="15%" class="text-center">Calificación</th>
+                            <th width="30%">Observaciones</th>
+                            <th width="10%" class="text-center">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in estudiantes_data %}
+                        <tr class="align-middle">
+                            <td class="text-center fw-semibold">{{ forloop.counter }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if data.estudiante.foto %}
+                                    <img src="{{ data.estudiante.foto.url }}" 
+                                         alt="{{ data.estudiante.usuario.get_full_name }}" 
+                                         class="rounded-circle me-2 border" 
+                                         width="40" height="40"
+                                         onerror="this.style.display='none'">
+                                    {% endif %}
+                                    <div>
+                                        <div class="fw-semibold">{{ data.estudiante.usuario.get_full_name }}</div>
+                                        <small class="text-muted">{{ data.estudiante.usuario.numero_documento }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <small class="text-muted">{{ data.estudiante.usuario.numero_documento }}</small>
+                            </td>
+                            <td>
+                                <input type="number"
+                                    name="nota_{{ data.estudiante.id }}"
+                                    step="0.1"
+                                    min="0"
+                                    max="5"
+                                    placeholder="0.0 - 5.0"
+                                    value="{% if data.calificacion %}{{ data.calificacion|stringformat:'.1f' }}{% endif %}"
+                                    class="form-control">
+                            </td>
+                            <td>
+                                <textarea name="observacion_{{ data.estudiante.id }}" 
+                                          class="form-control"
+                                          rows="2" 
+                                          placeholder="Observaciones...">{{ data.observaciones|default:'' }}</textarea>
+                            </td>
+                            <td class="text-center">
+                                {% if data.calificacion %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Calificado
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-clock me-1"></i>Pendiente
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="fas fa-user-slash display-4 d-block mb-2"></i>
+                                <h6>No hay estudiantes en este grado</h6>
+                                <p class="mb-0">No se encontraron estudiantes matriculados en este grado</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if estudiantes_data %}
+            <div class="card-footer bg-white border-top py-3">
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" id="btnLimpiarCalificaciones">
+                        <i class="fas fa-undo me-1"></i>Limpiar
+                    </button>
+                    <button type="button" class="btn btn-success" id="btnGuardarCalificaciones">
+                        <i class="fas fa-save me-1"></i>Guardar Calificaciones
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Mensajes de resultado -->
+<div id="mensajeResultado" class="mt-3"></div>
+{% endif %}

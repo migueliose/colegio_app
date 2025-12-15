@@ -1,0 +1,102 @@
+<!-- estudiantes/components/header.html -->
+{% load static estudiante_filters %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="welcome-card card text-white">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="mb-2">
+                            <i class="fas fa-user-graduate me-2"></i>
+                            ¡Hola, {{ estudiante.usuario.nombres|default:"Estudiante" }}!
+                        </h2>
+                        <p class="mb-3 opacity-75">
+                            Bienvenido a tu panel de control académico
+                        </p>
+                        
+                        <div class="d-flex flex-wrap gap-3">
+                            {% if grado_actual %}
+                            <span class="badge bg-white text-dark bg-opacity-90 px-3 py-2 rounded-pill">
+                                <i class="fas fa-graduation-cap me-2"></i>
+                                {{ grado_actual }}
+                            </span>
+                            {% endif %}
+                            
+                            {% if año_lectivo_actual %}
+                            <span class="badge bg-white text-dark bg-opacity-90 px-3 py-2 rounded-pill">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                Año Lectivo {{ año_lectivo_actual.anho }}
+                            </span>
+                            {% endif %}
+                            
+                            {% if periodo_actual %}
+                            <span class="badge bg-white text-dark bg-opacity-90 px-3 py-2 rounded-pill">
+                                <i class="fas fa-clock me-2"></i>
+                                Período {{ periodo_actual.periodo.nombre }}
+                            </span>
+                            {% endif %}
+                            
+                            {% if matricula_actual.sede %}
+                            <span class="badge bg-white text-dark bg-opacity-90 px-3 py-2 rounded-pill">
+                                <i class="fas fa-school me-2"></i>
+                                {{ matricula_actual.sede.nombre }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 text-md-end text-center mt-3 mt-md-0">
+                        <div class="avatar avatar-xl bg-white text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-2" 
+                             style="width: 80px; height: 80px;">
+                            {% if estudiante.foto %}
+                            <img src="{{ estudiante.foto.url }}" 
+                                 alt="{{ estudiante.usuario.nombres }}" 
+                                 class="rounded-circle w-100 h-100 object-fit-cover">
+                            {% else %}
+                            <i class="fas fa-user-graduate fs-3"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <small class="opacity-75">Actualizado hoy</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Indicadores rápidos -->
+            <div class="card-footer bg-white bg-opacity-10 border-0">
+                <div class="row text-center">
+                    <div class="col-6 col-md-3 border-end border-white border-opacity-25">
+                        <small class="opacity-75 d-block">Promedio</small>
+                        <span class="h5 mb-0 fw-bold">
+                            {{ notas_estudiante|calcular_promedio|default:"-" }}
+                        </span>
+                    </div>
+                    <div class="col-6 col-md-3 border-end border-white border-opacity-25">
+                        <small class="opacity-75 d-block">Asistencia</small>
+                        <span class="h5 mb-0 fw-bold">
+                            {{ porcentaje_asistencia|default:"-" }}%
+                        </span>
+                    </div>
+                    <div class="col-6 col-md-3 border-end border-white border-opacity-25">
+                        <small class="opacity-75 d-block">Positivos</small>
+                        <span class="h5 mb-0 fw-bold">
+                            {{ comportamientos_recientes|comportamiento_positivo_count|default:"0" }}
+                        </span>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <small class="opacity-75 d-block">Estado</small>
+                        {% with promedio=notas_estudiante|calcular_promedio|default:0 %}
+                        <span class="badge bg-{% if promedio >= 4.0 %}success{% elif promedio >= 3.0 %}warning{% else %}danger{% endif %}">
+                            {% if promedio >= 4.0 %}Excelente
+                            {% elif promedio >= 3.0 %}Aceptable
+                            {% else %}Por Mejorar
+                            {% endif %}
+                        </span>
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

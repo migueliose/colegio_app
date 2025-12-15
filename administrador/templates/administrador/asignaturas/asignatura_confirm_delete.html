@@ -1,0 +1,356 @@
+<!-- administrador/asignaturas/asignatura_confirm_delete.html -->
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Eliminar Asignatura - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'administrador:asignatura_list' %}">Asignaturas</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Eliminar Asignatura</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <!-- Card de confirmación -->
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación de Asignatura
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Advertencia crítica -->
+                    <div class="alert alert-danger">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-radiation-alt fa-2x"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h5 class="alert-heading">¡ACCIÓN IRREVERSIBLE!</h5>
+                                <p class="mb-2">Está a punto de eliminar la asignatura:</p>
+                                <h4 class="text-center my-3">"{{ object.nombre }}"</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detalles de la asignatura -->
+                    <div class="card mb-4 border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Información de la Asignatura
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-3">
+                                        <strong><i class="fas fa-book me-2 text-primary"></i>Nombre:</strong><br>
+                                        <span class="fs-5">{{ object.nombre }}</span>
+                                    </p>
+                                    <p class="mb-3">
+                                        <strong><i class="fas fa-sitemap me-2 text-info"></i>Área:</strong><br>
+                                        <span class="badge bg-info">{{ object.area.nombre }}</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-3">
+                                        <strong><i class="fas fa-layer-group me-2 text-success"></i>Nivel:</strong><br>
+                                        <span class="badge bg-success">{{ object.area.nivel_escolar.nombre }}</span>
+                                    </p>
+                                    <p class="mb-3">
+                                        <strong><i class="fas fa-clock me-2 text-warning"></i>Intensidad Horaria:</strong><br>
+                                        <span class="badge bg-warning text-dark">{{ object.ih|default:"No asignada" }}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Verificación de dependencias -->
+                    <div class="card mb-4 border-info">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-link me-2"></i>
+                                Verificación de Dependencias
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% if object.logros.exists or object.asignaturas_grado.exists or object.horarios.exists %}
+                            <div class="alert alert-warning">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    ¡ATENCIÓN! Esta asignatura tiene:
+                                </h6>
+                                <ul class="mb-2">
+                                    {% if object.logros.exists %}
+                                    <li>
+                                        <i class="fas fa-trophy me-1"></i>
+                                        {{ object.logros.count }} logro(s) académico(s) asociado(s)
+                                    </li>
+                                    {% endif %}
+                                    {% if object.asignaturas_grado.exists %}
+                                    <li>
+                                        <i class="fas fa-graduation-cap me-1"></i>
+                                        {{ object.asignaturas_grado.count }} relación(es) con grados
+                                    </li>
+                                    {% endif %}
+                                    {% if object.horarios.exists %}
+                                    <li>
+                                        <i class="fas fa-clock me-1"></i>
+                                        {{ object.horarios.count }} horario(s) de clase programado(s)
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                                <p class="mb-0">
+                                    <strong>Advertencia:</strong> Si elimina esta asignatura, estos registros quedarán huérfanos.
+                                </p>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                No se encontraron dependencias críticas para esta asignatura.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Formulario de confirmación -->
+                    <form method="post" id="deleteForm">
+                        {% csrf_token %}
+                        
+                        <!-- Campo de confirmación avanzado -->
+                        <div class="mb-4">
+                            <label for="confirm_text" class="form-label fw-bold">
+                                <i class="fas fa-shield-alt me-1 text-danger"></i>
+                                Confirmación de Seguridad
+                                <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-danger text-white">
+                                    <i class="fas fa-key"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="confirm_text" 
+                                       placeholder="Escriba 'ELIMINAR {{ object.nombre|slice:":15"|upper }}...'"
+                                       required>
+                            </div>
+                            <div class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Escriba exactamente: <code>ELIMINAR {{ object.nombre|slice:":15"|upper }}...</code>
+                            </div>
+                            <div class="mt-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="confirm_backup">
+                                    <label class="form-check-label" for="confirm_backup">
+                                        <i class="fas fa-database me-1"></i>
+                                        Confirmo que tengo un respaldo del sistema
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="confirm_aware">
+                                    <label class="form-check-label" for="confirm_aware">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        Soy consciente de que esta acción no se puede deshacer
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Campo para motivo (opcional) -->
+                        <div class="mb-4">
+                            <label for="motivo" class="form-label fw-bold">
+                                <i class="fas fa-comment-dots me-1"></i>
+                                Motivo de Eliminación (Opcional)
+                            </label>
+                            <textarea class="form-control" 
+                                      id="motivo" 
+                                      name="motivo" 
+                                      rows="2" 
+                                      placeholder="Describa brevemente por qué está eliminando esta asignatura..."></textarea>
+                        </div>
+                        
+                        <!-- Botones de acción -->
+                        <div class="d-flex justify-content-between mt-5 pt-4 border-top">
+                            <a href="{% url 'administrador:asignatura_list' %}" 
+                               class="btn btn-lg btn-success">
+                                <i class="fas fa-arrow-left me-2"></i> Volver Seguro
+                            </a>
+                            <button type="submit" 
+                                    id="deleteButton"
+                                    class="btn btn-lg btn-danger"
+                                    disabled>
+                                <i class="fas fa-trash-alt me-2"></i>
+                                Eliminar Permanentemente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Pie informativo -->
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-history me-1"></i>
+                        <strong>Información de registro:</strong> 
+                        Creada el {{ object.created_at|date:"d/m/Y" }} | 
+                        Última modificación: {{ object.updated_at|date:"d/m/Y H:i" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.border-danger {
+    border: 2px solid #dc3545 !important;
+}
+
+.btn-lg {
+    padding: 0.75rem 2rem;
+    font-weight: 500;
+}
+
+#deleteButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#deleteButton:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+    transition: all 0.3s ease;
+}
+
+.alert-danger .fa-radiation-alt {
+    color: #dc3545;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmInput = document.getElementById('confirm_text');
+    const confirmBackup = document.getElementById('confirm_backup');
+    const confirmAware = document.getElementById('confirm_aware');
+    const deleteButton = document.getElementById('deleteButton');
+    const deleteForm = document.getElementById('deleteForm');
+    const requiredText = `ELIMINAR {{ object.nombre|slice:":15"|upper }}...`;
+    
+    // Validar todos los requisitos
+    function validateForm() {
+        const textValid = confirmInput.value.trim().toUpperCase() === requiredText;
+        const backupChecked = confirmBackup.checked;
+        const awareChecked = confirmAware.checked;
+        
+        deleteButton.disabled = !(textValid && backupChecked && awareChecked);
+        
+        if (textValid) {
+            confirmInput.classList.remove('is-invalid');
+            confirmInput.classList.add('is-valid');
+        } else if (confirmInput.value.trim() !== '') {
+            confirmInput.classList.remove('is-valid');
+            confirmInput.classList.add('is-invalid');
+        } else {
+            confirmInput.classList.remove('is-valid', 'is-invalid');
+        }
+    }
+    
+    // Escuchar cambios en todos los campos de confirmación
+    confirmInput.addEventListener('input', validateForm);
+    confirmBackup.addEventListener('change', validateForm);
+    confirmAware.addEventListener('change', validateForm);
+    
+    // Confirmación final antes de enviar
+    deleteForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Mostrar modal de confirmación final
+        const finalConfirmation = `
+            <div class="alert alert-danger">
+                <h5 class="alert-heading">
+                    <i class="fas fa-skull-crossbones me-2"></i>
+                    ¡ÚLTIMA OPORTUNIDAD PARA CANCELAR!
+                </h5>
+                <p>¿Está absolutamente seguro de eliminar la asignatura:</p>
+                <h4 class="text-center my-3 text-danger">"{{ object.nombre }}"</h4>
+                <p><strong>Consecuencias:</strong></p>
+                <ul>
+                    <li>Se perderán todos los logros asociados</li>
+                    <li>Se eliminarán las relaciones con grados</li>
+                    <li>Los horarios programados se perderán</li>
+                    <li><strong>ESTA ACCIÓN NO SE PUEDE DESHACER</strong></li>
+                </ul>
+            </div>
+            <div class="text-center">
+                <button type="button" class="btn btn-success btn-lg me-3" onclick="cancelDelete()">
+                    <i class="fas fa-times me-2"></i> ¡CANCELAR!
+                </button>
+                <button type="button" class="btn btn-danger btn-lg" onclick="proceedDelete()">
+                    <i class="fas fa-check me-2"></i> SÍ, ELIMINAR
+                </button>
+            </div>
+        `;
+        
+        // Crear modal dinámico
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal fade';
+        modalDiv.id = 'finalConfirmationModal';
+        modalDiv.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-radiation-alt me-2"></i>
+                            Confirmación Final
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        ${finalConfirmation}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modalDiv);
+        const modal = new bootstrap.Modal(modalDiv);
+        modal.show();
+        
+        // Remover modal después de cerrar
+        modalDiv.addEventListener('hidden.bs.modal', function() {
+            modalDiv.remove();
+        });
+        
+        // Función para cancelar
+        window.cancelDelete = function() {
+            modal.hide();
+            modalDiv.remove();
+        };
+        
+        // Función para proceder
+        window.proceedDelete = function() {
+            // Mostrar loader
+            deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Eliminando...';
+            deleteButton.disabled = true;
+            
+            // Enviar formulario
+            deleteForm.submit();
+        };
+    });
+    
+    // Tecla Escape para cancelar
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            window.location.href = "{% url 'administrador:asignatura_list' %}";
+        }
+    });
+});
+</script>
+{% endblock %}

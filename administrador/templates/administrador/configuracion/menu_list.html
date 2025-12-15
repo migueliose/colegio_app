@@ -1,0 +1,237 @@
+<!-- administrador/configuracion/menu_list.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Menús del Sistema - Configuración{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-header {
+        background: linear-gradient(135deg, #5ee7df 0%, #b490ca 100%);
+        color: #495057;
+    }
+    .menu-tree {
+        list-style: none;
+        padding-left: 0;
+    }
+    .menu-tree ul {
+        list-style: none;
+        padding-left: 30px;
+        border-left: 2px dashed #dee2e6;
+        margin-left: 15px;
+    }
+    .menu-item {
+        padding: 10px 15px;
+        margin-bottom: 5px;
+        background-color: #fff;
+        border: 1px solid #e3e6f0;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+    }
+    .menu-item:hover {
+        background-color: #f8f9fa;
+        box-shadow: 0 0.15rem 0.5rem 0 rgba(58, 59, 69, 0.1);
+    }
+    .menu-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .menu-icon {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        color: #6c757d;
+    }
+    .menu-type-badge {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
+    .type-administrador { background-color: #4e73df; color: white; }
+    .type-rector { background-color: #1cc88a; color: white; }
+    .type-docente { background-color: #36b9cc; color: white; }
+    .type-estudiante { background-color: #f6c23e; color: white; }
+    .type-acudiente { background-color: #e74a3b; color: white; }
+    .menu-order {
+        width: 40px;
+        text-align: center;
+        font-weight: bold;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Filtros y Búsqueda -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-3">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <form method="get" class="row g-2">
+                                <div class="col-md-4">
+                                    <select name="tipo_usuario" class="form-select">
+                                        <option value="">Todos los tipos de usuario</option>
+                                        {% for tipo_val, tipo_label in tipos_usuario %}
+                                        <option value="{{ tipo_val }}" 
+                                            {% if selected_tipo == tipo_val %}selected{% endif %}>
+                                            {{ tipo_label }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <input type="text" 
+                                               name="search" 
+                                               class="form-control" 
+                                               placeholder="Buscar menús..."
+                                               value="{{ search_query }}">
+                                        <button class="btn btn-primary" type="submit">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{% url 'administrador:menu_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i> Nuevo Menú
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Menús -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-bars me-2"></i>Menús del Sistema
+                        </h4>
+                        <span class="badge bg-light text-dark">
+                            {{ menus.count }} menú{{ menus.count|pluralize }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if menus %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Orden</th>
+                                    <th>Nombre</th>
+                                    <th>Tipo de Usuario</th>
+                                    <th>URL / Icono</th>
+                                    <th>Padre</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for menu in menus %}
+                                <tr>
+                                    <td class="menu-order">{{ menu.orden }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if menu.icono %}
+                                            <div class="menu-icon">
+                                                <i class="{{ menu.icono }}"></i>
+                                            </div>
+                                            {% endif %}
+                                            <div>
+                                                <strong>{{ menu.nombre }}</strong>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="menu-type-badge type-{{ menu.tipo_usuario }}">
+                                            {{ menu.get_tipo_usuario_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="small">
+                                            <div><i class="fas fa-link me-1"></i>{{ menu.url|default:"#" }}</div>
+                                            {% if menu.icono %}
+                                            <div><i class="fas fa-icons me-1"></i>{{ menu.icono }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if menu.padre %}
+                                        <span class="badge bg-info">{{ menu.padre.nombre }}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Principal</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if menu.activo %}
+                                        <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'administrador:menu_update' menu.pk %}" 
+                                               class="btn btn-sm btn-outline-primary me-1">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% if menu.activo %}
+                                            <a href="#" class="btn btn-sm btn-outline-danger" title="Desactivar">
+                                                <i class="fas fa-toggle-on"></i>
+                                            </a>
+                                            {% else %}
+                                            <a href="#" class="btn btn-sm btn-outline-success" title="Activar">
+                                                <i class="fas fa-toggle-off"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Vista jerárquica (opcional) -->
+                    <div class="mt-4">
+                        <h6 class="mb-3"><i class="fas fa-sitemap me-2"></i>Vista Jerárquica</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                {% include 'administrador/configuracion/includes/menu_tree.html' with menus=menus %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="fas fa-bars fa-4x text-muted"></i>
+                        </div>
+                        <h5 class="text-muted mb-3">No hay menús configurados</h5>
+                        <p class="text-muted mb-4">Configure los menús del sistema para cada tipo de usuario</p>
+                        <a href="{% url 'administrador:menu_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i> Crear Primer Menú
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

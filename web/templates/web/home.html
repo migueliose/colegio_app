@@ -1,0 +1,173 @@
+{% extends "web/base.html" %}
+{% load static %}
+{% load gestion_extras %}
+
+{% block title %}Inicio | Colegio Cristiano El Shadai{% endblock %}
+
+{% block home1 %}
+<section class="hero_section hero-container container fade-in-up">
+    <div class="row align-items-center">
+        <!-- Sección de bienvenida -->
+        <div class="col-md-6">
+            <div class="custom-card">
+                {% if bienvenida %}
+                    <h1>{{ bienvenida.title }}</h1>
+                    <p>{{ bienvenida.description|linebreaks }}</p>
+                {% else %}
+                    <h1>Bienvenidos al Colegio Cristiano El Shadai</h1>
+                    <p>Descubre nuestra propuesta educativa integral y basada en valores cristianos.</p>
+                {% endif %}
+                <div class="text-center mt-4">
+                    <a href="{% url 'web:admision' %}" class="btn btn-primary mx-2 mb-2" 
+                       title="Información sobre admisiones y matrículas">
+                        <i class="fas fa-file-alt me-1"></i> Admisiones
+                    </a>
+                    
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'gestioncolegio:dashboard' %}" class="btn btn-secondary mx-2 mb-2"
+                           title="Acceder a tu panel académico">
+                            <i class="fas fa-tachometer-alt me-1"></i> Mi Panel
+                        </a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-secondary mx-2 mb-2"
+                           title="Iniciar sesión en el sistema">
+                            <i class="fas fa-sign-in-alt me-1"></i> Acceder
+                        </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'web:contact' %}" class="btn btn-success mx-2 mb-2"
+                       title="Contactar con el colegio">
+                        <i class="fas fa-envelope me-2"></i> Contactar
+                    </a>
+                </div>                
+            </div>
+        </div>
+        
+        <!-- Carrusel -->
+        <div class="col-md-6 img-container">
+            {% if carruseles %}
+                <div id="mainCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel">
+                    <div class="carousel-indicators">
+                        {% for carrusel in carruseles %}
+                            <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="{{ forloop.counter0 }}"
+                                    class="{% if forloop.first %}active{% endif %}" 
+                                    aria-label="Slide {{ forloop.counter }}">
+                            </button>
+                        {% endfor %}
+                    </div>
+                    <div class="carousel-inner">
+                        {% for carrusel in carruseles %}
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                <img src="{{ carrusel.image.url }}" 
+                                     class="d-block w-100 carousel-main-image"
+                                     alt="{{ carrusel.alt_text|default:'Imagen institucional' }}" 
+                                     loading="lazy">
+                                {% if carrusel.description %}
+                                    <div class="carousel-caption">
+                                        <p>{{ carrusel.description }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Anterior</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Siguiente</span>
+                    </button>
+                </div>
+            {% else %}
+                <div class="text-center">
+                    <img src="{% static 'web/images/default-school.jpg' %}" 
+                         class="img-fluid default-carousel-image" 
+                         alt="Colegio Cristiano El Shadai"
+                         loading="lazy">
+                    <p class="mt-2 text-muted">No hay imágenes disponibles por el momento.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Noticias -->
+<section class="common_style fade-in-up">
+    <div class="container">
+        <a href="{% url 'web:noticias' %}" class="text-decoration-none">
+            <h2 class="text-center mb-4">Noticias Recientes</h2>
+        </a>
+        
+        {% if noticias %}
+            <div id="newsCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    {% for noticia in noticias %}
+                        {% if forloop.counter0|divisibleby:3 %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <div class="row justify-content-center">
+                        {% endif %}
+                                <div class="col-12 col-md-4">
+                                    <div class="card h-100 shadow-sm border-0 gallery-card mb-3">
+                                        <a href="{% url 'web:noticia_detalle' noticia.pk %}" class="text-decoration-none text-dark">
+                                            <img src="{{ noticia.image.url }}" 
+                                                 class="card-img-top img-fluid rounded news-carousel-image" 
+                                                 alt="{{ noticia.title }}" 
+                                                 loading="lazy">
+                                            <div class="card-body text-center">
+                                                <h5 class="mb-2">{{ noticia.title }}</h5>
+                                                <p class="small text-muted mb-3">{{ noticia.description|truncatechars:80 }}</p>
+                                                <span class="btn btn-outline-primary btn-sm">Leer más</span>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                        {% if forloop.counter|divisibleby:3 or forloop.last %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                {% if noticias|length > 3 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#newsCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Anterior</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#newsCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Siguiente</span>
+                    </button>
+                {% endif %}
+            </div>
+            
+        {% else %}
+            <div class="text-center mt-4">
+                <p class="text-muted">No hay noticias disponibles.</p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Admisiones -->
+<section class="admission-section py-5 bg-light fade-in-up">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="mb-3">Proceso de Admisión</h2>
+                <p class="lead mb-4">Estamos recibiendo solicitudes para el próximo año escolar.</p>
+                <div class="mt-4">
+                    <a href="{% url 'web:admision' %}" class="btn btn-primary btn-lg me-3 mb-2 mb-md-0">Información</a>
+                    <a href="{% url 'web:contact' %}" class="btn btn-outline-primary btn-lg">Contáctanos</a>
+                </div>
+            </div>
+            <div class="col-md-4 text-center">
+                <img src="{% static 'web/images/admision.jpg' %}" 
+                     alt="Proceso de Admisión" 
+                     class="img-fluid rounded shadow admission-image"
+                     loading="lazy">
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock home1 %}

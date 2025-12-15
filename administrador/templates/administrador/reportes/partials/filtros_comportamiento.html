@@ -1,0 +1,105 @@
+<!-- templates/administrador/reportes/partials/filtros_comportamiento.html -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" id="filterFormComportamiento">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Periodo Académico</label>
+                    <select name="periodo" class="form-select">
+                        <option value="">Todos los periodos</option>
+                        {% for periodo in periodos %}
+                        <option value="{{ periodo.id }}" {% if filtros.periodo_id == periodo.id|stringformat:"s" %}selected{% endif %}>
+                            {{ periodo.periodo.nombre }} - {{ periodo.año_lectivo.anho }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Tipo de Comportamiento</label>
+                    <select name="tipo" class="form-select">
+                        <option value="">Todos los tipos</option>
+                        {% for tipo_val, tipo_label in tipos_comportamiento %}
+                        <option value="{{ tipo_val }}" {% if filtros.tipo == tipo_val %}selected{% endif %}>
+                            {{ tipo_label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Categoría</label>
+                    <select name="categoria" class="form-select">
+                        <option value="">Todas las categorías</option>
+                        {% for cat_val, cat_label in categorias %}
+                        <option value="{{ cat_val }}" {% if filtros.categoria == cat_val %}selected{% endif %}>
+                            {{ cat_label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Docente</label>
+                    <select name="docente" class="form-select">
+                        <option value="">Todos los docentes</option>
+                        {% for docente in docentes %}
+                        <option value="{{ docente.id }}" {% if filtros.docente_id == docente.id|stringformat:"s" %}selected{% endif %}>
+                            {{ docente.usuario.get_full_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">Estudiante</label>
+                    <select name="estudiante" class="form-select">
+                        <option value="">Todos los estudiantes</option>
+                        {% for estudiante in estudiantes %}
+                        <option value="{{ estudiante.id }}" {% if filtros.estudiante_id == estudiante.id|stringformat:"s" %}selected{% endif %}>
+                            {{ estudiante.usuario.get_full_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Inicio</label>
+                    <input type="date" name="fecha_inicio" class="form-control" value="{{ filtros.fecha_inicio }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Fin</label>
+                    <input type="date" name="fecha_fin" class="form-control" value="{{ filtros.fecha_fin }}">
+                </div>
+                
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="d-flex gap-2 w-100">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-filter me-2"></i>Filtrar
+                        </button>
+                        <a href="{% url 'administrador:reporte_comportamiento' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Configurar fechas por defecto
+    const today = new Date();
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+    
+    if (!$('input[name="fecha_inicio"]').val()) {
+        $('input[name="fecha_inicio"]').val(lastMonth.toISOString().split('T')[0]);
+    }
+    
+    if (!$('input[name="fecha_fin"]').val()) {
+        $('input[name="fecha_fin"]').val(today.toISOString().split('T')[0]);
+    }
+});
+</script>

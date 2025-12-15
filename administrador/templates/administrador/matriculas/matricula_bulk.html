@@ -1,0 +1,226 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Matrícula Masiva{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4">
+            <i class="fas fa-users me-2"></i>Matrícula Masiva
+        </h1>
+        <a href="{% url 'administrador:matricula_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Volver
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-user-plus me-1"></i>Matricular Múltiples Estudiantes
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.año_lectivo|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.sede|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.grado_año_lectivo|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.estado|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.estudiantes|as_crispy_field }}
+                            <small class="form-text text-muted">
+                                Mantén presionada la tecla Ctrl (Cmd en Mac) para seleccionar múltiples estudiantes.
+                            </small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Se crearán matrículas para todos los estudiantes seleccionados con la misma configuración.
+                            Los estudiantes que ya tengan matrícula en el año lectivo seleccionado serán omitidos.
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'administrador:matricula_list' %}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-user-plus me-1"></i>Crear Matrículas
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Estudiantes sin matrícula -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-user-clock me-1"></i>Estudiantes sin Matrícula
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <button id="cargarEstudiantes" class="btn btn-outline-primary">
+                            <i class="fas fa-sync me-1"></i>Cargar Estudiantes
+                        </button>
+                    </div>
+                    <div id="listaEstudiantes" class="d-none">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Estudiante</th>
+                                        <th>Documento</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="estudiantesTableBody">
+                                    <!-- Los estudiantes se cargarán aquí -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-center">
+                            <small class="text-muted" id="contadorEstudiantes"></small>
+                        </div>
+                    </div>
+                    <div id="cargandoEstudiantes" class="text-center d-none">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="mt-2">Cargando estudiantes...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información -->
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-lightbulb me-1"></i>Recomendaciones
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Verifica que los estudiantes no tengan matrícula previa
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Selecciona el año lectivo correcto
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Asigna la sede adecuada según ubicación
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Revisa el grado antes de confirmar
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Cargar estudiantes sin matrícula
+    $('#cargarEstudiantes').click(function() {
+        $('#cargandoEstudiantes').removeClass('d-none');
+        $('#listaEstudiantes').addClass('d-none');
+        
+        $.ajax({
+            url: '{% url "administrador:matricula_ajax" %}',
+            data: {
+                'tipo': 'estudiantes_sin_matricula'
+            },
+            success: function(data) {
+                $('#cargandoEstudiantes').addClass('d-none');
+                
+                if (data.estudiantes && data.estudiantes.length > 0) {
+                    var tbody = $('#estudiantesTableBody');
+                    tbody.empty();
+                    
+                    $.each(data.estudiantes, function(index, estudiante) {
+                        tbody.append(
+                            '<tr>' +
+                            '<td>' + estudiante.nombre_completo + '</td>' +
+                            '<td>' + estudiante.documento + '</td>' +
+                            '</tr>'
+                        );
+                    });
+                    
+                    $('#contadorEstudiantes').text(
+                        'Total: ' + data.estudiantes.length + ' estudiantes sin matrícula'
+                    );
+                    $('#listaEstudiantes').removeClass('d-none');
+                } else {
+                    $('#contadorEstudiantes').text('No hay estudiantes sin matrícula');
+                    $('#listaEstudiantes').removeClass('d-none');
+                }
+            },
+            error: function() {
+                $('#cargandoEstudiantes').addClass('d-none');
+                alert('Error al cargar los estudiantes');
+            }
+        });
+    });
+
+    // Actualizar grados según año lectivo
+    $('#id_año_lectivo').change(function() {
+        var añoLectivoId = $(this).val();
+        if (añoLectivoId) {
+            $.ajax({
+                url: '{% url "administrador:matricula_ajax" %}',
+                data: {
+                    'tipo': 'grados_por_año',
+                    'año_lectivo_id': añoLectivoId
+                },
+                success: function(data) {
+                    var gradosSelect = $('#id_grado_año_lectivo');
+                    gradosSelect.empty();
+                    gradosSelect.append('<option value="">---------</option>');
+                    $.each(data.grados, function(index, grado) {
+                        gradosSelect.append(
+                            '<option value="' + grado.id + '">' + 
+                            grado.nombre + ' - ' + grado.nivel_escolar + 
+                            '</option>'
+                        );
+                    });
+                }
+            });
+        }
+    });
+
+    // Si hay año lectivo seleccionado al cargar, actualizar grados
+    if ($('#id_año_lectivo').val()) {
+        $('#id_año_lectivo').trigger('change');
+    }
+});
+</script>
+{% endblock %}

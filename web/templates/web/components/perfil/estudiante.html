@@ -1,0 +1,94 @@
+<!-- INFORMACIÓN PARA ESTUDIANTES -->
+{% load gestion_extras %}
+<!-- INFORMACIÓN PARA ESTUDIANTES - VERSIÓN CORREGIDA -->
+{% if estudiante %}
+<div class="border-top pt-3 mb-4">
+    <h5 class="text-success mb-3">
+        <i class="fas fa-user-graduate me-2"></i>Información de Estudiante
+    </h5>
+    <div class="row">
+        <div class="col-md-6">
+            <p><strong>Estado del Estudiante:</strong> 
+                <span class="badge bg-{% if estudiante.estado %}success{% else %}warning{% endif %}">
+                    {% if estudiante.estado %}Activo{% else %}Inactivo{% endif %}
+                </span>
+            </p>          
+            
+            {% if notas_recientes %}
+                <div class="mt-3">
+                    <p><strong>Últimas calificaciones:</strong></p>
+                    <ul class="list-unstyled">
+                        {% for nota in notas_recientes %}
+                        <li>
+                            <small>
+                                {{ nota.asignatura_grado_año_lectivo.asignatura.nombre }}: 
+                                <span class="badge bg-{% if nota.calificacion >= 3.0 %}success{% else %}danger{% endif %}">
+                                    {{ nota.calificacion }}
+                                </span>
+                            </small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-6">
+            {% if matricula_actual %}
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-id-card me-1"></i>Información de Matrícula
+                    </h6>
+                    <hr>
+                    <p class="mb-1">
+                        <strong>Grado Actual:</strong> 
+                        <span class="badge bg-info">
+                            {% if grado_actual and grado_actual.grado %}
+                                {{ grado_actual.grado.nombre }}
+                            {% else %}
+                                Sin grado asignado
+                            {% endif %}
+                        </span>
+                    </p>
+                    <p class="mb-1">
+                        <strong>Sede:</strong> 
+                        {% if sede_actual %}
+                            {{ sede_actual.nombre }}
+                        {% else %}
+                            Sin sede asignada
+                        {% endif %}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Año Lectivo:</strong> 
+                        {% if matricula_actual.año_lectivo %}
+                            {{ matricula_actual.año_lectivo.anho }}
+                        {% else %}
+                            Sin año lectivo
+                        {% endif %}
+                    </p>
+                    <p class="mb-0">
+                        <strong>Estado Matrícula:</strong> 
+                        <span class="badge bg-{% if matricula_actual.estado == 'ACT' %}success{% elif matricula_actual.estado == 'PEN' %}warning{% else %}danger{% endif %}">
+                            {{ matricula_actual.get_estado_display }}
+                        </span>
+                    </p>
+                    
+                    {% if matricula_actual.codigo_matricula %}
+                        <p class="mb-0 mt-2">
+                            <strong>Código de Matrícula:</strong> 
+                            <code>{{ matricula_actual.codigo_matricula }}</code>
+                        </p>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle me-1"></i>Sin Matrícula Activa
+                    </h6>
+                    <p class="mb-0">No tienes una matrícula activa en el sistema.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}

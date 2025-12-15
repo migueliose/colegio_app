@@ -1,0 +1,233 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Asignaturas - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-book me-2"></i>Asignaturas
+    </h1>
+    {% if request.user.tipo_usuario.nombre != 'Docente' %}
+    <a href="#" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i> Nueva Asignatura
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filtros -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-filter me-1"></i> Filtros
+        </h6>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="nivel_id" class="form-label">Nivel Escolar</label>
+                <select name="nivel_id" id="nivel_id" class="form-select">
+                    <option value="">Todos los niveles</option>
+                    {% for nivel in niveles_escolares %}
+                    <option value="{{ nivel.id }}" 
+                            {% if request.GET.nivel_id == nivel.id|stringformat:"s" %}selected{% endif %}>
+                        {{ nivel.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="grado_id" class="form-label">Grado</label>
+                <select name="grado_id" id="grado_id" class="form-select">
+                    <option value="">Todos los grados</option>
+                    {% for grado in grados %}
+                    <option value="{{ grado.id }}" 
+                            {% if request.GET.grado_id == grado.id|stringformat:"s" %}selected{% endif %}>
+                        {{ grado.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-search me-1"></i> Filtrar
+                </button>
+                <a href="{% url 'docentes:asignaturas_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i> Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Mensaje informativo para docentes -->
+{% if request.user.tipo_usuario.nombre == 'Docente' and not page_obj %}
+<div class="alert alert-info mb-4">
+    <i class="fas fa-info-circle me-2"></i>
+    No tiene asignaturas asignadas para el año lectivo actual. 
+    Contacte al administrador del sistema si considera que esto es un error.
+</div>
+{% endif %}
+
+<!-- Tabla de asignaturas -->
+<div class="card shadow">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-list me-1"></i> Lista de Asignaturas
+            <span class="badge bg-primary ms-2">{{ page_obj.paginator.count }}</span>
+        </h6>
+    </div>
+    <div class="card-body">
+        {% if asignaturas_con_grados %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Área</th>
+                        <th>Nivel Escolar</th>
+                        <th>Grados donde se dicta</th>
+                        <th>Intensidad Horaria</th>
+                        {% if request.user.tipo_usuario.nombre != 'Docente' %}
+                        <th>Acciones</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in asignaturas_con_grados %}
+                    {% with asignatura=item.asignatura grados=item.grados %}
+                    <tr>
+                        <td>
+                            <strong>{{ asignatura.nombre }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ asignatura.area.nombre }}</span>
+                        </td>
+                        <td>
+                            {% if asignatura.area.nivel_escolar.nombre == 'Preescolar' %}
+                            <span class="badge bg-info">
+                                <i class="fas fa-child me-1"></i> {{ asignatura.area.nivel_escolar.nombre }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-primary">
+                                <i class="fas fa-graduation-cap me-1"></i> {{ asignatura.area.nivel_escolar.nombre }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if grados %}
+                                {% for ga in grados|slice:":3" %}
+                                    <span class="badge bg-light text-dark border mb-1">
+                                        {{ ga.grado_año_lectivo.grado.nombre }}
+                                        {% if request.user.tipo_usuario.nombre == 'Docente' %}
+                                        <small class="text-muted">(Sede: {{ ga.sede.nombre }})</small>
+                                        {% endif %}
+                                    </span>
+                                {% endfor %}
+                                {% if grados|length > 3 %}
+                                    <span class="badge bg-dark">+{{ grados|length|add:"-3" }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-exclamation-triangle me-1"></i> No asignada
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if asignatura.ih %}
+                            <span class="badge bg-success">{{ asignatura.ih }}h</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        {% if request.user.tipo_usuario.nombre != 'Docente' %}
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="#" class="btn btn-outline-primary" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="#" class="btn btn-outline-danger" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endwith %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if request.user.tipo_usuario.nombre != 'Docente' %}6{% else %}5{% endif %}" class="text-center py-4">
+                            <i class="fas fa-book fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No hay asignaturas que coincidan con los filtros</h5>
+                            {% if request.user.tipo_usuario.nombre == 'Docente' %}
+                            <p class="text-muted">Intente con otros filtros o contacte al administrador</p>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        {% if is_paginated %}
+        <nav aria-label="Paginación" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if request.GET.nivel_id %}&nivel_id={{ request.GET.nivel_id }}{% endif %}{% if request.GET.grado_id %}&grado_id={{ request.GET.grado_id }}{% endif %}">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.nivel_id %}&nivel_id={{ request.GET.nivel_id }}{% endif %}{% if request.GET.grado_id %}&grado_id={{ request.GET.grado_id }}{% endif %}">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if request.GET.nivel_id %}&nivel_id={{ request.GET.nivel_id }}{% endif %}{% if request.GET.grado_id %}&grado_id={{ request.GET.grado_id }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.nivel_id %}&nivel_id={{ request.GET.nivel_id }}{% endif %}{% if request.GET.grado_id %}&grado_id={{ request.GET.grado_id }}{% endif %}">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.nivel_id %}&nivel_id={{ request.GET.nivel_id }}{% endif %}{% if request.GET.grado_id %}&grado_id={{ request.GET.grado_id }}{% endif %}">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+            <p class="text-center text-muted mt-2">
+                Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ page_obj.paginator.count }} asignaturas
+            </p>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-book fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No hay asignaturas disponibles</h5>
+            {% if request.user.tipo_usuario.nombre == 'Docente' %}
+            <p class="text-muted">No tiene asignaturas asignadas para el año lectivo actual</p>
+            <a href="#" class="btn btn-outline-primary mt-2">
+                <i class="fas fa-question-circle me-1"></i> Contactar administrador
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

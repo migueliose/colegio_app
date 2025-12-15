@@ -1,0 +1,79 @@
+<!-- templates/administrador/reportes/partials/filtros_asistencia.html -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" id="filterFormAsistencia">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Inicio</label>
+                    <input type="date" name="fecha_inicio" class="form-control" value="{{ filtros.fecha_inicio }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Fin</label>
+                    <input type="date" name="fecha_fin" class="form-control" value="{{ filtros.fecha_fin }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Sede</label>
+                    <select name="sede" class="form-select">
+                        <option value="">Todas las sedes</option>
+                        {% for sede in sedes %}
+                        <option value="{{ sede.id }}" {% if filtros.sede_id == sede.id|stringformat:"s" %}selected{% endif %}>
+                            {{ sede.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Grado</label>
+                    <select name="grado" class="form-select">
+                        <option value="">Todos los grados</option>
+                        {% for grado in grados %}
+                        <option value="{{ grado.id }}" {% if filtros.grado_id == grado.id|stringformat:"s" %}selected{% endif %}>
+                            {{ grado.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">Estudiante</label>
+                    <select name="estudiante" class="form-select">
+                        <option value="">Todos los estudiantes</option>
+                        {% for estudiante in estudiantes %}
+                        <option value="{{ estudiante.id }}" {% if filtros.estudiante_id == estudiante.id|stringformat:"s" %}selected{% endif %}>
+                            {{ estudiante.usuario.get_full_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-8 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-filter me-2"></i>Filtrar
+                    </button>
+                    <a href="{% url 'administrador:reporte_asistencia' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-2"></i>Limpiar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Configurar fechas por defecto
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    if (!$('input[name="fecha_inicio"]').val()) {
+        $('input[name="fecha_inicio"]').val(firstDay.toISOString().split('T')[0]);
+    }
+    
+    if (!$('input[name="fecha_fin"]').val()) {
+        $('input[name="fecha_fin"]').val(today.toISOString().split('T')[0]);
+    }
+});
+</script>

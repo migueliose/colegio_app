@@ -1,0 +1,356 @@
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Editar{% else %}Crear{% endif %} Asignatura por Grado{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4">
+            <i class="fas fa-book me-2"></i>
+            {% if form.instance.pk %}Editar{% else %}Crear{% endif %} Asignatura por Grado
+        </h1>
+        <div>
+            <a href="{% url 'administrador:asignatura_grado_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <i class="fas fa-edit me-2"></i>Información de la Asignatura por Grado
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate id="asignaturaForm">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            <p class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.grado_año_lectivo.id_for_label }}" class="form-label">
+                                        Grado y Año Lectivo *
+                                    </label>
+                                    {{ form.grado_año_lectivo }}
+                                    {% if form.grado_año_lectivo.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.grado_año_lectivo.errors|join:", " }}
+                                    </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Seleccione el grado y año lectivo
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.sede.id_for_label }}" class="form-label">
+                                        Sede *
+                                    </label>
+                                    {{ form.sede }}
+                                    {% if form.sede.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.sede.errors|join:", " }}
+                                    </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Sede donde se impartirá la asignatura
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="{{ form.asignatura.id_for_label }}" class="form-label">
+                                        Asignatura *
+                                    </label>
+                                    {{ form.asignatura }}
+                                    {% if form.asignatura.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.asignatura.errors|join:", " }}
+                                    </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Seleccione la asignatura a asignar
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="{{ form.docente.id_for_label }}" class="form-label">
+                                        Docente Responsable
+                                    </label>
+                                    {{ form.docente }}
+                                    {% if form.docente.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.docente.errors|join:", " }}
+                                    </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Opcional - Puede asignarse posteriormente
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Información contextual -->
+                            <div class="col-12 mt-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="fas fa-info-circle me-2"></i>Información del Grado
+                                        </h6>
+                                        <div id="gradoInfo">
+                                            {% if form.instance.grado_año_lectivo %}
+                                            <p class="mb-1">
+                                                <strong>Grado:</strong> {{ form.instance.grado_año_lectivo.grado.nombre }}
+                                            </p>
+                                            <p class="mb-1">
+                                                <strong>Nivel:</strong> {{ form.instance.grado_año_lectivo.grado.nivel_escolar.nombre }}
+                                            </p>
+                                            <p class="mb-0">
+                                                <strong>Año Lectivo:</strong> {{ form.instance.grado_año_lectivo.año_lectivo.anho }}
+                                            </p>
+                                            {% else %}
+                                            <p class="text-muted mb-0">Seleccione un grado para ver información</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Información de la asignatura -->
+                            <div class="col-12 mt-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="fas fa-info-circle me-2"></i>Información de la Asignatura
+                                        </h6>
+                                        <div id="asignaturaInfo">
+                                            {% if form.instance.asignatura %}
+                                            <p class="mb-1">
+                                                <strong>Área:</strong> {{ form.instance.asignatura.area.nombre }}
+                                            </p>
+                                            <p class="mb-1">
+                                                <strong>Nivel:</strong> {{ form.instance.asignatura.area.nivel_escolar.nombre }}
+                                            </p>
+                                            {% if form.instance.asignatura.ih %}
+                                            <p class="mb-0">
+                                                <strong>Intensidad Horaria:</strong> {{ form.instance.asignatura.ih }} horas
+                                            </p>
+                                            {% endif %}
+                                            {% else %}
+                                            <p class="text-muted mb-0">Seleccione una asignatura para ver información</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if form.instance.pk %}
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <div class="d-flex">
+                                        <i class="fas fa-info-circle fa-2x me-3"></i>
+                                        <div>
+                                            <h6 class="alert-heading">Información del Registro</h6>
+                                            <p class="mb-1">
+                                                <strong>Creado:</strong> {{ form.instance.created_at|date:"d/m/Y H:i" }}
+                                            </p>
+                                            {% if form.instance.updated_at %}
+                                            <p class="mb-0">
+                                                <strong>Última modificación:</strong> {{ form.instance.updated_at|date:"d/m/Y H:i" }}
+                                            </p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                {% if form.instance.pk %}Actualizar{% else %}Crear{% endif %}
+                            </button>
+                            <a href="{% url 'administrador:asignatura_grado_list' %}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Información Contextual -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-lightbulb me-2"></i>Información Importante
+                </div>
+                <div class="card-body">
+                    <h6>Validaciones Automáticas:</h6>
+                    <ul class="small mb-3">
+                        <li>La asignatura debe ser del mismo nivel que el grado</li>
+                        <li>No puede haber asignaturas duplicadas en el mismo grado y sede</li>
+                        <li>Los docentes solo pueden ser asignados si están activos</li>
+                    </ul>
+                    
+                    <hr>
+                    
+                    <h6>Próximos Pasos:</h6>
+                    <ol class="small">
+                        <li>Crear horarios para esta asignatura</li>
+                        <li>Asignar materiales y recursos</li>
+                        <li>Configurar logros y competencias</li>
+                        <li>Establecer criterios de evaluación</li>
+                    </ol>
+                    
+                    <hr>
+                    
+                    <h6>Consideraciones:</h6>
+                    <ul class="small">
+                        <li>Puede asignar el docente posteriormente</li>
+                        <li>Una asignatura puede estar en múltiples grados</li>
+                        <li>Los cambios afectan a todas las matrículas del grado</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Asignaturas del mismo grado -->
+            {% if form.instance.grado_año_lectivo %}
+            <div class="card">
+                <div class="card-header bg-light">
+                    <i class="fas fa-list-ul me-2"></i>Otras Asignaturas del Grado
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for asignatura in form.instance.grado_año_lectivo.asignaturas_grado.all|slice:":5" %}
+                        <div class="list-group-item border-0 px-0 py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ asignatura.asignatura.nombre }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {% if asignatura.docente %}
+                                        <i class="fas fa-user-tie me-1"></i>{{ asignatura.docente.usuario.get_short_name }}
+                                        {% else %}
+                                        <span class="badge bg-warning">Sin docente</span>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <a href="{% url 'administrador:asignatura_grado_update' asignatura.pk %}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted mb-0">No hay otras asignaturas en este grado.</p>
+                        {% endfor %}
+                    </div>
+                    {% if form.instance.grado_año_lectivo.asignaturas_grado.count > 5 %}
+                    <div class="text-center mt-2">
+                        <a href="{% url 'administrador:asignatura_grado_list' %}?grado={{ form.instance.grado_año_lectivo.grado.id }}&año_lectivo={{ form.instance.grado_año_lectivo.año_lectivo.id }}" 
+                           class="btn btn-sm btn-outline-secondary">
+                            Ver todas ({{ form.instance.grado_año_lectivo.asignaturas_grado.count }})
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Cargar información del grado seleccionado
+    function loadGradoInfo(gradoAnhoId) {
+        if (gradoAnhoId) {
+            $.ajax({
+                url: '{% url "administrador:grado_anho_ajax_info" %}',
+                data: {grado_anho_id: gradoAnhoId},
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success) {
+                        $('#gradoInfo').html(`
+                            <p class="mb-1"><strong>Grado:</strong> ${data.grado_nombre}</p>
+                            <p class="mb-1"><strong>Nivel:</strong> ${data.nivel_escolar}</p>
+                            <p class="mb-0"><strong>Año Lectivo:</strong> ${data.anho_lectivo}</p>
+                        `);
+                        
+                        // Filtrar asignaturas por nivel
+                        var nivel = data.nivel_escolar;
+                        $('#id_asignatura option').each(function() {
+                            var option = $(this);
+                            var nivelAsignatura = option.data('nivel');
+                            if (nivelAsignatura && nivelAsignatura !== nivel) {
+                                option.hide();
+                            } else {
+                                option.show();
+                            }
+                        });
+                    }
+                }
+            });
+        } else {
+            $('#gradoInfo').html('<p class="text-muted mb-0">Seleccione un grado para ver información</p>');
+        }
+    }
+    
+    // Cargar información de la asignatura seleccionada
+    function loadAsignaturaInfo(asignaturaId) {
+        if (asignaturaId) {
+            $.ajax({
+                url: '{% url "administrador:asignatura_ajax_info" %}',
+                data: {asignatura_id: asignaturaId},
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success) {
+                        $('#asignaturaInfo').html(`
+                            <p class="mb-1"><strong>Área:</strong> ${data.area_nombre}</p>
+                            <p class="mb-1"><strong>Nivel:</strong> ${data.nivel_escolar}</p>
+                            ${data.ih ? `<p class="mb-0"><strong>Intensidad Horaria:</strong> ${data.ih} horas</p>` : ''}
+                        `);
+                    }
+                }
+            });
+        }
+    }
+    
+    // Eventos de cambio
+    $('#id_grado_año_lectivo').change(function() {
+        loadGradoInfo($(this).val());
+    });
+    
+    $('#id_asignatura').change(function() {
+        loadAsignaturaInfo($(this).val());
+    });
+    
+    // Cargar información inicial si ya hay valores
+    if ($('#id_grado_año_lectivo').val()) {
+        loadGradoInfo($('#id_grado_año_lectivo').val());
+    }
+    
+    if ($('#id_asignatura').val()) {
+        loadAsignaturaInfo($('#id_asignatura').val());
+    }
+});
+</script>
+{% endblock %}

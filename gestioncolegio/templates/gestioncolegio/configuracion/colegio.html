@@ -1,0 +1,249 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Configuración del Colegio - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="fas fa-school me-2"></i>Información del Colegio
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'gestioncolegio:dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Datos Básicos del Colegio
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <!-- Nombre del Colegio -->
+                            <div class="col-md-12 mb-3">
+                                <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                    <strong>Nombre del Colegio *</strong>
+                                </label>
+                                {{ form.nombre }}
+                                {% if form.nombre.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.nombre.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Dirección -->
+                            <div class="col-md-8 mb-3">
+                                <label for="{{ form.direccion.id_for_label }}" class="form-label">
+                                    <strong>Dirección *</strong>
+                                </label>
+                                {{ form.direccion }}
+                                {% if form.direccion.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.direccion.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Resolución -->
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.resolucion.id_for_label }}" class="form-label">
+                                    <strong>Resolución *</strong>
+                                </label>
+                                {{ form.resolucion }}
+                                {% if form.resolucion.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.resolucion.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Código DANE -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.dane.id_for_label }}" class="form-label">
+                                    <strong>Código DANE *</strong>
+                                </label>
+                                {{ form.dane }}
+                                {% if form.dane.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.dane.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Estado -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.estado.id_for_label }}" class="form-label">
+                                    <strong>Estado</strong>
+                                </label>
+                                <div class="form-check form-switch mt-2">
+                                    {{ form.estado }}
+                                    <label class="form-check-label" for="{{ form.estado.id_for_label }}">
+                                        Colegio activo en el sistema
+                                    </label>
+                                </div>
+                                {% if form.estado.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.estado.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'gestioncolegio:dashboard' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-1"></i>Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i>Guardar Cambios
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información Actual -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-building me-2"></i>Información Actual
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if object %}
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item px-0">
+                            <strong>Nombre:</strong><br>
+                            {{ object.nombre }}
+                        </div>
+                        <div class="list-group-item px-0">
+                            <strong>Dirección:</strong><br>
+                            {{ object.direccion }}
+                        </div>
+                        <div class="list-group-item px-0">
+                            <strong>Resolución:</strong><br>
+                            {{ object.resolucion }}
+                        </div>
+                        <div class="list-group-item px-0">
+                            <strong>Código DANE:</strong><br>
+                            {{ object.dane }}
+                        </div>
+                        <div class="list-group-item px-0">
+                            <strong>Estado:</strong><br>
+                            {% if object.estado %}
+                            <span class="badge bg-success">Activo</span>
+                            {% else %}
+                            <span class="badge bg-danger">Inactivo</span>
+                            {% endif %}
+                        </div>
+                        <div class="list-group-item px-0">
+                            <strong>Última Actualización:</strong><br>
+                            {{ object.updated_at|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-school fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No hay información del colegio registrada.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recursos del Colegio -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-images me-2"></i>Recursos Multimedia
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        {% if object.recursos.escudo %}
+                        <img src="{{ object.recursos.escudo.url }}" alt="Escudo" class="img-fluid mb-3" style="max-height: 100px;">
+                        {% else %}
+                        <div class="bg-light rounded p-4 mb-3">
+                            <i class="fas fa-shield-alt fa-2x text-muted"></i>
+                            <p class="small text-muted mt-2 mb-0">Escudo no cargado</p>
+                        </div>
+                        {% endif %}
+
+                        {% if object.recursos.bandera %}
+                        <img src="{{ object.recursos.bandera.url }}" alt="Bandera" class="img-fluid" style="max-height: 100px;">
+                        {% else %}
+                        <div class="bg-light rounded p-4">
+                            <i class="fas fa-flag fa-2x text-muted"></i>
+                            <p class="small text-muted mt-2 mb-0">Bandera no cargada</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .form-check-input:checked {
+        background-color: #198754;
+        border-color: #198754;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Agregar clases de Bootstrap a los campos
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            if (!input.classList.contains('btn') && input.type !== 'checkbox') {
+                input.classList.add('form-control');
+            }
+        });
+    });
+</script>
+{% endblock %}

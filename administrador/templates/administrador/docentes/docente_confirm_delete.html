@@ -1,0 +1,201 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Desactivar Docente{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirmar Desactivación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-slash fa-5x text-danger mb-3"></i>
+                        <h4 class="text-danger">¿Está seguro de desactivar este docente?</h4>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle me-2"></i>Esta acción tendrá los siguientes efectos:
+                        </h6>
+                        <ul class="mb-0">
+                            <li>El usuario <strong>no podrá acceder al sistema</strong></li>
+                            <li>El docente <strong>no aparecerá en los listados activos</strong></li>
+                            <li>No se eliminarán sus datos, solo se desactivará</li>
+                            <li>Podrá ser reactivado posteriormente por un administrador</li>
+                        </ul>
+                    </div>
+
+                    <!-- Información del docente -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h5 class="mb-2">{{ docente.usuario.get_full_name }}</h5>
+                                    <p class="mb-1">
+                                        <strong>Documento:</strong> {{ docente.usuario.numero_documento }}
+                                    </p>
+                                    <p class="mb-1">
+                                        <strong>Email:</strong> {{ docente.usuario.email|default:"No registrado" }}
+                                    </p>
+                                    <p class="mb-0">
+                                        <strong>Estado actual:</strong> 
+                                        {% if docente.usuario.estado %}
+                                        <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Inactivo</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    {% if docente.foto %}
+                                    <img src="{{ docente.foto.url }}" alt="{{ docente.usuario.get_full_name }}" 
+                                         class="rounded-circle img-fluid" style="width: 80px; height: 80px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" 
+                                         style="width: 80px; height: 80px;">
+                                        <i class="fas fa-user fa-2x text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estadísticas del docente -->
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-chart-bar me-2"></i>Resumen del docente:
+                        </h6>
+                        <div class="row text-center">
+                            <div class="col">
+                                <h5 class="mb-0">
+                                    {% if asignaturas %}
+                                    {{ asignaturas|length }}
+                                    {% else %}
+                                    0
+                                    {% endif %}
+                                </h5>
+                                <small class="text-muted">Asignaturas asignadas</small>
+                            </div>
+                            <div class="col">
+                                <h5 class="mb-0">
+                                    {% if sedes_asignadas %}
+                                    {{ sedes_asignadas|length }}
+                                    {% else %}
+                                    0
+                                    {% endif %}
+                                </h5>
+                                <small class="text-muted">Sedes asignadas</small>
+                            </div>
+                            <div class="col">
+                                <h5 class="mb-0">
+                                    {% if contactos %}
+                                    {{ contactos|length }}
+                                    {% else %}
+                                    0
+                                    {% endif %}
+                                </h5>
+                                <small class="text-muted">Contactos</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario de confirmación -->
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="motivo" class="form-label">
+                                <strong>Motivo de la desactivación (opcional):</strong>
+                            </label>
+                            <textarea class="form-control" id="motivo" name="motivo" 
+                                      rows="3" placeholder="Especifique el motivo de la desactivación..."></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'administrador:docente_detail' docente.pk %}" 
+                               class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-user-slash"></i> Confirmar Desactivación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-muted small">
+                    <div class="row">
+                        <div class="col">
+                            <i class="fas fa-calendar me-1"></i>
+                            Fecha: {{ fecha_actual|date:"d/m/Y" }}
+                        </div>
+                        <div class="col text-end">
+                            <i class="fas fa-user me-1"></i>
+                            Usuario: {{ request.user.get_full_name }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-question-circle me-2"></i>
+                        ¿Qué significa desactivar?
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p>Desactivar un docente significa:</p>
+                    <ul>
+                        <li>El usuario perderá acceso inmediato al sistema</li>
+                        <li>Todos sus datos se mantendrán en la base de datos</li>
+                        <li>Podrá ser reactivado en cualquier momento</li>
+                        <li>Su historial académico y asignaciones se conservarán</li>
+                        <li>No afectará los registros históricos donde participe</li>
+                    </ul>
+                    <p class="mb-0">
+                        <strong>Nota:</strong> Esta acción es reversible. Si necesita eliminar permanentemente 
+                        los datos del docente, contacte con el administrador del sistema.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Validación del formulario
+    $('form').on('submit', function(e) {
+        var motivo = $('#motivo').val();
+        
+        // Si no hay motivo, pedir confirmación adicional
+        if (!motivo.trim()) {
+            if (!confirm('¿Está seguro de desactivar sin especificar un motivo?\n\nSe recomienda registrar el motivo para mantener un historial adecuado.')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+        
+        // Confirmación final
+        if (!confirm('¿CONFIRMA LA DESACTIVACIÓN DEL DOCENTE?\n\nEsta acción no se puede deshacer automáticamente.')) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Mostrar loading
+        $('button[type="submit"]').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...');
+        $('button[type="submit"]').prop('disabled', true);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,481 @@
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block title %}Reporte de Logros Académicos - Colegio App{% endblock %}
+
+{% block extra_css %}
+<style>
+    .achievement-card {
+        border-left: 4px solid #0d6efd;
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+    
+    .achievement-card:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .achievement-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #0d6efd, #0a58ca);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .subject-badge {
+        background-color: #e9ecef;
+        color: #495057;
+        font-size: 0.8rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+    }
+    
+    .period-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+    }
+    
+    .stats-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        margin: 0 auto;
+    }
+    
+    .collapse-toggle {
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    
+    .collapse-toggle:hover {
+        color: #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">Reporte de Logros Académicos</h1>
+            <p class="text-muted">Seguimiento y análisis de logros por asignatura y grado</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'administrador:dashboard_reportes' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Año Lectivo</label>
+                        <select name="año_lectivo" class="form-select">
+                            <option value="">Todos los años</option>
+                            {% for año in años_lectivos %}
+                            <option value="{{ año.id }}" {% if filtros.año_lectivo_id == año.id|stringformat:"s" %}selected{% endif %}>
+                                {{ año.anho }} - {{ año.sede.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label">Grado</label>
+                        <select name="grado" class="form-select">
+                            <option value="">Todos los grados</option>
+                            {% for grado in grados %}
+                            <option value="{{ grado.id }}" {% if filtros.grado_id == grado.id|stringformat:"s" %}selected{% endif %}>
+                                {{ grado.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label">Periodo</label>
+                        <select name="periodo" class="form-select">
+                            <option value="">Todos los periodos</option>
+                            {% for periodo in periodos %}
+                            <option value="{{ periodo.id }}" {% if filtros.periodo_id == periodo.id|stringformat:"s" %}selected{% endif %}>
+                                {{ periodo.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label">Asignatura</label>
+                        <select name="asignatura" class="form-select">
+                            <option value="">Todas las asignaturas</option>
+                            {% for asignatura in asignaturas %}
+                            <option value="{{ asignatura.id }}" {% if filtros.asignatura_id == asignatura.id|stringformat:"s" %}selected{% endif %}>
+                                {{ asignatura.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-filter me-2"></i>Filtrar
+                            </button>
+                            <a href="{% url 'administrador:reporte_logros' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="stats-circle bg-primary text-white">
+                        {{ estadisticas.total_logros }}
+                    </div>
+                    <h5 class="mt-3 mb-0">Total Logros</h5>
+                    <p class="text-muted small">Registrados en el sistema</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="stats-circle bg-success text-white">
+                        {{ estadisticas.total_asignaturas }}
+                    </div>
+                    <h5 class="mt-3 mb-0">Asignaturas</h5>
+                    <p class="text-muted small">Con logros definidos</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="stats-circle bg-info text-white">
+                        {{ estadisticas.promedio_por_asignatura }}
+                    </div>
+                    <h5 class="mt-3 mb-0">Promedio por Asignatura</h5>
+                    <p class="text-muted small">Logros por materia</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="stats-circle bg-warning text-white">
+                        {% if logros_por_periodo %}{{ logros_por_periodo|length }}{% else %}0{% endif %}
+                    </div>
+                    <h5 class="mt-3 mb-0">Periodos</h5>
+                    <p class="text-muted small">Con logros registrados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribución de logros -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Distribución de Logros por Grado</h5>
+                    <form method="post" action="{% url 'administrador:exportar_reporte' %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="tipo_reporte" value="logros">
+                        <input type="hidden" name="formato" value="excel">
+                        <button type="submit" class="btn btn-sm btn-success">
+                            <i class="bi bi-file-excel me-1"></i>Exportar
+                        </button>
+                    </form>
+                </div>
+                <div class="card-body">
+                    {% if logros_por_grado %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Grado</th>
+                                    <th>Total Logros</th>
+                                    <th>Asignaturas</th>
+                                    <th>Promedio por Asignatura</th>
+                                    <th>Porcentaje</th>
+                                    <th>Gráfico</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grado in logros_por_grado %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ grado.grado__nombre }}</strong>
+                                    </td>
+                                    <td>{{ grado.total }}</td>
+                                    <td>
+                                        {% for item in logros_agrupados %}
+                                            {% if item.grado.nombre == grado.grado__nombre %}
+                                                <span class="badge bg-secondary">{{ item.asignaturas_con_logros|default:0 }}</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% widthratio grado.total 10 1 as promedio %}  <!-- Ejemplo cálculo -->
+                                        {{ promedio|floatformat:1 }}
+                                    </td>
+                                    <td>
+                                        {% widthratio grado.total estadisticas.total_logros 100 as porcentaje %}
+                                        {{ porcentaje|floatformat:1 }}%
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-primary" 
+                                                 style="width: {% widthratio grado.total estadisticas.total_logros 100 %}%">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-clipboard-data display-4 text-muted"></i>
+                        <p class="text-muted mt-2">No hay datos de distribución por grado</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Logros por Periodo</h5>
+                </div>
+                <div class="card-body">
+                    {% if logros_por_periodo %}
+                    <div class="list-group list-group-flush">
+                        {% for periodo in logros_por_periodo %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>{{ periodo.periodo_academico__periodo__nombre }}</span>
+                            <span class="badge bg-primary rounded-pill">{{ periodo.total }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-calendar-x display-4 text-muted"></i>
+                        <p class="text-muted mt-2">No hay datos por periodo</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logros agrupados -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Logros por Asignatura y Grado</h5>
+        </div>
+        <div class="card-body">
+            {% if logros_agrupados %}
+            <div class="accordion" id="logrosAccordion">
+                {% for grupo in logros_agrupados %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#collapse{{ forloop.counter }}">
+                            <div class="d-flex align-items-center w-100">
+                                <div class="achievement-icon me-3">
+                                    <i class="bi bi-trophy"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <strong>{{ grupo.grado.nombre }}</strong> - {{ grupo.asignatura.nombre }}
+                                            <span class="badge bg-secondary ms-2">{{ grupo.logros|length }} logros</span>
+                                        </div>
+                                        <div>
+                                            <span class="subject-badge me-2">{{ grupo.asignatura.area.nombre|default:"Sin área" }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-muted small">
+                                        Distribución por periodo: 
+                                        {% for periodo, cantidad in grupo.por_periodo.items %}
+                                        <span class="badge period-badge bg-info me-1">{{ periodo }}: {{ cantidad }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse" 
+                         data-bs-parent="#logrosAccordion">
+                        <div class="accordion-body">
+                            <div class="row">
+                                {% for logro in grupo.logros %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card achievement-card">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="mb-0">{{ logro.tema|default:"Sin tema" }}</h6>
+                                                <span class="badge bg-primary period-badge">
+                                                    {{ logro.periodo_academico.periodo.nombre }}
+                                                </span>
+                                            </div>
+                                            
+                                            {% if logro.descripcion_superior %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">Superior:</small>
+                                                <p class="mb-0 small">{{ logro.descripcion_superior|truncatechars:100 }}</p>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if logro.descripcion_alto %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">Alto:</small>
+                                                <p class="mb-0 small">{{ logro.descripcion_alto|truncatechars:80 }}</p>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if logro.descripcion_basico %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">Básico:</small>
+                                                <p class="mb-0 small">{{ logro.descripcion_basico|truncatechars:80 }}</p>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if logro.descripcion_bajo %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">Bajo:</small>
+                                                <p class="mb-0 small">{{ logro.descripcion_bajo|truncatechars:80 }}</p>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <div class="d-flex justify-content-between mt-3">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-calendar me-1"></i>
+                                                    {{ logro.created_at|date:"d/m/Y" }}
+                                                </small>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-building me-1"></i>
+                                                    {{ logro.periodo_academico.año_lectivo.sede.nombre }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-trophy display-4 text-muted"></i>
+                <h5 class="mt-3">No hay logros registrados</h5>
+                <p class="text-muted">No se encontraron logros con los filtros aplicados</p>
+                <a href="{% url 'administrador:gestion_logros' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Gestionar Logros
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Análisis y recomendaciones -->
+    {% if logros_agrupados %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>Análisis y Recomendaciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success mb-3">Fortalezas</h6>
+                            <ul>
+                                <li>Total de {{ estadisticas.total_logros }} logros definidos en el sistema</li>
+                                <li>{{ estadisticas.total_asignaturas }} asignaturas tienen logros establecidos</li>
+                                <li>Promedio de {{ estadisticas.promedio_por_asignatura }} logros por asignatura</li>
+                                <li>Cobertura en {% if logros_por_periodo %}{{ logros_por_periodo|length }}{% else %}0{% endif %} periodos académicos</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-warning mb-3">Oportunidades de Mejora</h6>
+                            <ul>
+                                <li>Verificar asignaturas sin logros definidos</li>
+                                <li>Actualizar logros para periodos recientes</li>
+                                <li>Establecer estándares uniformes por nivel educativo</li>
+                                <li>Capacitar docentes en definición de logros</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-lightbulb me-2"></i>Recomendación Principal
+                        </h6>
+                        <p class="mb-0">
+                            Establecer un cronograma de revisión y actualización de logros al inicio de cada periodo académico,
+                            asegurando que todas las asignaturas tengan logros claros y medibles definidos.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Expandir/contraer todos
+        $('#expandAll').on('click', function() {
+            $('.accordion-collapse').addClass('show');
+        });
+        
+        $('#collapseAll').on('click', function() {
+            $('.accordion-collapse').removeClass('show');
+        });
+        
+        // Configurar selects si hay valores en filtros
+        {% if filtros.año_lectivo_id %}
+        $('select[name="año_lectivo"]').val('{{ filtros.año_lectivo_id }}');
+        {% endif %}
+        
+        {% if filtros.grado_id %}
+        $('select[name="grado"]').val('{{ filtros.grado_id }}');
+        {% endif %}
+    });
+</script>
+{% endblock %}

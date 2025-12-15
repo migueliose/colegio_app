@@ -1,0 +1,103 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block title %}{{ pagina.title }} | Colegio Cristiano El Shadai{% endblock %}
+
+{% block content %}
+<section class="pagina-legal-section py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                
+                <!-- Header de la página -->
+                <div class="page-header text-center mb-5">
+                    <nav aria-label="breadcrumb" class="mb-3">
+                        <ol class="breadcrumb justify-content-center">
+                            <li class="breadcrumb-item">
+                                <a href="{% url 'web:home' %}" class="breadcrumb-link">
+                                    <i class="fas fa-home me-1"></i>Inicio
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                {{ pagina.get_tipo_display }}
+                            </li>
+                        </ol>
+                    </nav>
+                    
+                    <span class="badge page-badge mb-3">{{ pagina.get_tipo_display }}</span>
+                    <h1 class="page-title">{{ pagina.title }}</h1>
+                    
+                    {% if pagina.tipo == 'privacidad' %}
+                    <p class="page-subtitle">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Información sobre cómo protegemos y gestionamos tus datos personales
+                    </p>
+                    {% elif pagina.tipo == 'cookies' %}
+                    <p class="page-subtitle">
+                        <i class="fas fa-cookie me-2"></i>
+                        Uso de cookies y tecnologías similares en nuestro sitio web
+                    </p>
+                    {% elif pagina.tipo == 'aviso' %}
+                    <p class="page-subtitle">
+                        <i class="fas fa-gavel me-2"></i>
+                        Información legal sobre las condiciones de uso del sitio
+                    </p>
+                    {% endif %}
+                </div>
+
+                <!-- Contenido principal -->
+                <div class="page-content-card card shadow-sm border-0">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="page-content">
+                            {{ pagina.content|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de la página -->
+                <div class="page-footer mt-4">
+                    <div class="card border-0 page-info-card">
+                        <div class="card-body text-center py-3">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <small class="page-info-text">
+                                        <i class="fas fa-sync-alt me-1"></i>
+                                        Última actualización: <strong>{{ pagina.updated|date:"d M Y" }}</strong>
+                                    </small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="page-info-text">
+                                        <i class="fas fa-tag me-1"></i>
+                                        Categoría: <strong>{{ pagina.get_tipo_display }}</strong>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navegación entre páginas legales -->
+                <div class="page-navigation mt-5">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <a href="{% url 'web:home' %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-arrow-left me-2"></i>Volver al Inicio
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{% url 'web:contact' %}" class="btn btn-primary w-100">
+                                <i class="fas fa-question-circle me-2"></i>¿Tienes dudas?
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+
+{% endblock %}

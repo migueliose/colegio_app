@@ -1,0 +1,279 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container-fluid">
+        <!-- Logo y Nombre -->
+        <a class="navbar-brand" href="{% url 'web:home' %}">
+            <i class="fas fa-school me-2"></i>
+            Colegio El Shadai
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <!-- Navegación Principal -->
+            <ul class="navbar-nav me-auto">
+                <!-- Inicio -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'web:home' %}">
+                        <i class="fas fa-home me-1"></i>Inicio
+                    </a>
+                </li>
+                
+                <!-- Quiénes Somos -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-info-circle me-1"></i>Quiénes Somos
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{% url 'web:about' %}">Nuestra Institución</a></li>
+                        <li><a class="dropdown-item" href="{% url 'web:programas' %}">Programas Académicos</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'web:admision' %}">Admisión</a></li>
+                    </ul>
+                </li>
+                
+                <!-- Noticias -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'web:noticias' %}">
+                        <i class="fas fa-newspaper me-1"></i>Noticias
+                    </a>
+                </li>
+                
+                <!-- Contacto -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'web:contact' %}">
+                        <i class="fas fa-envelope me-1"></i>Contacto
+                    </a>
+                </li>
+                
+                <!-- Sistema de Gestión (Solo para usuarios autenticados) -->
+                {% if user.is_authenticated %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-warning" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-tachometer-alt me-1"></i>Sistema
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:dashboard' %}">
+                                <i class="fas fa-chart-line me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        
+                        <!-- Opciones para Administradores y Rectores -->
+                        {% if user.tipo_usuario.nombre in 'Administrador,Rector' or user.is_superuser %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="dropdown-header text-primary">
+                            <i class="fas fa-users me-1"></i>Gestión de Usuarios
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:estudiantes_list' %}">
+                                <i class="fas fa-user-graduate me-2"></i>Estudiantes
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:docentes_list' %}">
+                                <i class="fas fa-chalkboard-teacher me-2"></i>Docentes
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:administradores_list' %}">
+                                <i class="fas fa-user-shield me-2"></i>Administradores
+                            </a>
+                        </li>
+                        
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="dropdown-header text-primary">
+                            <i class="fas fa-book me-1"></i>Gestión Académica
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:grados_list' %}">
+                                <i class="fas fa-graduation-cap me-2"></i>Grados
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:asignaturas_list' %}">
+                                <i class="fas fa-book-open me-2"></i>Asignaturas
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:horarios_list' %}">
+                                <i class="fas fa-clock me-2"></i>Horarios
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:notas_list' %}">
+                                <i class="fas fa-graduation-cap me-2"></i>Notas
+                            </a>
+                        </li>
+                        
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="dropdown-header text-primary">
+                            <i class="fas fa-clipboard-list me-1"></i>Matrículas
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:matricula_list' %}">
+                                <i class="fas fa-list me-2"></i>Lista de Matrículas
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:matricula_create' %}">
+                                <i class="fas fa-plus me-2"></i>Nueva Matrícula
+                            </a>
+                        </li>
+                        
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="dropdown-header text-primary">
+                            <i class="fas fa-chart-bar me-1"></i>Reportes
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:reportes' %}">
+                                <i class="fas fa-chart-pie me-2"></i>Reportes del Sistema
+                            </a>
+                        </li>
+                        
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="dropdown-header text-primary">
+                            <i class="fas fa-cog me-1"></i>Configuración
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:configuracion_colegio' %}">
+                                <i class="fas fa-school me-2"></i>Información del Colegio
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:configuracion_general' %}">
+                                <i class="fas fa-sliders-h me-2"></i>Configuración General
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <!-- Opciones para Docentes -->
+                        {% if user.tipo_usuario.nombre == 'Docente' %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="dropdown-header text-success">
+                            <i class="fas fa-chalkboard-teacher me-1"></i>Panel Docente
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:notas_list' %}">
+                                <i class="fas fa-graduation-cap me-2"></i>Gestión de Notas
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:horarios_list' %}">
+                                <i class="fas fa-clock me-2"></i>Mis Horarios
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gestioncolegio:estudiantes_list' %}">
+                                <i class="fas fa-user-graduate me-2"></i>Mis Estudiantes
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <!-- Opciones para Estudiantes -->
+                        {% if user.tipo_usuario.nombre == 'Estudiante' %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="dropdown-header text-info">
+                            <i class="fas fa-user-graduate me-1"></i>Panel Estudiante
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-chart-line me-2"></i>Mi Rendimiento
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-clipboard-list me-2"></i>Mis Notas
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-clock me-2"></i>Mi Horario
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </li>
+                {% endif %}
+            </ul>
+            
+            <!-- Navegación del Lado Derecho -->
+            <ul class="navbar-nav">
+                {% if user.is_authenticated %}
+                <!-- Menú de Usuario -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-1"></i>
+                        {{ user.get_full_name|default:user.username }}
+                        {% if user.tipo_usuario %}
+                        <span class="badge bg-light text-dark ms-1">{{ user.tipo_usuario.nombre }}</span>
+                        {% endif %}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <!-- Información del usuario -->
+                        <li class="dropdown-header">
+                            <small class="text-muted">Sesión activa como</small><br>
+                            <strong>{{ user.get_full_name|default:user.username }}</strong>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        
+                        <!-- Enlaces comunes -->
+                        <li>
+                            <a class="dropdown-item" href="{% url 'web:perfil' %}">
+                                <i class="fas fa-user me-2"></i>Mi Perfil
+                            </a>
+                        </li>
+                        
+                        <!-- Enlaces según rol -->
+                        {% if user.tipo_usuario.nombre in 'Administrador,Rector' or user.is_superuser %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'admin:index' %}">
+                                <i class="fas fa-cogs me-2"></i>Admin Django
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <li><hr class="dropdown-divider"></li>
+                        
+                        <!-- Navegación entre sitios -->
+                        <li>
+                            <a class="dropdown-item" href="{% url 'web:home' %}">
+                                <i class="fas fa-globe me-2"></i>Sitio Web Público
+                            </a>
+                        </li>
+                        
+                        <li><hr class="dropdown-divider"></li>
+                        
+                        <!-- Cerrar sesión -->
+                        <li>
+                            <a class="dropdown-item text-danger" href="{% url 'logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                
+                <!-- Notificaciones (opcional) -->
+                <li class="nav-item">
+                    <a class="nav-link position-relative" href="#">
+                        <i class="fas fa-bell"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            3
+                            <span class="visually-hidden">notificaciones no leídas</span>
+                        </span>
+                    </a>
+                </li>
+                
+                {% else %}
+                <!-- Usuario no autenticado -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'login' %}">
+                        <i class="fas fa-sign-in-alt me-1"></i>Iniciar Sesión
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>

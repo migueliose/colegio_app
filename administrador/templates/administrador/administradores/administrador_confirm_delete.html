@@ -1,0 +1,98 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Desactivar Administrador/Rector{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-danger">
+                    <h6 class="m-0 font-weight-bold text-white">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>Confirmar Desactivación
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-slash fa-4x text-danger mb-3"></i>
+                        <h4 class="text-gray-800 font-weight-bold">¿Está seguro de desactivar este usuario?</h4>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <strong>Usuario:</strong> {{ object.get_full_name }}<br>
+                        <strong>Tipo:</strong> {{ object.tipo_usuario.nombre }}<br>
+                        <strong>Documento:</strong> {{ object.numero_documento }}<br>
+                        <strong>Email:</strong> {{ object.email|default:"Sin email" }}
+                    </div>
+                    
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle mr-2"></i>
+                        <strong>¡Atención!</strong> Esta acción tendrá los siguientes efectos:
+                        <ul class="mt-2 mb-0">
+                            <li>El usuario perderá acceso al sistema</li>
+                            <li>No podrá iniciar sesión</li>
+                            <li>Sus datos permanecerán en la base de datos</li>
+                            <li>Puede reactivarlo posteriormente si es necesario</li>
+                        </ul>
+                    </div>
+                    
+                    {% if object == user %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-ban mr-2"></i>
+                        <strong>No puede desactivar su propio usuario.</strong>
+                        Esta acción no está permitida por seguridad.
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-12 mb-3">
+                                <label for="motivo" class="form-label">
+                                    <i class="fas fa-comment-alt mr-2"></i>Motivo de la desactivación (opcional)
+                                </label>
+                                <textarea class="form-control" id="motivo" name="motivo" 
+                                          rows="3" placeholder="Ej: Cambio de personal, finalización de contrato..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-danger btn-block" 
+                                        {% if object == user %}disabled{% endif %}>
+                                    <i class="fas fa-user-slash mr-2"></i>Sí, Desactivar
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{% url 'administrador:administrador_list' %}" class="btn btn-secondary btn-block">
+                                    <i class="fas fa-times mr-2"></i>Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Información adicional -->
+            <div class="card border-left-info shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-info-circle mr-2"></i>¿Qué significa desactivar un usuario?
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li><strong>No es una eliminación:</strong> Los datos del usuario se mantienen en el sistema.</li>
+                        <li><strong>Acceso restringido:</strong> El usuario no podrá iniciar sesión.</li>
+                        <li><strong>Reactivación posible:</strong> Puede reactivar al usuario en cualquier momento.</li>
+                        <li><strong>Auditoría:</strong> La acción quedará registrada en el sistema.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

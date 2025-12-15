@@ -1,0 +1,393 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static horario_tags %}
+
+{% block title %}Horarios por Docente{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">
+            <i class="fas fa-chalkboard-teacher me-2 text-success"></i> Horarios por Docente
+            {% if año_lectivo %}
+            <span class="text-muted fs-6">(Año {{ año_lectivo.anho }})</span>
+            {% endif %}
+        </h2>
+        
+        <div class="btn-group">
+            <a href="{% url 'administrador:horario_list' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-list me-1"></i> Lista General
+            </a>
+            <a href="{% url 'administrador:horario_grado' %}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-graduation-cap me-1"></i> Por Grado
+            </a>
+            <a href="{% url 'administrador:horario_asignatura' %}" class="btn btn-outline-info btn-sm">
+                <i class="fas fa-book me-1"></i> Por Asignatura
+            </a>
+        </div>
+    </div>
+    
+    <!-- Alerta si no hay año lectivo activo -->
+    {% if not año_lectivo %}
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>No hay un año lectivo activo.</strong> 
+        Active un año lectivo para ver los horarios.
+        <a href="{% url 'administrador:añolectivo_list' %}" class="alert-link">Activar año lectivo</a>
+    </div>
+    {% else %}
+    
+    <!-- Selector de docente -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0 fw-bold text-primary">
+                <i class="fas fa-filter me-2"></i> Seleccionar Docente
+            </h6>
+        </div>
+        <div class="card-body">
+            {% if docentes %}
+            <div class="row">
+                {% for docente in docentes %}
+                <div class="col-md-3 col-6 mb-3">
+                    <a href="{% url 'administrador:horario_docente_detail' docente.id %}" 
+                       class="text-decoration-none">
+                        <div class="card border h-100 text-center hover-shadow {% if docente_seleccionado and docente_seleccionado.id == docente.id %}border-success border-2{% endif %}">
+                            <div class="card-body">
+                                <i class="fas fa-user-tie fa-3x text-success mb-3"></i>
+                                <h6 class="fw-bold">{{ docente.usuario.get_full_name }}</h6>
+                                <p class="text-muted small mb-0">Ver horario</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-chalkboard-teacher fa-3x mb-3"></i>
+                <p class="mb-0">No hay docentes con asignaciones en este año lectivo.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Horario del docente seleccionado -->
+    {% if docente_seleccionado %}
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-success text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-calendar-alt me-2"></i> Horario de {{ docente_seleccionado.usuario.get_full_name }}
+                    </h5>
+                    <small class="opacity-75">Año {{ año_lectivo.anho }} | Docente</small>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-light" onclick="window.print()">
+                        <i class="fas fa-print me-1"></i> Imprimir
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <!-- Resumen estadístico -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Asignaturas</h6>
+                            <h3 class="fw-bold text-success">
+                                {% with asignaturas=horarios_por_dia.LUN|add:horarios_por_dia.MAR|add:horarios_por_dia.MIE|add:horarios_por_dia.JUE|add:horarios_por_dia.VIE|map:"asignatura_grado.asignatura"|unique %}
+                                    {{ asignaturas|length }}
+                                {% endwith %}
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Grados</h6>
+                            <h3 class="fw-bold text-primary">
+                                {% with grados=horarios_por_dia.LUN|add:horarios_por_dia.MAR|add:horarios_por_dia.MIE|add:horarios_por_dia.JUE|add:horarios_por_dia.VIE|map:"asignatura_grado.grado_año_lectivo.grado"|unique %}
+                                    {{ grados|length }}
+                                {% endwith %}
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Horas Semanales</h6>
+                            <h3 class="fw-bold text-info">
+                                {% with total=0 %}
+                                    {% for dia in dias %}
+                                        {% for horario in horarios_por_dia|get_item:dia %}
+                                            {% if horario.hora_inicio and horario.hora_fin %}
+                                                {% with duracion=horario.hora_fin|time:"H"|add:horario.hora_fin|time:"i"|divisibleby:60|subtract:horario.hora_inicio|time:"H"|add:horario.hora_inicio|time:"i"|divisibleby:60 %}
+                                                    {% with total=total|add:duracion %}{% endwith %}
+                                                {% endwith %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endfor %}
+                                    {{ total }}
+                                {% endwith %}
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Salones</h6>
+                            <h3 class="fw-bold text-warning">
+                                {% with salones=horarios_por_dia.LUN|add:horarios_por_dia.MAR|add:horarios_por_dia.MIE|add:horarios_por_dia.JUE|add:horarios_por_dia.VIE|map:"salon"|unique %}
+                                    {{ salones|length }}
+                                {% endwith %}
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabla de horario -->
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="15%">Hora</th>
+                            <th width="17%">Lunes</th>
+                            <th width="17%">Martes</th>
+                            <th width="17%">Miércoles</th>
+                            <th width="17%">Jueves</th>
+                            <th width="17%">Viernes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Generar horas de 7:00 a 18:00 -->
+                        {% for hora in horas %}
+                        <tr>
+                            <td class="text-center fw-bold bg-light">
+                                {{ hora.0|time:"H:i" }} - {{ hora.1|time:"H:i" }}
+                            </td>
+                            
+                            <!-- Lunes -->
+                            <td>
+                                {% for horario in horarios_por_dia.LUN %}
+                                    {% if horario.hora_inicio >= hora.0 and horario.hora_inicio < hora.1 %}
+                                    <div class="p-2 border rounded mb-2" style="background-color: #e3f2fd;">
+                                        <strong>{{ horario.asignatura_grado.asignatura.nombre }}</strong>
+                                        <div class="small">
+                                            <i class="fas fa-graduation-cap me-1"></i>
+                                            {{ horario.asignatura_grado.grado_año_lectivo.grado.nombre }}
+                                            <br>
+                                            <i class="fas fa-door-open me-1"></i>
+                                            {{ horario.salon|default:"-" }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                            
+                            <!-- Martes -->
+                            <td>
+                                {% for horario in horarios_por_dia.MAR %}
+                                    {% if horario.hora_inicio >= hora.0 and horario.hora_inicio < hora.1 %}
+                                    <div class="p-2 border rounded mb-2" style="background-color: #f3e5f5;">
+                                        <strong>{{ horario.asignatura_grado.asignatura.nombre }}</strong>
+                                        <div class="small">
+                                            <i class="fas fa-graduation-cap me-1"></i>
+                                            {{ horario.asignatura_grado.grado_año_lectivo.grado.nombre }}
+                                            <br>
+                                            <i class="fas fa-door-open me-1"></i>
+                                            {{ horario.salon|default:"-" }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                            
+                            <!-- Miércoles -->
+                            <td>
+                                {% for horario in horarios_por_dia.MIE %}
+                                    {% if horario.hora_inicio >= hora.0 and horario.hora_inicio < hora.1 %}
+                                    <div class="p-2 border rounded mb-2" style="background-color: #e8f5e9;">
+                                        <strong>{{ horario.asignatura_grado.asignatura.nombre }}</strong>
+                                        <div class="small">
+                                            <i class="fas fa-graduation-cap me-1"></i>
+                                            {{ horario.asignatura_grado.grado_año_lectivo.grado.nombre }}
+                                            <br>
+                                            <i class="fas fa-door-open me-1"></i>
+                                            {{ horario.salon|default:"-" }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                            
+                            <!-- Jueves -->
+                            <td>
+                                {% for horario in horarios_por_dia.JUE %}
+                                    {% if horario.hora_inicio >= hora.0 and horario.hora_inicio < hora.1 %}
+                                    <div class="p-2 border rounded mb-2" style="background-color: #fff3e0;">
+                                        <strong>{{ horario.asignatura_grado.asignatura.nombre }}</strong>
+                                        <div class="small">
+                                            <i class="fas fa-graduation-cap me-1"></i>
+                                            {{ horario.asignatura_grado.grado_año_lectivo.grado.nombre }}
+                                            <br>
+                                            <i class="fas fa-door-open me-1"></i>
+                                            {{ horario.salon|default:"-" }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                            
+                            <!-- Viernes -->
+                            <td>
+                                {% for horario in horarios_por_dia.VIE %}
+                                    {% if horario.hora_inicio >= hora.0 and horario.hora_inicio < hora.1 %}
+                                    <div class="p-2 border rounded mb-2" style="background-color: #fce4ec;">
+                                        <strong>{{ horario.asignatura_grado.asignatura.nombre }}</strong>
+                                        <div class="small">
+                                            <i class="fas fa-graduation-cap me-1"></i>
+                                            {{ horario.asignatura_grado.grado_año_lectivo.grado.nombre }}
+                                            <br>
+                                            <i class="fas fa-door-open me-1"></i>
+                                            {{ horario.salon|default:"-" }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Información del docente -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <h6 class="fw-bold text-success mb-3">
+                        <i class="fas fa-info-circle me-2"></i> Información del Docente
+                    </h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-user-tie text-success me-2"></i>
+                            <strong>Nombre:</strong> {{ docente_seleccionado.usuario.get_full_name }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-id-card text-primary me-2"></i>
+                            <strong>Documento:</strong> {{ docente_seleccionado.usuario.numero_documento }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-envelope text-info me-2"></i>
+                            <strong>Email:</strong> {{ docente_seleccionado.usuario.email|default:"No registrado" }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-phone text-warning me-2"></i>
+                            <strong>Teléfono:</strong> {{ docente_seleccionado.usuario.telefono|default:"No registrado" }}
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="col-md-6">
+                    <h6 class="fw-bold text-success mb-3">
+                        <i class="fas fa-list-alt me-2"></i> Asignaturas Asignadas
+                    </h6>
+                    <div class="row">
+                        {% for dia in dias %}
+                        <div class="col-12 mb-2">
+                            <small class="text-muted">{{ dia }}:</small>
+                            <div>
+                                {% for horario in horarios_por_dia|get_item:dia %}
+                                <span class="badge bg-secondary mb-1">
+                                    {{ horario.asignatura_grado.asignatura.nombre }} ({{ horario.asignatura_grado.grado_año_lectivo.grado.nombre }})
+                                </span>
+                                {% empty %}
+                                <span class="text-muted small">No tiene clases este día</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-footer bg-transparent border-0">
+            <div class="text-center">
+                <small class="text-muted">
+                    Horario generado el {% now "d/m/Y H:i" %}
+                </small>
+            </div>
+        </div>
+    </div>
+    {% endif %} <!-- Fin del if docente_seleccionado -->
+    
+    {% endif %} <!-- Cierre del if año_lectivo -->
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+$(document).ready(function() {
+    // Efecto hover en las tarjetas de docente
+    $('.hover-shadow').hover(
+        function() {
+            $(this).addClass('shadow-lg');
+            $(this).css('transform', 'translateY(-5px)');
+        },
+        function() {
+            $(this).removeClass('shadow-lg');
+            $(this).css('transform', 'translateY(0)');
+        }
+    );
+});
+</script>
+
+<style>
+.hover-shadow {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.hover-shadow:hover {
+    transition: all 0.3s ease;
+}
+
+.table-bordered th, .table-bordered td {
+    vertical-align: middle;
+}
+
+.table-bordered td {
+    min-height: 80px;
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .table-bordered th, .table-bordered td {
+        border: 1px solid #000 !important;
+    }
+}
+</style>
+{% endblock %}

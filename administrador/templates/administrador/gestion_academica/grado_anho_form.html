@@ -1,0 +1,241 @@
+{% extends 'gestioncolegio/base2.html' %}
+{% load static academico %}
+
+{% block title %}{% if form.instance.pk %}Editar{% else %}Crear{% endif %} Grado por Año Lectivo{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4">
+            <i class="fas fa-graduation-cap me-2"></i>
+            {% if form.instance.pk %}Editar{% else %}Crear{% endif %} Grado por Año Lectivo
+        </h1>
+        <div>
+            <a href="{% url 'administrador:grado_anho_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <i class="fas fa-edit me-2"></i>Información del Grado por Año
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            <p class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.grado.id_for_label }}" class="form-label">
+                                        {{ form.grado.label }} *
+                                    </label>
+                                    {{ form.grado }}
+                                    {% if form.grado.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.grado.errors|join:", " }}
+                                    </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Seleccione el grado académico
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.año_lectivo.id_for_label }}" class="form-label">
+                                        {{ form.año_lectivo.label }} *
+                                    </label>
+                                    {{ form.año_lectivo }}
+                                    {% if form.año_lectivo.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.año_lectivo.errors|join:", " }}
+                                    </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Año lectivo al que pertenece el grado
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    {{ form.estado }}
+                                    <label class="form-check-label" for="{{ form.estado.id_for_label }}">
+                                        {{ form.estado.label }}
+                                    </label>
+                                    {% if form.estado.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.estado.errors|join:", " }}
+                                    </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted d-block">
+                                        Los grados inactivos no estarán disponibles para matrículas ni asignaturas.
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            {% if form.instance.pk %}
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <div class="d-flex">
+                                        <i class="fas fa-info-circle fa-2x me-3"></i>
+                                        <div>
+                                            <h6 class="alert-heading">Información del Registro</h6>
+                                            <p class="mb-1">
+                                                <strong>Creado:</strong> {{ form.instance.created_at|date:"d/m/Y H:i" }}
+                                            </p>
+                                            {% if form.instance.updated_at %}
+                                            <p class="mb-0">
+                                                <strong>Última modificación:</strong> {{ form.instance.updated_at|date:"d/m/Y H:i" }}
+                                            </p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                {% if form.instance.pk %}Actualizar{% else %}Crear{% endif %}
+                            </button>
+                            <a href="{% url 'administrador:grado_anho_list' %}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Información Contextual -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-lightbulb me-2"></i>Información Importante
+                </div>
+                <div class="card-body">
+                    <h6>¿Qué es un Grado por Año Lectivo?</h6>
+                    <p class="small">
+                        Esta relación define qué grados académicos están disponibles en cada año lectivo.
+                        Es el primer paso para configurar el plan de estudios.
+                    </p>
+                    
+                    <hr>
+                    
+                    <h6>Pasos Recomendados:</h6>
+                    <ol class="small">
+                        <li>Crear relación grado-año lectivo</li>
+                        <li>Asignar asignaturas al grado</li>
+                        <li>Asignar docentes a las asignaturas</li>
+                        <li>Crear horarios de clase</li>
+                    </ol>
+                    
+                    <hr>
+                    
+                    <h6>Consideraciones:</h6>
+                    <ul class="small">
+                        <li>Cada grado puede estar en múltiples años lectivos</li>
+                        <li>Los grados inactivos no se muestran para matrículas</li>
+                        <li>Esta configuración afecta a toda la gestión académica</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Acciones Rápidas -->
+            {% if form.instance.pk %}
+            <div class="card">
+                <div class="card-header bg-light">
+                    <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'administrador:asignatura_grado_create' %}?grado_anho={{ form.instance.pk }}" 
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Agregar Asignaturas
+                        </a>
+                        <a href="{% url 'administrador:asignatura_grado_list' %}?grado={{ form.instance.grado.id }}&año_lectivo={{ form.instance.año_lectivo.id }}" 
+                           class="btn btn-outline-info">
+                            <i class="fas fa-eye me-2"></i>Ver Asignaturas
+                        </a>
+                        <button type="button" 
+                                class="btn btn-outline-danger" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#deleteModal">
+                            <i class="fas fa-trash me-2"></i>Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal de Eliminación -->
+            <div class="modal fade" id="deleteModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>¿Está seguro de eliminar la relación <strong>{{ form.instance.grado.nombre }}</strong> del año <strong>{{ form.instance.año_lectivo.anho }}</strong>?</p>
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                <strong>Advertencia:</strong> Esta acción no se puede deshacer.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <form method="post" action="{% url 'administrador:grado_anho_delete' form.instance.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash me-1"></i>Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Selección automática de año lectivo activo si no hay seleccionado
+    if (!$('#id_año_lectivo').val()) {
+        var añoActivo = $('#id_año_lectivo option:contains("2024")').first();
+        if (añoActivo.length) {
+            $('#id_año_lectivo').val(añoActivo.val());
+        }
+    }
+    
+    // Mostrar información del grado seleccionado
+    $('#id_grado').change(function() {
+        var gradoId = $(this).val();
+        if (gradoId) {
+            // Aquí podrías hacer una llamada AJAX para obtener más información del grado
+        }
+    });
+});
+</script>
+{% endblock %}

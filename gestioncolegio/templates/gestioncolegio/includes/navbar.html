@@ -1,0 +1,55 @@
+<!-- gestioncolegio/includes/navbar.html -->
+{% load static %}
+
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm" 
+     style="height: var(--navbar-height);">
+    <div class="container-fluid">
+
+        <!-- Logo -->
+        <a class="navbar-brand d-flex align-items-center" href="{% if user.is_authenticated %}{% url 'gestioncolegio:dashboard' %}{% else %}{% url 'web:home' %}{% endif %}">
+            <img src="{% static 'web/images/logo.png' %}" alt="Logo Colegio El Shadai" width="40" class="me-2" loading="lazy">
+            <span class="fw-bold d-block" style="font-size: 1.1rem;">Colegio El Shadai</span>
+        </a>
+
+        <!-- Toggle -->
+        <button class="navbar-toggler" 
+                type="button" 
+                data-bs-toggle="collapse" 
+                data-bs-target="#navbarMain"
+                aria-controls="navbarMain" 
+                aria-expanded="false" 
+                aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Contenido -->
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <!-- Menús según rol -->
+            {% if user.is_authenticated %}
+                <ul class="navbar-nav me-auto">
+                    <!-- ADMIN / RECTOR -->
+                    {% if user.tipo_usuario.nombre == "Administrador" or user.tipo_usuario.nombre == "Rector" or user.is_superuser %}
+                        {% include 'gestioncolegio/components/admin_menu.html' %}
+
+                    <!-- DOCENTE -->
+                    {% elif user.tipo_usuario.nombre == "Docente" %}
+                        {% include 'gestioncolegio/components/teacher_menu.html' %}
+
+                    <!-- ESTUDIANTE -->
+                    {% elif user.tipo_usuario.nombre == "Estudiante" %}
+                        {% if estudiante.estado %}
+                            {% include 'gestioncolegio/components/student_menu.html' %}
+                        {% endif %}
+                    
+                    <!-- ACUDIENTE -->
+                    {% elif user.tipo_usuario.nombre == "Acudiente" %}
+                        {% include 'gestioncolegio/components/acudiente_menu.html' %}
+                    {% endif %}
+                </ul>
+            {% endif %}
+
+            {% include 'gestioncolegio/includes/user_menu.html' %}
+
+        </div>
+    </div>
+</nav>

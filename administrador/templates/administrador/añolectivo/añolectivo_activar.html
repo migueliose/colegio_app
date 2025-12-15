@@ -1,0 +1,40 @@
+<!-- administrador/añolectivo/añolectivo_activar.html -->
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Activar Año Lectivo - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-success mt-5">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-toggle-on me-2"></i>
+                        Activar Año Lectivo
+                    </h5>
+                </div>
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-check-circle fa-5x text-success mb-4"></i>
+                    <h3 class="mb-3">¿Activar año lectivo {{ object.anho }}?</h3>
+                    <p class="text-muted mb-4">
+                        Esta acción desactivará automáticamente cualquier otro año lectivo activo.
+                    </p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="{% url 'administrador:añolectivo_list' %}" class="btn btn-lg btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-lg btn-success">
+                                <i class="fas fa-toggle-on me-2"></i> Sí, Activar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

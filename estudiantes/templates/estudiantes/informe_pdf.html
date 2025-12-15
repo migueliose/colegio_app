@@ -1,0 +1,298 @@
+<!-- informe_pdf.html -->
+{% load static %}
+{% load static estudiante_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Informe Académico</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1.0cm;           
+        }
+        
+        body {
+            font-family: "Helvetica", Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #2c3e50;
+        }
+        
+        /* Encabezado Institucional */
+        .institutional-header {
+            text-align: center;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #2c3e50;
+        }
+        
+        .institutional-name {
+            font-size: 22pt;
+            font-family: "Times New Roman", serif;
+            font-weight: bold;
+            margin: 10px 0 5px 0;
+            text-transform: none;
+            border-bottom: 1px solid #2c3e50;
+            padding-bottom: 2px;
+            display: inline-block;
+            color: #1a3e72;
+            letter-spacing: 0.5px;
+        }
+        
+        .institutional-info {
+            font-size: 9pt;
+            margin-bottom: 10px;
+        }
+        
+        .student-info {
+            margin-bottom: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+        }
+        
+        .badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .section-title {
+            color: #2c3e50;
+            font-size: 12pt;
+            margin: 15px 0 8px 0;
+            padding-bottom: 3px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 9pt;
+        }
+        
+        .data-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            text-align: left;
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        
+        .data-table td {
+            border: 1px solid #ddd;
+            padding: 7px;
+            vertical-align: top;
+        }
+        
+        .no-data {
+            color: #95a5a6;
+            font-style: italic;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .signature-area {
+            margin-top: 40px;
+            text-align: right;
+        }
+        
+        .signature-line {
+            display: inline-block;
+            width: 250px;
+            border-top: 1px solid #333;
+            margin-top: 20px;
+            padding-top: 5px;
+            text-align: center;
+        }
+        
+        .footer {
+            font-size: 8pt;
+            color: #555;
+            text-align: center;
+            border-top: 1px solid #ecf0f1;
+            padding-top: 8px;
+            margin-top: 20px;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-bold {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Encabezado Institucional -->
+    <div class="institutional-header">
+        <h1 class="institutional-name">COLEGIO CRISTIANO EL SHADAI</h1>
+        <div class="institutional-info" align="center">
+            Resolución de Estudios N.º {{ colegio.resolucion|default:"000374 de 2011" }}<br>
+            COD. DANE: {{ colegio.dane|default:"320001069084" }}<br>
+            Educación Preescolar - Básica Primaria | Valledupar - Cesar
+        </div>
+    </div>
+
+    <!-- Información del Estudiante -->
+    <div class="student-info">
+        <table>
+            <tr>
+                <td><strong>Estudiante:</strong> {{ estudiante.nombre_completo }}</td>
+                <td><strong>Grado:</strong> {{ estudiante.grado_actual }}</td>
+            </tr>
+            <tr>
+                <td><strong>Documento:</strong> {{ estudiante.usuario.tipo_documento }}: {{ estudiante.usuario.numero_documento }}</td>
+                <td><strong>Periodo:</strong> {{ periodo_detalle.periodo.nombre }} - {{ periodo_detalle.año_lectivo.anho }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Información de las Asignaturas -->
+    <h2 class="section-title" align="center">Informe Académico</h2>
+    
+    {% if asignaturas_detalle %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th width="25%">Asignatura</th>
+                    <th width="15%">Docente</th>
+                    <th width="10%" class="text-center">Nota</th>
+                    <th width="15%" class="text-center">Desempeño</th>
+                    <th width="35%">Logro Alcanzado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for asignatura in asignaturas_detalle %}
+                <tr>
+                    <td>{{ asignatura.nombre }}</td>
+                    <td>{{ asignatura.docente|default:"Sin asignar" }}</td>
+                    <td class="text-center">
+                        {% if asignatura.tiene_nota %}
+                            <span class="text-bold">{{ asignatura.calificacion|floatformat:1 }}</span>
+                        {% else %}
+                            <span class="no-data">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if asignatura.tiene_nota %}
+                            <span class="badge" style="background-color: {{ asignatura.desempeno|get_color:'hex' }};">
+                                {{ asignatura.desempeno|title }}
+                            </span>
+                        {% else %}
+                            <span class="badge" style="background-color: #6c757d;">Sin calificar</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ asignatura.logro|default:"No evaluado" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Estadísticas del Período -->
+        <div style="margin: 15px 0; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
+            <table style="border: none;">
+                <tr>
+                    <td style="border: none; text-align: center; width: 25%;">
+                        <strong style="color: #28a745;">{{ asignaturas_detalle|count_performance:"Superior" }}</strong><br>
+                        <small>Superior</small>
+                    </td>
+                    <td style="border: none; text-align: center; width: 25%;">
+                        <strong style="color: #17a2b8;">{{ asignaturas_detalle|count_performance:"Alto" }}</strong><br>
+                        <small>Alto</small>
+                    </td>
+                    <td style="border: none; text-align: center; width: 25%;">
+                        <strong style="color: #ffc107;">{{ asignaturas_detalle|count_performance:"Básico" }}</strong><br>
+                        <small>Básico</small>
+                    </td>
+                    <td style="border: none; text-align: center; width: 25%;">
+                        <strong style="color: #dc3545;">{{ asignaturas_detalle|count_performance:"Bajo" }}</strong><br>
+                        <small>Bajo</small>
+                    </td>
+                </tr>
+            </table>
+            <div style="text-align: center; margin-top: 10px;">
+                <strong>Promedio General: {{ asignaturas_detalle|calcular_promedio }}</strong>
+            </div>
+        </div>
+    {% else %}
+        <div class="no-data">No hay asignaturas registradas para este período.</div>
+    {% endif %}
+    
+    <!-- Comportamiento -->
+    <h2 class="section-title">Comportamiento Escolar</h2>
+    {% if comportamientos_detalle %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th width="15%">Tipo</th>
+                    <th width="20%">Categoría</th>
+                    <th width="45%">Descripción</th>
+                    <th width="20%">Fecha</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for comp in comportamientos_detalle %}
+                <tr>
+                    <td>
+                        <span class="badge" style="background-color: {% if comp.tipo == 'Positivo' %}#28a745{% else %}#dc3545{% endif %};">
+                            {{ comp.tipo }}
+                        </span>
+                    </td>
+                    <td>{{ comp.categoria }}</td>
+                    <td>{{ comp.descripcion }}</td>
+                    <td>{{ comp.fecha|date:"d/m/Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="no-data">No hay registros de comportamiento para este período.</div>
+    {% endif %}
+
+    <!-- Observaciones Generales -->
+    <h2 class="section-title">Observaciones Generales</h2>
+    <div style="padding: 10px; background-color: #f8f9fa; border-radius: 4px; min-height: 50px;">
+        {% if observaciones_generales %}
+            {{ observaciones_generales|linebreaks }}
+        {% else %}
+            <div class="no-data">No hay observaciones generales registradas.</div>
+        {% endif %}
+    </div>   
+    
+    <!-- Firma -->
+    <div class="signature-area">
+        <div class="signature-line">
+            María Mederis Madero Garrido<br>
+            Directora - Colegio Cristiano El Shadai
+        </div>
+    </div>
+
+    <div class="footer">
+        Página <pdf:pagenumber> de <pdf:pagecount> | Generado el {% now "d/m/Y H:i" %}<br>
+        <strong>Estudiante:</strong> {{ estudiante.nombre_completo }} | 
+        <strong>Documento:</strong> {{ estudiante.usuario.numero_documento }}<br>
+        Código del Informe: {{ estudiante.usuario.numero_documento }}-INF-{{ periodo_detalle.año_lectivo.anho }}
+    </div>
+</body>
+</html>

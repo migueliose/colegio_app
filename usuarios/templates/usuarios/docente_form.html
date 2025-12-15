@@ -1,0 +1,135 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{% if object %}Editar{% else %}Nuevo{% endif %} Docente - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-chalkboard-teacher me-2"></i>
+        {% if object %}Editar Docente{% else %}Nuevo Docente{% endif %}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'usuarios:docentes_list' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Volver a la lista
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Información del Docente
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.usuario.id_for_label }}" class="form-label">
+                                    Usuario <span class="text-danger">*</span>
+                                </label>
+                                {% render_field form.usuario class="form-control" %}
+                                {% if form.usuario.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.usuario.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.foto.id_for_label }}" class="form-label">
+                                    Foto
+                                </label>
+                                {% render_field form.foto class="form-control" %}
+                                {% if form.foto.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.foto.errors.0 }}
+                                </div>
+                                {% endif %}
+                                {% if object and object.foto %}
+                                <div class="mt-2">
+                                    <img src="{{ object.foto.url }}" alt="Foto actual" class="img-thumbnail" width="100">
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.hdv.id_for_label }}" class="form-label">
+                                    Hoja de Vida (PDF)
+                                </label>
+                                {% render_field form.hdv class="form-control" %}
+                                {% if form.hdv.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.hdv.errors.0 }}
+                                </div>
+                                {% endif %}
+                                {% if object and object.hdv %}
+                                <div class="mt-2">
+                                    <a href="{{ object.hdv.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-file-pdf me-1"></i>Ver HDV actual
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.estado.id_for_label }}" class="form-label">
+                                    Estado
+                                </label>
+                                <div class="form-check form-switch">
+                                    {% render_field form.estado class="form-check-input" %}
+                                    <label class="form-check-label" for="{{ form.estado.id_for_label }}">
+                                        {% if form.estado.value %}Activo{% else %}Inactivo{% endif %}
+                                    </label>
+                                </div>
+                                {% if form.estado.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.estado.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="{% url 'usuarios:docentes_list' %}" class="btn btn-secondary me-md-2">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>
+                                    {% if object %}Actualizar{% else %}Crear{% endif %} Docente
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

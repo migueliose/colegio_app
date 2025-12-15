@@ -1,0 +1,118 @@
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block title %}Reporte de Notas - Colegio App{% endblock %}
+
+{% block extra_css %}
+<style>
+    .grade-badge {
+        font-size: 0.9rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .grade-excellent { background-color: #198754; color: white; }
+    .grade-good { background-color: #20c997; color: white; }
+    .grade-average { background-color: #ffc107; color: black; }
+    .grade-poor { background-color: #dc3545; color: white; }
+    
+    .subject-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    
+    .average-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    
+    .tabs-container .nav-link {
+        border: none;
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .tabs-container .nav-link.active {
+        color: #0d6efd;
+        border-bottom: 3px solid #0d6efd;
+        background: transparent;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">Reporte de Notas</h1>
+            <p class="text-muted">Gestión y consulta de calificaciones académicas</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'administrador:dashboard_reportes' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Pestañas -->
+    <div class="card mb-4">
+        <div class="card-header tabs-container">
+            <ul class="nav nav-tabs card-header-tabs">
+                <li class="nav-item">
+                    <a class="nav-link {% if tipo_reporte == 'grupal' %}active{% endif %}" 
+                       href="{% url 'administrador:reporte_notas' %}?tipo=grupal">
+                        <i class="bi bi-people me-2"></i>Reporte Grupal
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if tipo_reporte == 'individual' %}active{% endif %}" 
+                       href="{% url 'administrador:reporte_notas' %}?tipo=individual">
+                        <i class="bi bi-person me-2"></i>Reporte Individual
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    {% include 'administrador/reportes/partials/filtros_notas.html' %}
+
+    {% include 'administrador/reportes/partials/tabla_notas.html' %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Cambio automático entre pestañas
+        $('.nav-tabs .nav-link').on('click', function(e) {
+            e.preventDefault();
+            window.location.href = $(this).attr('href');
+        });
+        
+        // Formateo de promedios
+        $('.average-circle').each(function() {
+            const value = parseFloat($(this).text());
+            if (value >= 4.0) {
+                $(this).addClass('bg-success text-white');
+            } else if (value >= 3.0) {
+                $(this).addClass('bg-warning text-dark');
+            } else {
+                $(this).addClass('bg-danger text-white');
+            }
+        });
+    });
+</script>
+{% endblock %}

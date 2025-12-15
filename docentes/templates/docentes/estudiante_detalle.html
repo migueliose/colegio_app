@@ -1,0 +1,261 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Detalle Estudiante - {{ estudiante.usuario.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4">
+            <i class="fas fa-user-graduate me-2"></i>
+            {{ estudiante.usuario.get_full_name }}
+        </h1>
+        <div>
+            <a href="{% url 'docentes:crear_comportamiento' %}?estudiante={{ estudiante.id }}" 
+               class="btn btn-warning me-2">
+                <i class="fas fa-user-check me-2"></i>Registrar Comportamiento
+            </a>
+            <a href="{% url 'docentes:lista_estudiantes' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver a la lista
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Personal -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-id-card me-2"></i>Información Personal
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        {% if estudiante.foto %}
+                        <img src="{{ estudiante.foto.url }}" alt="Foto" class="img-thumbnail" style="max-width: 150px;">
+                        {% else %}
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" 
+                             style="width: 150px; height: 150px;">
+                            <i class="fas fa-user-graduate fa-3x text-muted"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <p><strong>Documento:</strong> {{ estudiante.usuario.numero_documento }}</p>
+                    <p><strong>Fecha Nacimiento:</strong> 
+                        {% if estudiante.usuario.fecha_nacimiento %}
+                        {{ estudiante.usuario.fecha_nacimiento|date:"d/m/Y" }}
+                        ({{ estudiante.usuario.edad }} años)
+                        {% else %}
+                        No especificada
+                        {% endif %}
+                    </p>
+                    <p><strong>Sexo:</strong> {{ estudiante.usuario.get_sexo_display|default:"No especificado" }}</p>
+                    <p><strong>Email:</strong> {{ estudiante.usuario.email|default:"No especificado" }}</p>
+                    <p><strong>Teléfono:</strong> {{ estudiante.usuario.telefono|default:"No especificado" }}</p>
+                    <p><strong>Dirección:</strong> {{ estudiante.usuario.direccion|default:"No especificada" }}</p>
+                    <p><strong>Estado:</strong> 
+                        <span class="badge {% if estudiante.estado %}bg-success{% else %}bg-danger{% endif %}">
+                            {{ estudiante.estado|yesno:"Activo,Inactivo" }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Acudientes -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-users me-2"></i>Acudientes
+                </div>
+                <div class="card-body">
+                    {% for acudiente in estudiante.acudientes.all %}
+                    <div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                        <h6>{{ acudiente.acudiente.get_full_name }}</h6>
+                        <p class="mb-1"><strong>Parentesco:</strong> {{ acudiente.parentesco }}</p>
+                        <p class="mb-1"><strong>Teléfono:</strong> {{ acudiente.acudiente.telefono|default:"No especificado" }}</p>
+                        <p class="mb-0"><strong>Email:</strong> {{ acudiente.acudiente.email|default:"No especificado" }}</p>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center">No hay acudientes registrados</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información Académica -->
+        <div class="col-md-8">
+            <!-- Situación Actual -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-school me-2"></i>Situación Actual
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <h5>Grado</h5>
+                            <div class="display-4">
+                                {% if estudiante.grado_actual %}
+                                <span class="badge bg-primary">{{ estudiante.grado_actual.grado.nombre }}</span>
+                                {% else %}
+                                <span class="badge bg-warning">Sin asignar</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h5>Sede</h5>
+                            <p class="lead">
+                                {% if estudiante.sede_actual %}
+                                {{ estudiante.sede_actual.nombre }}
+                                {% else %}
+                                No asignada
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h5>Asistencia</h5>
+                            <div class="display-4">
+                                {% if asistencia_stats.porcentaje > 0 %}
+                                <span class="badge {% if asistencia_stats.porcentaje >= 90 %}bg-success{% elif asistencia_stats.porcentaje >= 70 %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ asistencia_stats.porcentaje }}%
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">Sin datos</span>
+                                {% endif %}
+                            </div>
+                            <small>{{ asistencia_stats.asistencias }}/{{ asistencia_stats.total }} clases</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Comportamientos Recientes -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-user-check me-2"></i>Comportamientos Recientes
+                    <a href="{% url 'docentes:crear_comportamiento' %}?estudiante={{ estudiante.id }}" 
+                       class="btn btn-sm btn-warning float-end">
+                        <i class="fas fa-plus me-1"></i>Nuevo
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if comportamientos %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Categoría</th>
+                                    <th>Descripción</th>
+                                    <th>Periodo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for comp in comportamientos %}
+                                <tr class="{% if comp.tipo == 'Positivo' %}table-success{% else %}table-danger{% endif %}">
+                                    <td>{{ comp.fecha|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <span class="badge {% if comp.tipo == 'Positivo' %}bg-success{% else %}bg-danger{% endif %}">
+                                            {{ comp.tipo }}
+                                        </span>
+                                    </td>
+                                    <td>{{ comp.categoria }}</td>
+                                    <td>{{ comp.descripcion|truncatechars:50 }}</td>
+                                    <td>{{ comp.periodo_academico.periodo.nombre }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">No hay registros de comportamiento</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Notas Recientes -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-graduation-cap me-2"></i>Notas Recientes
+                </div>
+                <div class="card-body">
+                    {% if notas %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Asignatura</th>
+                                    <th>Calificación</th>
+                                    <th>Periodo</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for nota in notas %}
+                                <tr>
+                                    <td>{{ nota.asignatura_grado_año_lectivo.asignatura.nombre }}</td>
+                                    <td>
+                                        <span class="badge {% if nota.calificacion >= 3.0 %}bg-success{% else %}bg-danger{% endif %}">
+                                            {{ nota.calificacion }}
+                                        </span>
+                                    </td>
+                                    <td>{{ nota.periodo_academico.periodo.nombre }}</td>
+                                    <td>{{ nota.observaciones|truncatechars:30|default:"-" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">No hay notas registradas</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Historial Académico -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-history me-2"></i>Historial Académico
+                </div>
+                <div class="card-body">
+                    {% if historial_matriculas %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Año</th>
+                                    <th>Grado</th>
+                                    <th>Sede</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Matrícula</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for matricula in historial_matriculas %}
+                                <tr>
+                                    <td>{{ matricula.año_lectivo.anho }}</td>
+                                    <td>{{ matricula.grado_año_lectivo.grado.nombre }}</td>
+                                    <td>{{ matricula.sede.nombre }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if matricula.estado == 'ACT' %}bg-success
+                                            {% elif matricula.estado == 'PEN' %}bg-warning
+                                            {% elif matricula.estado == 'INA' %}bg-danger
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ matricula.get_estado_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ matricula.fecha_matricula|date:"d/m/Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">No hay historial académico registrado</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

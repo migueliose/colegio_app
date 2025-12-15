@@ -1,0 +1,66 @@
+<!-- INFORMACIÓN PARA DOCENTES -->
+{% load gestion_extras %}
+{% if user|es_docente and docente %}
+<div class="border-top pt-3 mb-4">
+    <h5 class="text-warning mb-3">
+        <i class="fas fa-chalkboard-teacher me-2"></i>Información de Docente
+    </h5>
+    <div class="row">
+        <div class="col-md-6">
+            <p><strong>Estado:</strong> 
+                <span class="badge bg-{% if docente.estado %}success{% else %}warning{% endif %}">
+                    {% if docente.estado %}Activo{% else %}Inactivo{% endif %}
+                </span>
+            </p>
+            {% if docente.foto %}
+            <p><strong>Foto:</strong> <i class="fas fa-check text-success"></i> Cargada</p>
+            {% endif %}
+            {% if docente.hdv %}
+            <p><strong>Hoja de Vida:</strong> <i class="fas fa-check text-success"></i> Cargada</p>
+            {% endif %}
+        </div>
+        <div class="col-md-6">
+            {% if sedes_asignadas %}
+                <p><strong>Sedes Asignadas:</strong></p>
+                <ul class="list-unstyled">
+                    {% for sede_asignada in sedes_asignadas %}
+                        <li><i class="fas fa-school me-2 text-muted"></i>{{ sede_asignada.sede.nombre }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Asignaturas del Docente -->
+    {% if asignaturas_docente %}
+    <div class="mt-3">
+        <p><strong>Asignaturas Asignadas:</strong></p>
+        <div class="row">
+            {% for asignatura in asignaturas_docente %}
+            <div class="col-md-6 mb-2">
+                <div class="card border-warning">
+                    <div class="card-body py-2">
+                        <h6 class="card-title mb-1">
+                            {% if asignatura.asignatura %}
+                                {{ asignatura.asignatura.nombre }}
+                            {% else %}
+                                Sin asignatura asignada
+                            {% endif %}
+                        </h6>
+                        <p class="card-text small mb-0">
+                            <i class="fas fa-graduation-cap me-1"></i>
+                            {% if asignatura.grado_año_lectivo and asignatura.grado_año_lectivo.grado %}
+                                {{ asignatura.grado_año_lectivo.grado.nombre }}
+                            {% else %}
+                                Sin grado asignado
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}

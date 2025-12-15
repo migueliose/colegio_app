@@ -1,0 +1,383 @@
+<!-- notas/calificar_notas.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Calificar Notas - Sistema Docente{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+    }
+    
+    .loading-spinner {
+        display: none;
+    }
+    
+    .loading .loading-spinner {
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="card-title mb-1">
+                                <i class="fas fa-edit text-primary me-2"></i>
+                                Calificar Estudiantes
+                            </h4>
+                            <p class="text-muted mb-0">Seleccione el grado, asignatura y período para calificar</p>
+                        </div>
+                        <a href="{% url 'docentes:lista_notas_docente' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-list me-1"></i>Ver Todas las Notas
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <div class="card filter-card mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">
+                                <i class="fas fa-filter me-2 text-primary"></i>
+                                Filtros de Búsqueda
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="gradoSelect" class="form-label fw-semibold">
+                                        <i class="fas fa-graduation-cap me-1"></i>Grado
+                                    </label>
+                                    <select class="form-select" id="gradoSelect">
+                                        <option value="">Seleccione un grado</option>
+                                        {% for grado in grados %}
+                                        <option value="{{ grado.id }}">{{ grado.nombre }}</option>
+                                        {% empty %}
+                                        <option value="">No tiene grados asignados</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label for="asignaturaSelect" class="form-label fw-semibold">
+                                        <i class="fas fa-book me-1"></i>Asignatura
+                                    </label>
+                                    <select class="form-select" id="asignaturaSelect" disabled>
+                                        <option value="">Primero seleccione un grado</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label for="periodoSelect" class="form-label fw-semibold">
+                                        <i class="fas fa-calendar me-1"></i>Período Académico
+                                    </label>
+                                    <select class="form-select" id="periodoSelect">
+                                        <option value="">Seleccione un período</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Botón para cargar estudiantes -->
+                            <div class="text-center mt-3">
+                                <button id="cargarEstudiantesBtn" class="btn btn-primary px-4" disabled>
+                                    <i class="fas fa-users me-1"></i>
+                                    <span class="btn-text">Cargar Estudiantes</span>
+                                    <div class="loading-spinner spinner-border spinner-border-sm ms-2" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contenedor para la lista de estudiantes -->
+                    <div id="listaEstudiantesContainer">
+                        <!-- Estado inicial -->
+                        <div class="text-center text-muted py-5" id="estadoInicial">
+                            <i class="fas fa-search display-4 d-block mb-3 opacity-50"></i>
+                            <h5 class="mb-2">Seleccione los filtros para comenzar</h5>
+                            <p class="mb-0">Elija el grado, asignatura y período académico para ver los estudiantes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// =============================================
+// FUNCIÓN PARA INICIALIZAR EVENTOS DE CALIFICACIONES
+// =============================================
+function inicializarEventosCalificaciones() {
+    const form = document.getElementById('formCalificaciones');
+    const btnLimpiar = document.getElementById('btnLimpiarCalificaciones');
+    const btnGuardar = document.getElementById('btnGuardarCalificaciones');
+    const mensajeResultado = document.getElementById('mensajeResultado');
+
+    console.log('🔧 Inicializando eventos de calificaciones...');
+    
+    if (!form || !btnGuardar) {
+        console.log('❌ No se encontraron elementos necesarios para calificaciones');
+        return;
+    }
+
+    // Configurar botón limpiar
+    if (btnLimpiar) {
+        btnLimpiar.addEventListener('click', function() {
+            console.log('🧹 Limpiando formulario...');
+            form.querySelectorAll('input[type="number"]').forEach(input => {
+                input.value = '';
+            });
+            form.querySelectorAll('textarea').forEach(textarea => {
+                textarea.value = '';
+            });
+            if (mensajeResultado) {
+                mensajeResultado.innerHTML = '';
+            }
+        });
+        console.log('✅ Botón limpiar configurado');
+    }
+
+    // Configurar botón guardar
+    btnGuardar.addEventListener('click', function() {
+        console.log('🚀 Iniciando guardado de calificaciones...');
+        
+        // Validar que hay al menos una calificación
+        let tieneCalificaciones = false;
+        form.querySelectorAll('input[type="number"]').forEach(input => {
+            if (input.value.trim() !== '') {
+                tieneCalificaciones = true;
+            }
+        });
+
+        if (!tieneCalificaciones) {
+            if (mensajeResultado) {
+                mensajeResultado.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Ingrese al menos una calificación para guardar.
+                    </div>
+                `;
+            }
+            return;
+        }
+
+        // Cambiar texto y desactivar botón
+        const originalHtml = btnGuardar.innerHTML;
+        btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando...';
+        btnGuardar.disabled = true;
+
+        const formData = new FormData(form);
+        const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        console.log('📤 Enviando calificaciones al servidor...');
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(response => {
+            console.log('📥 Respuesta recibida:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('📊 Datos de respuesta:', data);
+            
+            if (mensajeResultado) {
+                if (data.success) {
+                    let htmlMsg = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>${data.message}</strong>
+                    `;
+                    if (data.warning) {
+                        htmlMsg += `<br><small class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>${data.warning}</small>`;
+                    }
+                    htmlMsg += `</div>`;
+                    mensajeResultado.innerHTML = htmlMsg;
+
+                    // Recargar después de 2 segundos
+                    setTimeout(() => {
+                        console.log('🔄 Recargando página...');
+                        location.reload();
+                    }, 2000);
+                    
+                } else {
+                    mensajeResultado.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Error:</strong> ${data.error || 'No se pudo guardar las calificaciones.'}
+                        </div>
+                    `;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error:', error);
+            if (mensajeResultado) {
+                mensajeResultado.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Error de conexión:</strong> No se pudo guardar las calificaciones.
+                    </div>
+                `;
+            }
+        })
+        .finally(() => {
+            btnGuardar.innerHTML = originalHtml;
+            btnGuardar.disabled = false;
+            console.log('🏁 Proceso de guardado finalizado');
+        });
+    });
+    
+    console.log('✅ Eventos de calificaciones inicializados correctamente');
+}
+
+// =============================================
+// CÓDIGO PRINCIPAL EXISTENTE
+// =============================================
+document.addEventListener('DOMContentLoaded', function() {
+    const gradoSelect = document.getElementById('gradoSelect');
+    const asignaturaSelect = document.getElementById('asignaturaSelect');
+    const periodoSelect = document.getElementById('periodoSelect');
+    const cargarBtn = document.getElementById('cargarEstudiantesBtn');
+    const listaContainer = document.getElementById('listaEstudiantesContainer');
+    const estadoInicial = document.getElementById('estadoInicial');
+
+    // Cargar períodos al iniciar
+    cargarPeriodos();
+
+    // Cargar asignaturas cuando se selecciona un grado
+    gradoSelect.addEventListener('change', function() {
+        const gradoId = this.value;
+        
+        if (gradoId) {
+            asignaturaSelect.disabled = true;
+            asignaturaSelect.innerHTML = '<option value="">Cargando asignaturas...</option>';
+            
+            fetch(`{% url "docentes:obtener_asignaturas_docente" %}?grado_id=${gradoId}`)
+                .then(response => response.json())
+                .then(data => {
+                    asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option>';
+                    if (data.asignaturas && data.asignaturas.length > 0) {
+                        data.asignaturas.forEach(asignatura => {
+                            const option = document.createElement('option');
+                            option.value = asignatura.id;
+                            option.textContent = asignatura.nombre;
+                            asignaturaSelect.appendChild(option);
+                        });
+                    } else {
+                        asignaturaSelect.innerHTML = '<option value="">No tiene asignaturas en este grado</option>';
+                    }
+                    asignaturaSelect.disabled = false;
+                    verificarFiltros();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    asignaturaSelect.innerHTML = '<option value="">Error al cargar asignaturas</option>';
+                });
+        } else {
+            asignaturaSelect.innerHTML = '<option value="">Primero seleccione un grado</option>';
+            asignaturaSelect.disabled = true;
+            verificarFiltros();
+        }
+    });
+
+    // Cargar períodos disponibles
+    function cargarPeriodos() {
+        periodoSelect.disabled = true;
+        periodoSelect.innerHTML = '<option value="">Cargando períodos...</option>';
+        
+        fetch('{% url "docentes:obtener_periodos_docente" %}')
+            .then(response => response.json())
+            .then(data => {
+                periodoSelect.innerHTML = '<option value="">Seleccione un período</option>';
+                if (data.periodos && data.periodos.length > 0) {
+                    data.periodos.forEach(periodo => {
+                        const option = document.createElement('option');
+                        option.value = periodo.id;
+                        option.textContent = periodo.nombre;
+                        periodoSelect.appendChild(option);
+                    });
+                } else {
+                    periodoSelect.innerHTML = '<option value="">No hay períodos disponibles</option>';
+                }
+                periodoSelect.disabled = false;
+                verificarFiltros();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                periodoSelect.innerHTML = '<option value="">Error al cargar períodos</option>';
+            });
+    }
+
+    // Verificar si todos los filtros están llenos
+    function verificarFiltros() {
+        const gradoValido = gradoSelect.value && gradoSelect.value !== '';
+        const asignaturaValida = asignaturaSelect.value && asignaturaSelect.value !== '';
+        const periodoValido = periodoSelect.value && periodoSelect.value !== '';
+        
+        cargarBtn.disabled = !(gradoValido && asignaturaValida && periodoValido);
+    }
+
+    asignaturaSelect.addEventListener('change', verificarFiltros);
+    periodoSelect.addEventListener('change', verificarFiltros);
+
+    // Cargar estudiantes cuando se hace clic en el botón
+    cargarBtn.addEventListener('click', function() {
+        const gradoId = gradoSelect.value;
+        const asignaturaId = asignaturaSelect.value;
+        const periodoId = periodoSelect.value;
+        
+        if (gradoId && asignaturaId && periodoId) {
+            // Mostrar loading
+            cargarBtn.classList.add('loading');
+            cargarBtn.disabled = true;
+            
+            // Cargar la lista de estudiantes
+            const url = `{% url "docentes:obtener_notas_estudiantes" %}?grado_id=${gradoId}&asignatura_id=${asignaturaId}&periodo_id=${periodoId}`;
+            
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) throw new Error('Error en la respuesta');
+                    return response.text();
+                })
+                .then(html => {
+                    listaContainer.innerHTML = html;
+                    estadoInicial.style.display = 'none';
+                    
+                    // 🔥 AGREGAR ESTA LLAMADA DESPUÉS DE CARGAR EL HTML
+                    inicializarEventosCalificaciones();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    listaContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error al cargar los estudiantes. Por favor, intente nuevamente.
+                        </div>
+                    `;
+                })
+                .finally(() => {
+                    cargarBtn.classList.remove('loading');
+                    cargarBtn.disabled = false;
+                });
+        }
+    });
+});
+</script>
+{% endblock %}

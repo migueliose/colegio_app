@@ -1,0 +1,184 @@
+<!-- administrador/añolectivo/periodo_confirm_delete.html -->
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Eliminar Periodo Académico - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'administrador:añolectivo_list' %}">Años Lectivos</a></li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'administrador:añolectivo_periodos' año_lectivo.pk %}">
+                    Periodos {{ año_lectivo.anho }}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Eliminar Periodo</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <!-- Card de confirmación -->
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Advertencia -->
+                    <div class="alert alert-danger">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            ¡ADVERTENCIA!
+                        </h6>
+                        <p class="mb-0">
+                            Está a punto de eliminar el periodo académico:
+                            <strong>{{ object.periodo.nombre }}</strong>
+                        </p>
+                    </div>
+                    
+                    <!-- Detalles del periodo -->
+                    <div class="card mb-4 border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Información del Periodo
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong>Periodo:</strong><br>
+                                        {{ object.periodo.nombre }}
+                                    </p>
+                                    <p class="mb-2">
+                                        <strong>Año Lectivo:</strong><br>
+                                        {{ object.año_lectivo.anho }}
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong>Fecha Inicio:</strong><br>
+                                        {% if object.fecha_inicio %}
+                                        {{ object.fecha_inicio|date:"d/m/Y" }}
+                                        {% else %}
+                                        <span class="text-muted">No definida</span>
+                                        {% endif %}
+                                    </p>
+                                    <p class="mb-2">
+                                        <strong>Fecha Fin:</strong><br>
+                                        {% if object.fecha_fin %}
+                                        {{ object.fecha_fin|date:"d/m/Y" }}
+                                        {% else %}
+                                        <span class="text-muted">No definida</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Verificación de dependencias -->
+                    <div class="card mb-4 border-info">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-link me-2"></i>
+                                Verificación de Dependencias
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% if object.logros.exists or object.notas.exists or object.comportamientos.exists %}
+                            <div class="alert alert-warning">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    ¡ATENCIÓN! Este periodo tiene:
+                                </h6>
+                                <ul class="mb-2">
+                                    {% if object.logros.exists %}
+                                    <li>{{ object.logros.count }} logro(s) académico(s)</li>
+                                    {% endif %}
+                                    {% if object.notas.exists %}
+                                    <li>{{ object.notas.count }} calificación(es)</li>
+                                    {% endif %}
+                                    {% if object.comportamientos.exists %}
+                                    <li>{{ object.comportamientos.count }} registro(s) de comportamiento</li>
+                                    {% endif %}
+                                </ul>
+                                <p class="mb-0">
+                                    <strong>Nota:</strong> Al eliminar este periodo, estos registros quedarán sin periodo asociado.
+                                </p>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                No se encontraron dependencias críticas.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Formulario de confirmación -->
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="confirm_text" class="form-label fw-bold">
+                                <i class="fas fa-keyboard me-1"></i>
+                                Confirmar Eliminación
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="confirm_text" 
+                                   placeholder="Escriba 'ELIMINAR' para confirmar"
+                                   required>
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-5 pt-4 border-top">
+                            <a href="{% url 'administrador:añolectivo_periodos' año_lectivo.pk %}" 
+                               class="btn btn-success">
+                                <i class="fas fa-times me-2"></i> Cancelar
+                            </a>
+                            <button type="submit" 
+                                    id="deleteButton"
+                                    class="btn btn-danger"
+                                    disabled>
+                                <i class="fas fa-trash-alt me-2"></i>
+                                Eliminar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmInput = document.getElementById('confirm_text');
+    const deleteButton = document.getElementById('deleteButton');
+    const form = document.querySelector('form');
+    
+    confirmInput.addEventListener('input', function() {
+        if (this.value.trim().toUpperCase() === 'ELIMINAR') {
+            deleteButton.disabled = false;
+        } else {
+            deleteButton.disabled = true;
+        }
+    });
+    
+    form.addEventListener('submit', function(e) {
+        if (!confirm('¿Está seguro de eliminar este periodo académico?')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

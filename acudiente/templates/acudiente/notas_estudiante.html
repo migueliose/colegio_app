@@ -1,0 +1,293 @@
+<!-- acudiente/templates/acudiente/notas_estudiante.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static estudiante_filters %}
+
+{% block title %}Notas de {{ estudiante.usuario.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'gestioncolegio:dashboard_acudiente' %}">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'acudiente:detalle_estudiante' estudiante.id %}">
+                            {{ estudiante.usuario.nombres }}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Notas</li>
+                </ol>
+            </nav>
+            
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="h3 mb-1">
+                                <i class="fas fa-chart-bar me-2"></i>Notas y Calificaciones
+                            </h1>
+                            <p class="text-muted mb-0">
+                                {{ estudiante.usuario.get_full_name }}
+                                {% if estudiante.matricula_actual %}
+                                • {{ estudiante.matricula_actual.grado_año_lectivo.grado.nombre }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary dropdown-toggle" 
+                                    type="button" 
+                                    data-bs-toggle="dropdown" 
+                                    aria-expanded="false">
+                                <i class="fas fa-filter me-1"></i>Filtrar
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 300px;">
+                                <form method="get" action="{% url 'acudiente:notas_estudiante' estudiante.id %}">
+                                    <div class="mb-3">
+                                        <label for="año_lectivo" class="form-label small">Año Lectivo</label>
+                                        <select class="form-select form-select-sm" id="año_lectivo" name="año_lectivo">
+                                            <option value="">Todos los años</option>
+                                            {% for año in años_disponibles %}
+                                            <option value="{{ año.id }}" {% if año.id == año_seleccionado.id %}selected{% endif %}>
+                                                {{ año.anho }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    {% if periodos_disponibles %}
+                                    <div class="mb-3">
+                                        <label for="periodo" class="form-label small">Período</label>
+                                        <select class="form-select form-select-sm" id="periodo" name="periodo">
+                                            <option value="">Todos los períodos</option>
+                                            {% for periodo in periodos_disponibles %}
+                                            <option value="{{ periodo.id }}" {% if periodo.id == periodo_seleccionado.id %}selected{% endif %}>
+                                                {{ periodo.periodo.nombre }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    {% endif %}
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-check me-1"></i>Aplicar Filtros
+                                        </button>
+                                        <a href="{% url 'acudiente:notas_estudiante' estudiante.id %}" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-times me-1"></i>Limpiar
+                                        </a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen de Promedios -->
+    {% if promedios.general > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Resumen de Promedios
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Promedio General -->
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-success h-100">
+                                <div class="card-body text-center">
+                                    <div class="display-4 text-success mb-2">
+                                        {{ promedios.general }}
+                                    </div>
+                                    <h6 class="text-muted mb-1">Promedio General</h6>
+                                    <small class="text-muted">/ 5.0</small>
+                                    <div class="progress mt-2" style="height: 8px;">
+                                        <div class="progress-bar bg-success" 
+                                             style="width: {{ promedios.general|multiply:20 }}%">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Promedios por Período -->
+                        <div class="col-md-8">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-3">Promedios por Período</h6>
+                                    <div class="row">
+                                        {% for periodo, promedio in promedios.por_periodo.items %}
+                                        <div class="col-md-3 col-6 mb-2">
+                                            <div class="border rounded p-2 text-center">
+                                                <div class="h5 mb-1">{{ promedio }}</div>
+                                                <small class="text-muted">{{ periodo }}</small>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabla de Notas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table me-2"></i>Detalle de Notas
+                    </h5>
+                    <div>
+                        <span class="badge bg-primary">
+                            {{ notas_agrupadas|length }} asignaturas
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if notas_agrupadas %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="30%">Asignatura</th>
+                                    {% for periodo_nombre in periodos_disponibles %}
+                                    <th class="text-center">{{ periodo_nombre.periodo.nombre }}</th>
+                                    {% endfor %}
+                                    <th class="text-center">Promedio</th>
+                                    <th class="text-center">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asignatura_id, data in notas_agrupadas.items %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ data.asignatura.nombre }}</strong>
+                                        {% if data.asignatura.ih %}
+                                        <br>
+                                        <small class="text-muted">IH: {{ data.asignatura.ih }}</small>
+                                        {% endif %}
+                                    </td>
+                                    
+                                    {% for periodo in periodos_disponibles %}
+                                    <td class="text-center">
+                                        {% with nota=data.notas_por_periodo|get_item:periodo.periodo.nombre %}
+                                            {% if nota %}
+                                            <span class="badge {% if nota >= 3.5 %}bg-success{% elif nota >= 3.0 %}bg-warning{% else %}bg-danger{% endif %} p-2">
+                                                {{ nota }}
+                                            </span>
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                    {% endfor %}
+                                    
+                                    <td class="text-center">
+                                        {% with promedio=data.notas_por_periodo.values|average %}
+                                            {% if promedio %}
+                                            <div class="h5 {% if promedio >= 3.5 %}text-success{% elif promedio >= 3.0 %}text-warning{% else %}text-danger{% endif %}">
+                                                {{ promedio|floatformat:2 }}
+                                            </div>
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                    
+                                    <td class="text-center">
+                                        {% with promedio=data.notas_por_periodo.values|average %}
+                                            {% if promedio %}
+                                                {% if promedio >= 3.5 %}
+                                                <span class="badge bg-success">Aprobado</span>
+                                                {% elif promedio >= 3.0 %}
+                                                <span class="badge bg-warning">Regular</span>
+                                                {% else %}
+                                                <span class="badge bg-danger">Reprobado</span>
+                                                {% endif %}
+                                            {% else %}
+                                            <span class="text-muted">Sin calificar</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay notas registradas</h5>
+                        <p class="text-muted">
+                            {% if año_seleccionado %}
+                                No hay notas para el año {{ año_seleccionado.anho }}
+                            {% else %}
+                                No hay notas disponibles para este estudiante
+                            {% endif %}
+                        </p>
+                        <a href="{% url 'acudiente:notas_estudiante' estudiante.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-redo me-1"></i>Ver todas las notas
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leyenda -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="alert alert-light">
+                <div class="row">
+                    <div class="col-md-3">
+                        <span class="badge bg-success me-2 p-2">3.5 - 5.0</span>
+                        <small>Aprobado</small>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="badge bg-warning me-2 p-2">3.0 - 3.4</span>
+                        <small>Regular</small>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="badge bg-danger me-2 p-2">0.0 - 2.9</span>
+                        <small>Reprobado</small>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="badge bg-secondary me-2 p-2">-</span>
+                        <small>Sin calificar</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table th {
+    font-weight: 600;
+    white-space: nowrap;
+}
+.table td {
+    vertical-align: middle;
+}
+.badge.p-2 {
+    min-width: 50px;
+}
+</style>
+
+{% endblock %}

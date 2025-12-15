@@ -1,0 +1,620 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Gestión de Estudiantes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0">Gestión de Estudiantes</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_administrador' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Estudiantes</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'administrador:estudiante_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nuevo Estudiante
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros Rápidos -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-body py-3">
+                    <form method="get" class="row g-3" id="quick-filters-form">
+                        <!-- 🔍 Búsqueda -->
+                        <div class="col-md-3">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" class="form-control" name="search"
+                                    placeholder="Buscar estudiante..."
+                                    value="{{ filtros.search }}">
+                            </div>
+                        </div>
+
+                        <!-- 🎓 Nivel -->
+                        <div class="col-md-2">
+                            <select class="form-control form-control-sm" name="grado">
+                                <option value="">Todos los grados</option>
+                                <option value="preescolar" {% if filtros.grado == 'preescolar' %}selected{% endif %}>Preescolar</option>
+                                <option value="primaria" {% if filtros.grado == 'primaria' %}selected{% endif %}>Primaria</option>
+                            </select>
+                        </div>
+
+                        <!-- 🧍 Estado de usuario -->
+                        <div class="col-md-2">
+                            <select class="form-control form-control-sm" name="estado">
+                                <option value="">Todos los estados</option>
+                                <option value="activo" {% if filtros.estado == 'activo' %}selected{% endif %}>Activos</option>
+                                <option value="inactivo" {% if filtros.estado == 'inactivo' %}selected{% endif %}>Inactivos</option>
+                            </select>
+                        </div>
+
+                        <!-- 📝 Estado matrícula -->
+                        <div class="col-md-2">
+                            <select class="form-control form-control-sm" name="estado_matricula">
+                                <option value="">Todas las matrículas</option>
+                                <option value="ACT" {% if filtros.estado_matricula == 'ACT' %}selected{% endif %}>Matriculados</option>
+                                <option value="INA" {% if filtros.estado_matricula == 'INA' %}selected{% endif %}>Sin matrícula</option>
+                                <option value="PEN" {% if filtros.estado_matricula == 'PEN' %}selected{% endif %}>Pendientes</option>
+                            </select>
+                        </div>
+
+                        <!-- ⚧ Género -->
+                        <div class="col-md-2">
+                            <select class="form-control form-control-sm" name="genero">
+                                <option value="">Todos los géneros</option>
+                                <option value="M" {% if filtros.genero == 'M' %}selected{% endif %}>Masculino</option>
+                                <option value="F" {% if filtros.genero == 'F' %}selected{% endif %}>Femenino</option>
+                            </select>
+                        </div>
+
+                        <!-- 🔘 Botones -->
+                        <div class="col-md-1 text-end">
+                            <div class="btn-group">
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-filter me-1"></i> Filtrar
+                                </button>
+                                <a href="{% url 'administrador:estudiante_list' %}" class="btn btn-sm btn-secondary">
+                                    <i class="fas fa-redo"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="card border-start border-primary border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                Total Estudiantes
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ total_estudiantes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="card border-start border-success border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                Matriculados
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ matriculados_actual|default:"0" }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="card border-start border-info border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                Masculino
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ estudiantes_masculino }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-male fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="card border-start border-warning border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                Femenino
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ estudiantes_femenino }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-female fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="card border-start border-danger border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-danger text-uppercase mb-1">
+                                Sin Acudientes
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ sin_acudientes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-times fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="card border-start border-secondary border-4 h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-secondary text-uppercase mb-1">
+                                Edad Promedio
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ edad_promedio }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-birthday-cake fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen de Filtros Aplicados -->
+    {% if filtros.search or filtros.estado_matricula or filtros.grado or filtros.genero or filtros.estado %}
+    <div class="alert alert-info mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-1">
+                    <i class="fas fa-filter me-2"></i>Filtros Aplicados
+                </h6>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    {% if filtros.search %}
+                    <span class="badge bg-primary">
+                        Búsqueda: "{{ filtros.search }}"
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'search' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                           class="text-white ms-2">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </span>
+                    {% endif %}
+                    
+                    {% if filtros.estado_matricula %}
+                    <span class="badge bg-success">
+                        Matrícula: 
+                        {% if filtros.estado_matricula == 'ACT' %}Activa{% endif %}
+                        {% if filtros.estado_matricula == 'PEN' %}Pendiente{% endif %}
+                        {% if filtros.estado_matricula == 'INA' %}Inactiva{% endif %}
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'estado_matricula' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                           class="text-white ms-2">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </span>
+                    {% endif %}
+                    
+                    {% if filtros.grado %}
+                    <span class="badge bg-warning">
+                        Grado: {{ filtros.grado|title }}
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'grado' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                           class="text-white ms-2">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </span>
+                    {% endif %}
+                    
+                    {% if filtros.genero %}
+                    <span class="badge bg-danger">
+                        Género: {% if filtros.genero == 'M' %}Masculino{% else %}Femenino{% endif %}
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'genero' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                           class="text-white ms-2">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </span>
+                    {% endif %}
+                    
+                    {% if filtros.estado %}
+                    <span class="badge bg-secondary">
+                        Estado: {{ filtros.estado|title }}
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'estado' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                           class="text-white ms-2">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <a href="{% url 'administrador:estudiante_list' %}" class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-times me-1"></i> Limpiar Todos
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Listado de Estudiantes -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Listado de Estudiantes
+                    <span class="badge bg-primary ms-2">{{ page_obj.paginator.count }}</span>
+                </h5>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            {% if estudiantes %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="estudiantes-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Estudiante</th>
+                            <th>Documento</th>
+                            <th>Información Académica</th>
+                            <th>Contacto</th>
+                            <th>Acudientes</th>
+                            <th>Estado</th>
+                            <th width="150" class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for estudiante in estudiantes %}
+                        <tr class="estudiante-row">
+                            <!-- Columna 1: Estudiante -->
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if estudiante.foto %}
+                                    <img src="{{ estudiante.foto.url }}" alt="{{ estudiante.usuario.get_full_name }}" 
+                                         class="rounded-circle me-2" 
+                                         style="width: 36px; height: 36px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center me-2" 
+                                         style="width: 36px; height: 36px;">
+                                        <i class="fas fa-user-graduate text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong class="d-block">{{ estudiante.usuario.get_full_name }}</strong>
+                                        <small class="text-muted">
+                                            {% if estudiante.usuario.fecha_nacimiento %}
+                                            {{ estudiante.usuario.edad }} años
+                                            {% else %}
+                                            Edad no registrada
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <!-- Columna 2: Documento -->
+                            <td>
+                                <div class="fw-bold">{{ estudiante.usuario.numero_documento }}</div>
+                                <small class="text-muted">
+                                    {{ estudiante.usuario.tipo_documento.nombre|default:"Sin tipo" }}
+                                </small>
+                            </td>
+                            
+                            <!-- Columna 3: Información Académica -->
+                            <td>
+                                {% if año_lectivo_actual %}
+                                    {% with matricula_actual=estudiante.matricula_actual %}
+                                        {% if matricula_actual %}
+                                        <div>
+                                            <span class="badge {% if matricula_actual.estado == 'ACT' %}bg-success{% elif matricula_actual.estado == 'PEN' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                                {{ matricula_actual.grado_año_lectivo.grado.nombre }}
+                                            </span>
+                                            <small class="text-muted d-block">
+                                                {{ matricula_actual.sede.nombre }}
+                                            </small>
+                                        </div>
+                                        {% else %}
+                                        <div>
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-exclamation-triangle me-1"></i> Sin matrícula
+                                            </span>
+                                            <small class="text-muted d-block">
+                                                Año {{ año_lectivo_actual.anho }}
+                                            </small>
+                                        </div>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% else %}
+                                    {% with ultima_matricula=estudiante.matriculas.first %}
+                                        {% if ultima_matricula %}
+                                        <div>
+                                            <span class="badge bg-info">
+                                                {{ ultima_matricula.grado_año_lectivo.grado.nombre }}
+                                            </span>
+                                            <small class="text-muted d-block">
+                                                Año {{ ultima_matricula.año_lectivo.anho }}
+                                            </small>
+                                        </div>
+                                        {% else %}
+                                        <span class="badge bg-warning">Nunca matriculado</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endif %}
+                            </td>
+                            
+                            <!-- Columna 4: Contacto -->
+                            <td>
+                                <div class="small">
+                                    {% if estudiante.usuario.email %}
+                                    <div class="text-truncate" style="max-width: 150px;">
+                                        <i class="fas fa-envelope me-1 text-muted"></i>
+                                        {{ estudiante.usuario.email }}
+                                    </div>
+                                    {% endif %}
+                                    {% if estudiante.usuario.telefono %}
+                                    <div>
+                                        <i class="fas fa-phone me-1 text-muted"></i>
+                                        {{ estudiante.usuario.telefono }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            
+                            <!-- Columna 5: Acudientes -->
+                            <td>
+                                {% with acudientes_count=estudiante.acudientes.count %}
+                                {% if acudientes_count > 0 %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-user-tie me-1"></i> {{ acudientes_count }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-exclamation-triangle me-1"></i> 0
+                                </span>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
+                            
+                            <!-- Columna 6: Estado -->
+                            <td>
+                                {% if estudiante.usuario.estado %}
+                                    {% if estudiante.matricula_actual %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i> Activo
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-exclamation-circle me-1"></i> Sin matrícula
+                                    </span>
+                                    {% endif %}
+                                {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times-circle me-1"></i> Inactivo
+                                </span>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- Columna 7: Acciones -->
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'administrador:estudiante_detail' estudiante.pk %}" 
+                                       class="btn btn-outline-info" title="Ver detalle"
+                                       data-bs-toggle="tooltip" data-bs-placement="top">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'administrador:estudiante_update' estudiante.pk %}" 
+                                       class="btn btn-outline-warning" title="Editar"
+                                       data-bs-toggle="tooltip" data-bs-placement="top">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    <!-- Botón de matrícula -->
+                                    {% with matricula_actual=estudiante.matricula_actual %}
+                                        {% if matricula_actual %}
+                                            <!-- Si ya tiene matrícula en el año actual -->
+                                            <a href="{% url 'administrador:matricula_detail' matricula_actual.pk %}" 
+                                               class="btn btn-outline-info" title="Ver Matrícula"
+                                               data-bs-toggle="tooltip" data-bs-placement="top">
+                                                <i class="fas fa-school"></i>
+                                            </a>
+                                        {% else %}
+                                            <!-- Si NO tiene matrícula en el año actual -->
+                                            {% if año_lectivo_actual %}
+                                            <a href="{% url 'administrador:matricula_create' %}?estudiante_id={{ estudiante.pk }}&año_lectivo_id={{ año_lectivo_actual.id }}" 
+                                               class="btn btn-outline-success" title="Matricular"
+                                               data-bs-toggle="tooltip" data-bs-placement="top">
+                                                <i class="fas fa-school"></i>
+                                            </a>
+                                            {% else %}
+                                            <a href="{% url 'administrador:matricula_create' %}?estudiante_id={{ estudiante.pk }}" 
+                                               class="btn btn-outline-secondary" title="Matricular"
+                                               data-bs-toggle="tooltip" data-bs-placement="top">
+                                                <i class="fas fa-school"></i>
+                                            </a>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endwith %}
+                                    
+                                    <a href="{% url 'administrador:estudiante_delete' estudiante.pk %}" 
+                                       class="btn btn-outline-danger" title="Desactivar"
+                                       data-bs-toggle="tooltip" data-bs-placement="top">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación con parámetros de filtro -->
+            {% if page_obj.has_other_pages %}
+            <div class="border-top p-3">
+                <nav aria-label="Page navigation">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">
+                                Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} 
+                                de {{ page_obj.paginator.count }} estudiantes
+                                {% if filtros.search or filtros.estado_matricula or filtros.grado or filtros.genero or filtros.estado %}
+                                (filtrados)
+                                {% endif %}
+                            </small>
+                        </div>
+                        <ul class="pagination mb-0">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <!-- Estado vacío -->
+            <div class="text-center py-5">
+                <i class="fas fa-user-graduate fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No se encontraron estudiantes</h4>
+                <p class="text-muted mb-4">
+                    {% if filtros.search or filtros.estado_matricula or filtros.grado or filtros.genero or filtros.estado %}
+                    No hay estudiantes que coincidan con los filtros aplicados
+                    {% else %}
+                    No hay estudiantes registrados en el sistema
+                    {% endif %}
+                </p>
+                {% if filtros.search or filtros.estado_matricula or filtros.grado or filtros.genero or filtros.estado %}
+                <a href="{% url 'administrador:estudiante_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-redo me-2"></i> Limpiar Filtros
+                </a>
+                {% else %}
+                <a href="{% url 'administrador:estudiante_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i> Agregar el primer estudiante
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="card-footer text-muted small">
+            <div class="row">
+                <div class="col">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Última actualización: {% now "d/m/Y H:i" %}
+                    {% if filtros.search or filtros.estado_matricula or filtros.grado or filtros.genero or filtros.estado %}
+                    <span class="badge bg-info ms-2">Filtrado</span>
+                    {% endif %}
+                </div>
+                <div class="col text-end">
+                    <i class="fas fa-database me-1"></i>
+                    {{ page_obj.paginator.count }} registros
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Auto-submit para filtros rápidos cuando cambian
+    $('select[name="grado"], select[name="estado"], select[name="genero"], select[name="estado_matricula"]').change(function() {
+        $('#quick-filters-form').submit();
+    });
+
+    // Búsqueda en tiempo real con debounce
+    var searchTimer;
+    $('input[name="search"]').on('input', function() {
+        clearTimeout(searchTimer);
+        var $this = $(this);
+        searchTimer = setTimeout(function() {
+            $this.closest('form').submit();
+        }, 500);
+    });
+});
+</script>
+{% endblock %}

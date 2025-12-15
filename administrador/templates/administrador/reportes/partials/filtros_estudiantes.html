@@ -1,0 +1,82 @@
+<!-- templates/administrador/reportes/partials/filtros_estudiantes.html -->
+<div class="card filter-card mb-4">
+    <div class="card-body">
+        <form method="get" id="filterFormEstudiantes">
+            <div class="row g-3">
+                
+                <div class="col-md-4">
+                    <label class="form-label">Año Lectivo</label>
+                    <select name="año_lectivo" class="form-select">
+                        <option value="">Todos los años</option>
+                        {% for año in años_lectivos %}
+                        <option value="{{ año.id }}" {% if filtros.año_lectivo == año.id|stringformat:"s" %}selected{% endif %}>
+                            {{ año.anho }} - {{ año.sede.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">Grado</label>
+                    <select name="grado" class="form-select">
+                        <option value="">Todos los grados</option>
+                        {% for grado in grados %}
+                        <option value="{{ grado.id }}" {% if filtros.grado == grado.id|stringformat:"s" %}selected{% endif %}>
+                            {{ grado.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">Estado Matrícula</label>
+                    <select name="estado" class="form-select">
+                        <option value="">Todos los estados</option>
+                        <option value="ACT" {% if filtros.estado == 'ACT' %}selected{% endif %}>Activa</option>
+                        <option value="PEN" {% if filtros.estado == 'PEN' %}selected{% endif %}>Pendiente</option>
+                        <option value="INA" {% if filtros.estado == 'INA' %}selected{% endif %}>Inactiva</option>
+                        <option value="RET" {% if filtros.estado == 'RET' %}selected{% endif %}>Retirada</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Género</label>
+                    <select name="genero" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="M" {% if filtros.genero == 'M' %}selected{% endif %}>Masculino</option>
+                        <option value="F" {% if filtros.genero == 'F' %}selected{% endif %}>Femenino</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Edad Mínima</label>
+                    <input type="number" name="edad_min" class="form-control" value="{{ filtros.edad_min }}" min="0" max="100">
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Edad Máxima</label>
+                    <input type="number" name="edad_max" class="form-control" value="{{ filtros.edad_max }}" min="0" max="100">
+                </div>
+                
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search me-2"></i>Filtrar
+                    </button>
+                    <a href="{% url 'administrador:reporte_estudiantes' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Formato automático de números
+    $('input[type="number"]').on('input', function() {
+        if ($(this).val() < 0) $(this).val(0);
+        if ($(this).val() > 100) $(this).val(100);
+    });
+});
+</script>

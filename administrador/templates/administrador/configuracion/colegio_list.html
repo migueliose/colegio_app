@@ -1,0 +1,148 @@
+<!-- administrador/configuracion/colegio_list.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Colegios - Configuración{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .badge-active {
+        background-color: #28a745;
+    }
+    .badge-inactive {
+        background-color: #dc3545;
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.1);
+    }
+    .action-buttons {
+        min-width: 120px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0 text-white">
+                            <i class="fas fa-school me-2"></i>Lista de Colegios
+                        </h4>
+                        <a href="{% url 'administrador:colegio_create' %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-plus me-1"></i> Nuevo Colegio
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if colegios %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Dirección</th>
+                                    <th>Resolución</th>
+                                    <th>Código DANE</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for colegio in colegios %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'administrador:colegio_detail' colegio.pk %}" 
+                                           class="text-decoration-none text-dark fw-semibold">
+                                            {{ colegio.nombre }}
+                                        </a>
+                                    </td>
+                                    <td>{{ colegio.direccion|truncatechars:30 }}</td>
+                                    <td>{{ colegio.resolucion }}</td>
+                                    <td>{{ colegio.dane }}</td>
+                                    <td>
+                                        {% if colegio.estado %}
+                                        <span class="badge badge-active rounded-pill px-3 py-1">
+                                            <i class="fas fa-check-circle me-1"></i> Activo
+                                        </span>
+                                        {% else %}
+                                        <span class="badge badge-inactive rounded-pill px-3 py-1">
+                                            <i class="fas fa-times-circle me-1"></i> Inactivo
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end action-buttons">
+                                        <a href="{% url 'administrador:colegio_detail' colegio.pk %}" 
+                                           class="btn btn-sm btn-outline-info" title="Ver">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'administrador:colegio_update' colegio.pk %}" 
+                                           class="btn btn-sm btn-outline-primary" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if colegio.estado %}
+                                        <a href="#" class="btn btn-sm btn-outline-danger" title="Desactivar">
+                                            <i class="fas fa-toggle-on"></i>
+                                        </a>
+                                        {% else %}
+                                        <a href="#" class="btn btn-sm btn-outline-success" title="Activar">
+                                            <i class="fas fa-toggle-off"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="fas fa-school fa-4x text-muted"></i>
+                        </div>
+                        <h5 class="text-muted mb-3">No hay colegios registrados</h5>
+                        <p class="text-muted mb-4">Comienza agregando el primer colegio al sistema</p>
+                        <a href="{% url 'administrador:colegio_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i> Agregar Colegio
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if colegios.has_other_pages %}
+                <div class="card-footer bg-transparent">
+                    <nav aria-label="Paginación">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if colegios.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ colegios.previous_page_number }}">Anterior</a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in colegios.paginator.page_range %}
+                                {% if colegios.number == num %}
+                                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                {% elif num > colegios.number|add:'-3' and num < colegios.number|add:'3' %}
+                                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if colegios.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ colegios.next_page_number }}">Siguiente</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

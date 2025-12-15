@@ -1,0 +1,106 @@
+{% extends 'gestioncolegio/base2.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0 fw-bold text-primary">
+                        <i class="fas fa-calendar-plus me-2"></i> {{ title }}
+                    </h5>
+                </div>
+                
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row g-3">
+                            <!-- Asignatura por Grado -->
+                            <div class="col-md-12">
+                                <label class="form-label">{{ form.asignatura_grado.label }} *</label>
+                                {{ form.asignatura_grado }}
+                                {% if form.asignatura_grado.errors %}
+                                <div class="text-danger small">{{ form.asignatura_grado.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Día de la semana -->
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.dia_semana.label }} *</label>
+                                {{ form.dia_semana }}
+                                {% if form.dia_semana.errors %}
+                                <div class="text-danger small">{{ form.dia_semana.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Hora de inicio -->
+                            <div class="col-md-3">
+                                <label class="form-label">{{ form.hora_inicio.label }} *</label>
+                                {{ form.hora_inicio }}
+                                {% if form.hora_inicio.errors %}
+                                <div class="text-danger small">{{ form.hora_inicio.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Hora de fin -->
+                            <div class="col-md-3">
+                                <label class="form-label">{{ form.hora_fin.label }} *</label>
+                                {{ form.hora_fin }}
+                                {% if form.hora_fin.errors %}
+                                <div class="text-danger small">{{ form.hora_fin.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Salón -->
+                            <div class="col-md-12">
+                                <label class="form-label">{{ form.salon.label }}</label>
+                                {{ form.salon }}
+                                {% if form.salon.errors %}
+                                <div class="text-danger small">{{ form.salon.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i> {{ submit_text }}
+                            </button>
+                            <a href="{% url 'administrador:horario_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Información del año lectivo -->
+            {% if año_lectivo %}
+            <div class="card border-left-info shadow-sm mt-3">
+                <div class="card-body">
+                    <h6 class="fw-bold text-info">
+                        <i class="fas fa-info-circle me-2"></i> Año Lectivo Activo
+                    </h6>
+                    <p class="mb-0">
+                        <strong>Año:</strong> {{ año_lectivo.anho }}<br>
+                        <strong>Sede:</strong> {{ año_lectivo.sede.nombre }}<br>
+                        <strong>Estado:</strong> 
+                        <span class="badge bg-success">Activo</span>
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

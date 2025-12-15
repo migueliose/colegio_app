@@ -1,0 +1,428 @@
+<!-- acudiente/templates/acudiente/documentos_estudiante.html -->
+{% extends 'gestioncolegio/base.html' %}
+{% load static estudiante_filters %}
+
+{% block title %}Documentos de {{ estudiante.usuario.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'gestioncolegio:dashboard_acudiente' %}">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'acudiente:detalle_estudiante' estudiante.id %}">
+                            {{ estudiante.usuario.nombres }}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Documentos</li>
+                </ol>
+            </nav>
+            
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="h3 mb-1">
+                                <i class="fas fa-file-alt me-2"></i>Documentos Académicos
+                            </h1>
+                            <p class="text-muted mb-0">
+                                {{ estudiante.usuario.get_full_name }}
+                                {% if matricula_actual %}
+                                • {{ matricula_actual.grado_año_lectivo.grado.nombre }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div>
+                            <span class="badge bg-primary">
+                                {{ años_lectivos|length }} años con matrícula
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Año Lectivo Actual (si el estudiante está matriculado este año) -->
+    {% if año_lectivo_actual and estudiante.id in matriculas_activas %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        Año Lectivo Actual - {{ año_lectivo_actual.anho }}
+                    </h5>
+                    <span class="badge bg-light text-success">Activo</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Constancia de Estudio -->
+                        <div class="col-md-4">
+                            <div class="card h-100 border">
+                                <div class="card-body text-center">
+                                    <div class="text-primary mb-3">
+                                        <i class="fas fa-certificate fa-3x"></i>
+                                    </div>
+                                    <h5 class="card-title">Constancia de Estudio</h5>
+                                    <p class="card-text small text-muted mb-3">
+                                        Certificado oficial de matrícula activa
+                                    </p>
+                                    <div class="d-grid">
+                                        <a href="{% url 'acudiente:constancia_pdf' estudiante.id año_lectivo_actual.id %}" 
+                                           class="btn btn-primary"
+                                           target="_blank">
+                                            <i class="fas fa-download me-1"></i> Descargar PDF
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-light py-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i> {{ año_lectivo_actual.anho }}
+                                        <i class="fas fa-graduation-cap ms-2 me-1"></i>
+                                        {{ matriculas_activas|get_item:estudiante.id }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Observador del Estudiante -->
+                        <div class="col-md-4">
+                            <div class="card h-100 border">
+                                <div class="card-body text-center">
+                                    <div class="text-warning mb-3">
+                                        <i class="fas fa-user-check fa-3x"></i>
+                                    </div>
+                                    <h5 class="card-title">Observador</h5>
+                                    <p class="card-text small text-muted mb-3">
+                                        Registro completo de comportamiento
+                                    </p>
+                                    <div class="d-grid">
+                                        <a href="{% url 'acudiente:observador_pdf' estudiante.id año_lectivo_actual.id %}" 
+                                           class="btn btn-warning"
+                                           target="_blank">
+                                            <i class="fas fa-download me-1"></i> Descargar PDF
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-light py-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i> {{ año_lectivo_actual.anho }}
+                                        <i class="fas fa-graduation-cap ms-2 me-1"></i>
+                                        {{ matriculas_activas|get_item:estudiante.id }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Boletín Final -->
+                        <div class="col-md-4">
+                            <div class="card h-100 border">
+                                <div class="card-body text-center">
+                                    <div class="text-success mb-3">
+                                        <i class="fas fa-chart-bar fa-3x"></i>
+                                    </div>
+                                    <h5 class="card-title">Boletín Final</h5>
+                                    <p class="card-text small text-muted mb-3">
+                                        Reporte completo de calificaciones finales
+                                    </p>
+                                    <div class="d-grid">
+                                        <a href="{% url 'acudiente:boletin_pdf' estudiante.id año_lectivo_actual.id %}" 
+                                           class="btn btn-success"
+                                           target="_blank">
+                                            <i class="fas fa-download me-1"></i> Descargar PDF
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-light py-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i> {{ año_lectivo_actual.anho }}
+                                        <i class="fas fa-graduation-cap ms-2 me-1"></i>
+                                        {{ matriculas_activas|get_item:estudiante.id }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% elif año_lectivo_actual %}
+    <!-- Mostrar mensaje si hay año actual pero el estudiante NO está matriculado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                    <div>
+                        <h6 class="alert-heading">No Matriculado en el Año Actual</h6>
+                        <p class="mb-0">
+                            El estudiante <strong>{{ estudiante.usuario.get_full_name }}</strong> 
+                            no está matriculado en el año lectivo actual 
+                            <strong>{{ año_lectivo_actual.anho }}</strong>.
+                            Solo puede acceder a documentos de años anteriores.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Historial de Años Anteriores -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Documentos de Años Anteriores
+                    </h5>
+                    <span class="badge bg-secondary">{{ años_lectivos|length }} años con matrícula</span>
+                </div>
+                <div class="card-body">
+                    {% if años_lectivos %}
+                        {% for año_lectivo in años_lectivos %}
+                        <!-- Excluir el año actual si está en la lista -->
+                        {% if not año_lectivo.estado or año_lectivo.id != año_lectivo_actual.id %}
+                        <div class="mb-4 year-documents-section">
+                            <!-- Encabezado del año -->
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-calendar me-2 
+                                        {% if año_lectivo.estado %}text-success{% else %}text-secondary{% endif %}"></i>
+                                    Año Lectivo {{ año_lectivo.anho }}
+                                    <!-- Obtener grado del estudiante para este año -->
+                                    {% for matricula in estudiante.matriculas.all %}
+                                        {% if matricula.año_lectivo_id == año_lectivo.id %}
+                                        <small class="text-muted ms-2">
+                                            <i class="fas fa-graduation-cap"></i>
+                                            {{ matricula.grado_año_lectivo.grado.nombre }}
+                                        </small>
+                                        {% endif %}
+                                    {% endfor %}
+                                </h5>
+                                <button class="btn btn-sm btn-outline-secondary toggle-documents" 
+                                        data-year="{{ año_lectivo.id }}">
+                                    <i class="fas fa-chevron-down"></i> Mostrar documentos
+                                </button>
+                            </div>
+                            
+                            <!-- Documentos del año (ocultos inicialmente) -->
+                            <div class="documents-container" id="documents-{{ año_lectivo.id }}" style="display: none;">
+                                <div class="row g-3">
+                                    <!-- Constancia -->
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-start mb-3">
+                                                    <div class="flex-shrink-0">
+                                                        <div class="bg-primary bg-opacity-10 p-2 rounded">
+                                                            <i class="fas fa-certificate text-primary fa-2x"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1 ms-3">
+                                                        <h6 class="card-title mb-1">Constancia de Estudio</h6>
+                                                        <p class="card-text small text-muted mb-2">
+                                                            Certificado de matrícula {{ año_lectivo.anho }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="d-grid">
+                                                    <a href="{% url 'acudiente:constancia_pdf' estudiante.id año_lectivo.id %}" 
+                                                       class="btn btn-primary btn-sm"
+                                                       target="_blank">
+                                                        <i class="fas fa-download me-1"></i> Descargar PDF
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer bg-light py-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-1"></i> {{ año_lectivo.anho }}
+                                                    <!-- Mostrar grado para este año -->
+                                                    {% for matricula in estudiante.matriculas.all %}
+                                                        {% if matricula.año_lectivo_id == año_lectivo.id %}
+                                                        <i class="fas fa-graduation-cap ms-2 me-1"></i>
+                                                        {{ matricula.grado_año_lectivo.grado.nombre }}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Observador -->
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-start mb-3">
+                                                    <div class="flex-shrink-0">
+                                                        <div class="bg-warning bg-opacity-10 p-2 rounded">
+                                                            <i class="fas fa-user-check text-warning fa-2x"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1 ms-3">
+                                                        <h6 class="card-title mb-1">Observador</h6>
+                                                        <p class="card-text small text-muted mb-2">
+                                                            Comportamiento {{ año_lectivo.anho }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="d-grid">
+                                                    <a href="{% url 'acudiente:observador_pdf' estudiante.id año_lectivo.id %}" 
+                                                       class="btn btn-warning btn-sm"
+                                                       target="_blank">
+                                                        <i class="fas fa-download me-1"></i> Descargar PDF
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer bg-light py-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-1"></i> {{ año_lectivo.anho }}
+                                                    {% for matricula in estudiante.matriculas.all %}
+                                                        {% if matricula.año_lectivo_id == año_lectivo.id %}
+                                                        <i class="fas fa-graduation-cap ms-2 me-1"></i>
+                                                        {{ matricula.grado_año_lectivo.grado.nombre }}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Boletín Final -->
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-start mb-3">
+                                                    <div class="flex-shrink-0">
+                                                        <div class="bg-success bg-opacity-10 p-2 rounded">
+                                                            <i class="fas fa-chart-bar text-success fa-2x"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1 ms-3">
+                                                        <h6 class="card-title mb-1">Boletín Final</h6>
+                                                        <p class="card-text small text-muted mb-2">
+                                                            Calificaciones finales {{ año_lectivo.anho }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="d-grid">
+                                                    <a href="{% url 'acudiente:boletin_pdf' estudiante.id año_lectivo.id %}" 
+                                                       class="btn btn-success btn-sm"
+                                                       target="_blank">
+                                                        <i class="fas fa-download me-1"></i> Descargar PDF
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer bg-light py-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-1"></i> {{ año_lectivo.anho }}
+                                                    {% for matricula in estudiante.matriculas.all %}
+                                                        {% if matricula.año_lectivo_id == año_lectivo.id %}
+                                                        <i class="fas fa-graduation-cap ms-2 me-1"></i>
+                                                        {{ matricula.grado_año_lectivo.grado.nombre }}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Separador entre años -->
+                                <div class="text-center mt-3">
+                                    <hr class="my-2">
+                                    <small class="text-muted">Documentos del año {{ año_lectivo.anho }}</small>
+                                </div>
+                            </div>
+                            
+                            {% if not forloop.last %}
+                            <hr class="my-3">
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay documentos históricos</h5>
+                        <p class="text-muted">
+                            No se encontraron documentos para años anteriores
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.year-documents-section {
+    transition: all 0.3s ease;
+}
+
+.documents-container {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.btn.collapsed .fa-chevron-up {
+    display: none;
+}
+
+.btn:not(.collapsed) .fa-chevron-down {
+    display: none;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle para mostrar/ocultar documentos de años anteriores
+    const toggleButtons = document.querySelectorAll('.toggle-documents');
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const yearId = this.getAttribute('data-year');
+            const container = document.getElementById(`documents-${yearId}`);
+            const icon = this.querySelector('i');
+            
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+                this.classList.add('collapsed');
+            } else {
+                container.style.display = 'none';
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+                this.classList.remove('collapsed');
+            }
+        });
+    });
+    
+    // Expandir automáticamente el primer año (si no es el actual)
+    const firstYearSection = document.querySelector('.year-documents-section');
+    if (firstYearSection) {
+        const toggleBtn = firstYearSection.querySelector('.toggle-documents');
+        if (toggleBtn) {
+            toggleBtn.click();
+        }
+    }
+});
+</script>
+{% endblock %}

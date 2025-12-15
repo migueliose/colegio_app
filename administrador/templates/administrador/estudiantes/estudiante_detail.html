@@ -1,0 +1,874 @@
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block title %}Administración - {{ estudiante.usuario.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- HEADER PRINCIPAL -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card admin-card">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="me-3">
+                                    {% if estudiante.foto %}
+                                    <img src="{{ estudiante.foto.url }}" alt="Foto" 
+                                         class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" 
+                                         style="width: 80px; height: 80px;">
+                                        <i class="fas fa-user-graduate fa-2x text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h1 class="h3 mb-1">
+                                        <i class="fas fa-user-graduate me-2 text-primary"></i>
+                                        {{ estudiante.usuario.get_full_name }}
+                                    </h1>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-primary me-2">Estudiante</span>
+                                        <span class="badge {% if estudiante.estado %}bg-success{% else %}bg-danger{% endif %} me-2">
+                                            {% if estudiante.estado %}Activo{% else %}Inactivo{% endif %}
+                                        </span>
+                                        <small class="text-muted">
+                                            ID: {{ estudiante.pk }} | 
+                                            {{ estudiante.usuario.numero_documento }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                                    <i class="fas fa-cog me-1"></i> Acciones
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    {% for accion in acciones_disponibles %}
+                                    <li>
+                                        <a class="dropdown-item" href="{{ accion.url }}">
+                                            <i class="{{ accion.icono }} text-{{ accion.color }} me-2"></i>
+                                            {{ accion.nombre }}
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="{% url 'administrador:estudiante_delete' estudiante.pk %}">
+                                            <i class="fas fa-user-times me-2"></i>
+                                            Desactivar Estudiante
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL DE ESTADÍSTICAS RÁPIDAS -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card admin-card border-start border-5 border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">Rendimiento</h6>
+                            <h3 class="mb-0">{{ estadisticas_notas.promedio_general }}</h3>
+                            <small class="text-muted">Promedio general</small>
+                        </div>
+                        <div class="align-self-center">
+                            <span class="badge bg-{{ estadisticas_notas.color_rendimiento }} p-2">
+                                {{ estadisticas_notas.rendimiento }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-chart-line me-1"></i>
+                            {{ estadisticas_notas.aprobadas }}/{{ estadisticas_notas.total_notas }} aprobadas
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card admin-card border-start border-5 border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">Asistencia</h6>
+                            <h3 class="mb-0">{{ estadisticas_asistencia.porcentaje }}%</h3>
+                            <small class="text-muted">Tasa de asistencia</small>
+                        </div>
+                        <div class="align-self-center">
+                            <span class="badge bg-{{ estadisticas_asistencia.color_tendencia }} p-2">
+                                {{ estadisticas_asistencia.tendencia }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar-check me-1"></i>
+                            {{ estadisticas_asistencia.asistencias }}/{{ estadisticas_asistencia.total }} días
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card admin-card border-start border-5 border-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">Comportamiento</h6>
+                            <h3 class="mb-0">{{ estadisticas_comportamiento.ratio_positivos }}%</h3>
+                            <small class="text-muted">Positivos</small>
+                        </div>
+                        <div class="align-self-center">
+                            <span class="badge bg-{{ estadisticas_comportamiento.color_tendencia }} p-2">
+                                {{ estadisticas_comportamiento.tendencia }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-balance-scale me-1"></i>
+                            {{ estadisticas_comportamiento.positivos }}/{{ estadisticas_comportamiento.total }} registros
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card admin-card border-start border-5 border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">Riesgo Académico</h6>
+                            <h3 class="mb-0">{{ estadisticas_avanzadas.riesgo|default:"N/A" }}</h3>
+                            <small class="text-muted">Nivel de riesgo</small>
+                        </div>
+                        <div class="align-self-center">
+                            {% if estadisticas_avanzadas.color_riesgo %}
+                            <span class="badge bg-{{ estadisticas_avanzadas.color_riesgo }} p-2">
+                                {{ estadisticas_avanzadas.riesgo }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            Basado en rendimiento reciente
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- COLUMNA IZQUIERDA - INFORMACIÓN Y ACCIONES -->
+        <div class="col-lg-4">
+            <!-- TARJETA DE INFORMACIÓN PERSONAL -->
+            <div class="card admin-card mb-4">
+                <div class="card-header admin-card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-id-card me-2"></i>Información Personal</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item px-0 border-0">
+                            <div class="row">
+                                <div class="col-5"><small class="text-muted">Documento</small></div>
+                                <div class="col-7 text-end">
+                                    <strong>{{ estudiante.usuario.numero_documento }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item px-0 border-0">
+                            <div class="row">
+                                <div class="col-5"><small class="text-muted">Fecha Nac.</small></div>
+                                <div class="col-7 text-end">
+                                    <strong>{{ estudiante.usuario.fecha_nacimiento|date:"d/m/Y"|default:"No registrada" }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item px-0 border-0">
+                            <div class="row">
+                                <div class="col-5"><small class="text-muted">Edad</small></div>
+                                <div class="col-7 text-end">
+                                    <strong>{{ estudiante.usuario.edad|default:"-" }} años</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item px-0 border-0">
+                            <div class="row">
+                                <div class="col-5"><small class="text-muted">Sexo</small></div>
+                                <div class="col-7 text-end">
+                                    <strong>
+                                        {% if estudiante.usuario.sexo == 'M' %}
+                                        Masculino
+                                        {% elif estudiante.usuario.sexo == 'F' %}
+                                        Femenino
+                                        {% else %}
+                                        No especificado
+                                        {% endif %}
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item px-0 border-0">
+                            <div class="row">
+                                <div class="col-5"><small class="text-muted">Contacto</small></div>
+                                <div class="col-7 text-end">
+                                    <div>
+                                        {% if estudiante.usuario.telefono %}
+                                        <small class="d-block">{{ estudiante.usuario.telefono }}</small>
+                                        {% endif %}
+                                        {% if estudiante.usuario.email %}
+                                        <small class="d-block">{{ estudiante.usuario.email }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item px-0 border-0">
+                            <div class="row">
+                                <div class="col-5"><small class="text-muted">Dirección</small></div>
+                                <div class="col-7 text-end">
+                                    <small>{{ estudiante.usuario.direccion|default:"No registrada"|truncatechars:30 }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MATRÍCULA ACTUAL -->
+            <div class="card admin-card mb-4">
+                <div class="card-header admin-card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-school me-2"></i>Matrícula Actual</h5>
+                </div>
+                <div class="card-body">
+                    {% if matricula_actual %}
+                    <div class="mb-3 text-center">
+                        <h4 class="text-primary">{{ matricula_actual.grado_año_lectivo.grado.nombre }}</h4>
+                        <p class="text-muted mb-1">
+                            {{ matricula_actual.sede.nombre }} - {{ matricula_actual.año_lectivo.anho }}
+                        </p>
+                        <span class="badge {% if matricula_actual.estado == 'ACT' %}bg-success{% else %}bg-warning{% endif %}">
+                            {{ matricula_actual.get_estado_display }}
+                        </span>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'administrador:matricula_update' matricula_actual.pk %}" 
+                           class="btn btn-outline-primary action-btn">
+                            <i class="fas fa-edit me-1"></i> Gestionar Matrícula
+                        </a>
+                        <a href="{% url 'administrador:estudiante_matriculas' estudiante.pk %}" 
+                           class="btn btn-outline-secondary action-btn">
+                            <i class="fas fa-history me-1"></i> Ver Historial
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
+                        <p class="text-muted mb-3">Sin matrícula activa</p>
+                        <a href="{% url 'administrador:matricula_create' %}?estudiante_id={{ estudiante.pk }}" 
+                           class="btn btn-primary action-btn">
+                            <i class="fas fa-plus me-1"></i> Crear Matrícula
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- ACUDIENTES -->
+            <div class="card admin-card">
+                <div class="card-header admin-card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-user-friends me-2"></i>Acudientes</h5>
+                        <span class="badge bg-primary">{{ acudientes|length }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if acudientes %}
+                    {% for acudiente in acudientes|slice:":2" %}
+                    <div class="mb-3 {% if not forloop.last %}border-bottom pb-3{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">{{ acudiente.acudiente.get_full_name }}</h6>
+                            <span class="badge bg-info">{{ acudiente.parentesco }}</span>
+                        </div>
+                        <p class="small text-muted mb-1">
+                            <i class="fas fa-id-card me-1"></i> {{ acudiente.acudiente.numero_documento }}
+                        </p>
+                        {% if acudiente.acudiente.telefono %}
+                        <p class="small text-muted mb-1">
+                            <i class="fas fa-phone me-1"></i> {{ acudiente.acudiente.telefono }}
+                        </p>
+                        {% endif %}
+                        <div class="mt-2">
+                            <a href="{% url 'administrador:acudiente_detail' acudiente.pk %}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'administrador:acudiente_update' acudiente.pk %}" 
+                               class="btn btn-sm btn-outline-warning">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if acudientes|length > 2 %}
+                    <div class="text-center mt-3">
+                        <a href="#" class="btn btn-sm btn-outline-secondary">
+                            + {{ acudientes|length|add:"-2" }} más
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'administrador:acudiente_create' %}?estudiante_id={{ estudiante.pk }}" 
+                           class="btn btn-outline-success w-100 action-btn">
+                            <i class="fas fa-plus me-1"></i> Agregar Acudiente
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-user-times fa-2x text-muted mb-3"></i>
+                        <p class="text-muted mb-3">Sin acudientes registrados</p>
+                        <a href="{% url 'administrador:acudiente_create' %}?estudiante_id={{ estudiante.pk }}" 
+                           class="btn btn-success action-btn">
+                            <i class="fas fa-plus me-1"></i> Agregar Primer Acudiente
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA - INFORMACIÓN ACADÉMICA -->
+        <div class="col-lg-8">
+            <!-- PESTAÑAS PRINCIPALES -->
+            <div class="card admin-card mb-4">
+                <div class="card-header bg-light p-0 border-0">
+                    <ul class="nav nav-tabs nav-tabs-admin" id="estudianteTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="rendimiento-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#rendimiento" type="button">
+                                <i class="fas fa-chart-line me-1"></i> Rendimiento
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="asistencia-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#asistencia" type="button">
+                                <i class="fas fa-calendar-check me-1"></i> Asistencia
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="comportamiento-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#comportamiento" type="button">
+                                <i class="fas fa-clipboard-check me-1"></i> Comportamiento
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="documentos-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#documentos" type="button">
+                                <i class="fas fa-file-alt me-1"></i> Documentos
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="estudianteTabsContent">
+                        <!-- PESTAÑA RENDIMIENTO -->
+                        <div class="tab-pane fade show active" id="rendimiento" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    {% if datos_graficos.rendimiento %}
+                                    <div class="chart-admin">
+                                        <canvas id="chartRendimiento"></canvas>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">No hay datos de rendimiento</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="list-group list-group-flush">
+                                        <div class="list-group-item border-0">
+                                            <small class="text-muted d-block">Mejor Nota</small>
+                                            <h5 class="mb-0 text-success">{{ estadisticas_notas.mejor_nota }}</h5>
+                                        </div>
+                                        <div class="list-group-item border-0">
+                                            <small class="text-muted d-block">Peor Nota</small>
+                                            <h5 class="mb-0 text-danger">{{ estadisticas_notas.peor_nota }}</h5>
+                                        </div>
+                                        <div class="list-group-item border-0">
+                                            <small class="text-muted d-block">% Aprobación</small>
+                                            <h5 class="mb-0">{{ estadisticas_notas.porcentaje_aprobacion }}%</h5>
+                                        </div>
+                                        <div class="list-group-item border-0">
+                                            <small class="text-muted d-block">Desviación</small>
+                                            <h5 class="mb-0">{{ estadisticas_notas.desviacion }}</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h6 class="mb-3">Notas Recientes</h6>
+                                {% if notas_recientes %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Asignatura</th>
+                                                <th>Periodo</th>
+                                                <th>Calificación</th>
+                                                <th>Fecha</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for nota in notas_recientes %}
+                                            <tr>
+                                                <td>{{ nota.asignatura_grado_año_lectivo.asignatura.nombre }}</td>
+                                                <td>{{ nota.periodo_academico.periodo.nombre }}</td>
+                                                <td>
+                                                    <span class="badge {% if nota.calificacion >= 3.0 %}bg-success{% else %}bg-danger{% endif %}">
+                                                        {{ nota.calificacion }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ nota.updated_at|date:"d/m/Y" }}</td>
+                                                <td>
+                                                    <a href="#" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <p class="text-muted">No hay notas registradas</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- PESTAÑA ASISTENCIA -->
+                        <div class="tab-pane fade" id="asistencia" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    {% if datos_graficos.asistencia %}
+                                    <div class="chart-admin">
+                                        <canvas id="chartAsistencia"></canvas>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">No hay datos de asistencia</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="list-group list-group-flush">
+                                        <div class="list-group-item border-0">
+                                            <small class="text-muted d-block">Total Días</small>
+                                            <h5 class="mb-0">{{ estadisticas_asistencia.total }}</h5>
+                                        </div>
+                                        <div class="list-group-item border-0">
+                                            <small class="text-muted d-block">Asistencias</small>
+                                            <h5 class="mb-0 text-success">{{ estadisticas_asistencia.asistencias }}</h5>
+                                        </div>
+                                        <div class="list-group-item border-0">
+                                            <small class="text-muted d-block">Faltas</small>
+                                            <h5 class="mb-0 text-danger">{{ estadisticas_asistencia.faltas }}</h5>
+                                        </div>
+                                        <div class="list-group-item border-0">
+                                            <small class="text-muted d-block">Justificadas</small>
+                                            <h5 class="mb-0 text-warning">{{ estadisticas_asistencia.justificadas }}</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h6 class="mb-3">Asistencias Recientes</h6>
+                                {% if asistencias_recientes %}
+                                <div class="row">
+                                    {% for asistencia in asistencias_recientes %}
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card border">
+                                            <div class="card-body p-3">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-0">{{ asistencia.fecha|date:"d/m" }}</h6>
+                                                        <small class="text-muted">{{ asistencia.fecha|date:"Y" }}</small>
+                                                    </div>
+                                                    <div>
+                                                        {% if asistencia.estado == 'A' %}
+                                                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                                                        {% elif asistencia.estado == 'F' %}
+                                                        <i class="fas fa-times-circle fa-2x text-danger"></i>
+                                                        {% else %}
+                                                        <i class="fas fa-exclamation-circle fa-2x text-warning"></i>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                {% if asistencia.justificacion %}
+                                                <small class="text-muted d-block mt-2">
+                                                    {{ asistencia.justificacion|truncatechars:30 }}
+                                                </small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-muted">No hay registros de asistencia</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- PESTAÑA COMPORTAMIENTO -->
+                        <div class="tab-pane fade" id="comportamiento" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    {% if datos_graficos.comportamiento %}
+                                    <div class="chart-admin">
+                                        <canvas id="chartComportamiento"></canvas>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">No hay datos de comportamiento</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="list-group list-group-flush">
+                                        <div class="list-group-item border-0">
+                                            <small class="text-muted d-block">Total Registros</small>
+                                            <h5 class="mb-0">{{ estadisticas_comportamiento.total }}</h5>
+                                        </div>
+                                        <div class="list-group-item border-0">
+                                            <small class="text-muted d-block">Positivos</small>
+                                            <h5 class="mb-0 text-success">{{ estadisticas_comportamiento.positivos }}</h5>
+                                        </div>
+                                        <div class="list-group-item border-0">
+                                            <small class="text-muted d-block">Negativos</small>
+                                            <h5 class="mb-0 text-danger">{{ estadisticas_comportamiento.negativos }}</h5>
+                                        </div>
+                                        <div class="list-group-item border-0">
+                                            <small class="text-muted d-block">Ratio Positivos</small>
+                                            <h5 class="mb-0">{{ estadisticas_comportamiento.ratio_positivos }}%</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h6 class="mb-3">Últimos Comportamientos</h6>
+                                {% if comportamientos %}
+                                <div class="timeline-admin">
+                                    {% for comp in comportamientos %}
+                                    <div class="timeline-item-admin">
+                                        <div class="d-flex justify-content-between">
+                                            <h6 class="mb-1">
+                                                {% if comp.tipo == 'Positivo' %}
+                                                <i class="fas fa-plus-circle text-success me-2"></i>
+                                                {% else %}
+                                                <i class="fas fa-minus-circle text-danger me-2"></i>
+                                                {% endif %}
+                                                {{ comp.get_categoria_display }}
+                                            </h6>
+                                            <small>{{ comp.fecha|date:"d/m/Y" }}</small>
+                                        </div>
+                                        <p class="mb-1">{{ comp.descripcion|truncatechars:100 }}</p>
+                                        <small class="text-muted">
+                                            {% if comp.docente %}
+                                            Registrado por: {{ comp.docente.usuario.get_full_name }}
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-muted">No hay registros de comportamiento</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- PESTAÑA DOCUMENTOS -->
+                        <div class="tab-pane fade" id="documentos" role="tabpanel">
+                            <div class="row">
+                                {% for doc in documentos_estudiante %}
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card border h-100">
+                                            <div class="card-body text-center">
+                                                <div class="mb-3">
+                                                    <i class="fas {{ doc.icono }} fa-3x text-{{ doc.color }}"></i>
+                                                </div>
+                                                <h6 class="card-title">{{ doc.nombre }}</h6>
+                                                <p class="card-text small text-muted">
+                                                    {{ doc.año }}
+                                                </p>
+                                                <a href="{{ doc.url }}" target="_blank" class="btn btn-outline-{{ doc.color }} w-100">
+                                                    <i class="fas fa-download me-1"></i> Descargar
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                <div class="col-12">
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">No hay documentos disponibles</p>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h6 class="mb-3">Generar Documentos {% if año_actual %}({{ año_actual.anho }}){% endif %}</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        {% if año_actual and año_actual.id %}
+                                            <a href="{% url 'administrador:constancia_pdf' estudiante.id año_actual.id %}" 
+                                            target="_blank" class="btn btn-outline-primary w-100">
+                                                <i class="fas fa-file-certificate me-1"></i> Constancia
+                                            </a>
+                                        {% else %}
+                                            <button class="btn btn-outline-secondary w-100" disabled>
+                                                <i class="fas fa-file-certificate me-1"></i> No disponible
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        {% if año_actual and año_actual.id %}
+                                            <a href="{% url 'administrador:observador_pdf' estudiante.id año_actual.id %}" 
+                                            target="_blank" class="btn btn-outline-warning w-100">
+                                                <i class="fas fa-clipboard-list me-1"></i> Observador
+                                            </a>
+                                        {% else %}
+                                            <button class="btn btn-outline-secondary w-100" disabled>
+                                                <i class="fas fa-clipboard-list me-1"></i> No disponible
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        {% if año_actual and año_actual.id %}
+                                            <a href="{% url 'administrador:boletin_pdf' estudiante.id año_actual.id %}" 
+                                            target="_blank" class="btn btn-outline-success w-100">
+                                                <i class="fas fa-chart-bar me-1"></i> Boletín
+                                            </a>
+                                        {% else %}
+                                            <button class="btn btn-outline-secondary w-100" disabled>
+                                                <i class="fas fa-chart-bar me-1"></i> No disponible
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INCONSISTENCIAS Y OBSERVACIONES -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card admin-card h-100">
+                        <div class="card-header admin-card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Inconsistencias</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if inconsistencias %}
+                            <div class="list-group list-group-flush">
+                                {% for inc in inconsistencias %}
+                                <div class="list-group-item border-0 px-0">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="mb-1">{{ inc.tipo }}</h6>
+                                        <small>{{ inc.fecha|date:"d/m/Y" }}</small>
+                                    </div>
+                                    <p class="mb-1 small">{{ inc.descripcion|truncatechars:80 }}</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-3">
+                                <i class="fas fa-check-circle fa-2x text-success mb-3"></i>
+                                <p class="text-muted mb-0">Sin inconsistencias registradas</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ÚLTIMAS ACTIVIDADES -->
+                <div class="col-md-6">
+                    <div class="card admin-card h-100">
+                        <div class="card-header admin-card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-history me-2"></i>Últimas Actividades</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if ultimas_actividades %}
+                            <div class="timeline-admin">
+                                {% for actividad in ultimas_actividades %}
+                                <div class="timeline-item-admin">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas {{ actividad.icono }} text-{{ actividad.color }}"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <p class="mb-1 small">{{ actividad.descripcion }}</p>
+                                            <small class="text-muted">{{ actividad.fecha|timesince }} atrás</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-3">
+                                <i class="fas fa-info-circle fa-2x text-muted mb-3"></i>
+                                <p class="text-muted mb-0">No hay actividades recientes</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALES Y SCRIPT -->
+{% endblock %}
+
+{% block extra_js %}
+<!-- Incluir Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Inicializar pestañas
+    $('#estudianteTabs a').on('click', function (e) {
+        e.preventDefault();
+        $(this).tab('show');
+    });
+
+    // Inicializar gráficos si hay datos
+    {% if datos_graficos.rendimiento %}
+    const ctxRendimiento = document.getElementById('chartRendimiento').getContext('2d');
+    new Chart(ctxRendimiento, {
+        type: 'line',
+        data: {{ datos_graficos.rendimiento|safe }},
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 5,
+                    ticks: {
+                        stepSize: 0.5
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    {% if datos_graficos.asistencia %}
+    const ctxAsistencia = document.getElementById('chartAsistencia').getContext('2d');
+    new Chart(ctxAsistencia, {
+        type: 'bar',
+        data: {{ datos_graficos.asistencia|safe }},
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    {% if datos_graficos.comportamiento %}
+    const ctxComportamiento = document.getElementById('chartComportamiento').getContext('2d');
+    new Chart(ctxComportamiento, {
+        type: 'bar',
+        data: {{ datos_graficos.comportamiento|safe }},
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    // Confirmación para acciones peligrosas
+    $('.btn-danger').on('click', function(e) {
+        if (!confirm('¿Está seguro de realizar esta acción? Esta acción no se puede deshacer.')) {
+            e.preventDefault();
+        }
+    });
+
+    // Tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

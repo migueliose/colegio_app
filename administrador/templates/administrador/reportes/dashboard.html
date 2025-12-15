@@ -1,0 +1,375 @@
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block title %}Dashboard de Reportes - Colegio App{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-counter {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    
+    .card-icon {
+        font-size: 2rem;
+        opacity: 0.8;
+    }
+    
+    .quick-action {
+        transition: transform 0.2s;
+    }
+    
+    .quick-action:hover {
+        transform: translateY(-5px);
+    }
+    
+    .recent-item {
+        border-left: 4px solid #0d6efd;
+        padding-left: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .stat-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+    }
+    
+    .stat-card:hover {
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">Dashboard de Reportes</h1>
+            <p class="text-muted">Panel principal de estadísticas y reportes del sistema</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary" onclick="window.print()">
+                <i class="bi bi-printer me-2"></i>Imprimir
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtro rápido -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">Año Lectivo</label>
+                    <select class="form-select" id="filterYear">
+                        <option value="">Todos los años</option>
+                        {% for año in años_lectivos %}
+                        <option value="{{ año.id }}" {% if año_actual and año.id == año_actual.id %}selected{% endif %}>
+                            {{ año.anho }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Sede</label>
+                    <select class="form-select" id="filterSede">
+                        <option value="">Todas las sedes</option>
+                        {% for sede in sedes %}
+                        <option value="{{ sede.id }}">{{ sede.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Grado</label>
+                    <select class="form-select" id="filterGrado">
+                        <option value="">Todos los grados</option>
+                        {% for grado in grados %}
+                        <option value="{{ grado.id }}">{{ grado.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" onclick="aplicarFiltros()">
+                        <i class="bi bi-filter me-2"></i>Aplicar Filtros
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-start border-primary border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <h6 class="text-uppercase text-muted mb-0">Total Estudiantes</h6>
+                            <h2 class="card-counter text-primary mb-0">{{ total_estudiantes }}</h2>
+                            <p class="text-muted mb-0">Activos en sistema</p>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="bi bi-people-fill card-icon text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-start border-success border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <h6 class="text-uppercase text-muted mb-0">Estudiantes Activos</h6>
+                            <h2 class="card-counter text-success mb-0">{{ estudiantes_activos }}</h2>
+                            <p class="text-muted mb-0">Matriculados</p>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="bi bi-person-check-fill card-icon text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-start border-info border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <h6 class="text-uppercase text-muted mb-0">Total Docentes Activos</h6>
+                            <h2 class="card-counter text-info mb-0">{{ total_docentes }}</h2>
+                            <p class="text-muted mb-0">Activos en sistema</p>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="bi bi-person-badge-fill card-icon text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-start border-warning border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <h6 class="text-uppercase text-muted mb-0">Año Lectivo Activo</h6>
+                            <h2 class="card-counter text-warning mb-0">
+                                {% if año_actual %}{{ año_actual.anho }}{% else %}No activo{% endif %}
+                            </h2>
+                            <p class="text-muted mb-0">
+                                {% if año_actual %}{{ año_actual.sede.nombre }}{% else %}No configurado{% endif %}
+                            </p>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="bi bi-calendar-check-fill card-icon text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reportes rápidos -->
+    <div class="row mb-4">
+        <div class="col-12 mb-3">
+            <h4 class="mb-3">Acceso rápido a reportes</h4>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <a href="{% url 'administrador:reporte_estudiantes' %}" class="card quick-action text-decoration-none">
+                <div class="card-body text-center">
+                    <i class="bi bi-people-fill text-primary mb-3" style="font-size: 2rem;"></i>
+                    <h6 class="card-title">Estudiantes</h6>
+                    <p class="text-muted small">Listados y estadísticas</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <a href="{% url 'administrador:reporte_notas' %}" class="card quick-action text-decoration-none">
+                <div class="card-body text-center">
+                    <i class="bi bi-journal-text text-success mb-3" style="font-size: 2rem;"></i>
+                    <h6 class="card-title">Notas</h6>
+                    <p class="text-muted small">Boletines y promedios</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <a href="{% url 'administrador:reporte_asistencia' %}" class="card quick-action text-decoration-none">
+                <div class="card-body text-center">
+                    <i class="bi bi-calendar-check text-info mb-3" style="font-size: 2rem;"></i>
+                    <h6 class="card-title">Asistencia</h6>
+                    <p class="text-muted small">Control y porcentajes</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <a href="{% url 'administrador:reporte_comportamiento' %}" class="card quick-action text-decoration-none">
+                <div class="card-body text-center">
+                    <i class="bi bi-emoji-smile text-warning mb-3" style="font-size: 2rem;"></i>
+                    <h6 class="card-title">Comportamiento</h6>
+                    <p class="text-muted small">Escolar</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <a href="{% url 'administrador:reporte_estudiantes_riesgo' %}" class="card quick-action text-decoration-none">
+                <div class="card-body text-center">
+                    <i class="bi bi-exclamation-triangle text-danger mb-3" style="font-size: 2rem;"></i>
+                    <h6 class="card-title">Estudiantes </h6>
+                    <p class="text-muted small">En riesgo</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <a href="{% url 'administrador:reporte_logros' %}" class="card quick-action text-decoration-none">
+                <div class="card-body text-center">
+                    <i class="bi bi-trophy-fill text-purple mb-3" style="font-size: 2rem;"></i>
+                    <h6 class="card-title">Logros</h6>
+                    <p class="text-muted small">Académicos</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Contenido reciente -->
+    <div class="row">
+        <!-- Notas recientes -->
+        <div class="col-xl-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Notas recientes</h5>
+                    <a href="{% url 'administrador:reporte_notas' %}" class="btn btn-sm btn-outline-primary">Ver todas</a>
+                </div>
+                <div class="card-body">
+                    {% if notas_recientes %}
+                        {% for nota in notas_recientes %}
+                        <div class="recent-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ nota.estudiante.usuario.get_full_name }}</strong>
+                                <span class="badge bg-primary rounded-pill">{{ nota.calificacion }}</span>
+                            </div>
+                            <small class="text-muted">
+                                {{ nota.asignatura_grado_año_lectivo.asignatura.nombre }}
+                                <span class="ms-2">{{ nota.created_at|date:"d/m/Y H:i" }}</span>
+                            </small>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-journal-x text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-2">No hay notas recientes</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Comportamientos recientes -->
+        <div class="col-xl-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-emoji-smile me-2"></i>Comportamientos recientes</h5>
+                    <a href="{% url 'administrador:reporte_comportamiento' %}" class="btn btn-sm btn-outline-primary">Ver todas</a>
+                </div>
+                <div class="card-body">
+                    {% if comportamientos_recientes %}
+                        {% for comp in comportamientos_recientes %}
+                        <div class="recent-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ comp.estudiante.usuario.get_full_name }}</strong>
+                                <span class="badge {% if comp.tipo == 'Positivo' %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
+                                    {{ comp.tipo }}
+                                </span>
+                            </div>
+                            <p class="mb-1 small">{{ comp.descripcion|truncatechars:60 }}</p>
+                            <small class="text-muted">
+                                {{ comp.categoria }}
+                                <span class="ms-2">{{ comp.fecha|date:"d/m/Y" }}</span>
+                            </small>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-emoji-neutral text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-2">No hay comportamientos recientes</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas adicionales -->
+    {% if año_actual %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Estadísticas del Año {{ año_actual.anho }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 border rounded">
+                                <h3 class="text-primary">{{ estudiantes_activos }}</h3>
+                                <p class="mb-0 text-muted">Estudiantes Activos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 border rounded">
+                                <h3 class="text-success">{{ año_actual.sede.nombre }}</h3>
+                                <p class="mb-0 text-muted">Sede Principal</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 border rounded">
+                                <h3 class="text-info">{{ grados.count }}</h3>
+                                <p class="mb-0 text-muted">Grados Ofrecidos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 border rounded">
+                                <h3 class="text-warning">{{ sedes.count }}</h3>
+                                <p class="mb-0 text-muted">Sedes Activas</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function aplicarFiltros() {
+        const year = document.getElementById('filterYear').value;
+        const sede = document.getElementById('filterSede').value;
+        const grado = document.getElementById('filterGrado').value;
+        
+        let url = '?';
+        if (year) url += `año_lectivo=${year}&`;
+        if (sede) url += `sede=${sede}&`;
+        if (grado) url += `grado=${grado}`;
+        
+        window.location.href = url;
+    }
+    
+    // Cargar estadísticas dinámicas
+    $(document).ready(function() {
+        // Puedes cargar datos adicionales via AJAX aquí
+        console.log('Dashboard de reportes cargado');
+    });
+</script>
+{% endblock %}

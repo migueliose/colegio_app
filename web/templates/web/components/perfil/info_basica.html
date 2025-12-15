@@ -1,0 +1,18 @@
+<!-- Información Básica del Usuario -->
+{% load gestion_extras %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <p><strong>Usuario:</strong> {{ user.username }}</p>
+        <p><strong>Nombre:</strong> {{ user.nombres }} {{ user.apellidos }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+    </div>
+    <div class="col-md-6">
+        <p><strong>Último acceso:</strong> {{ user.last_login|date:"d M Y H:i" }}</p>
+        <p><strong>Fecha de registro:</strong> {{ user.date_joined|date:"d M Y" }}</p>
+        <p><strong>Estado:</strong> 
+            <span class="badge bg-{% if user.is_active %}success{% else %}danger{% endif %}">
+                {% if user.is_active %}Activo{% else %}Inactivo{% endif %}
+            </span>
+        </p>
+    </div>
+</div>

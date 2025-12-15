@@ -1,0 +1,199 @@
+<!-- gestioncolegio/templates/gestioncolegio/areas/area_form.html -->
+{% extends 'gestioncolegio/base2.html' %}
+
+{% block title %}{{ title }} - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'administrador:area_list' %}">Áreas Académicas</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Card principal -->
+            <div class="card shadow">
+                <div class="card-header {% if object %}bg-warning{% else %}bg-primary{% endif %} text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas {% if object %}fa-edit{% else %}fa-plus-circle{% endif %} me-2"></i>
+                        {{ title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate id="areaForm">
+                        {% csrf_token %}
+                        
+                        <!-- Nombre del Área -->
+                        <div class="mb-4">
+                            <label for="{{ form.nombre.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-signature me-1"></i> Nombre del Área
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nombre }}
+                            {% if form.nombre.help_text %}
+                            <div class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i> {{ form.nombre.help_text }}
+                            </div>
+                            {% endif %}
+                            {% if form.nombre.errors %}
+                            <div class="invalid-feedback d-block">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {% for error in form.nombre.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Nivel Escolar -->
+                        <div class="mb-4">
+                            <label for="{{ form.nivel_escolar.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-layer-group me-1"></i> Nivel Escolar
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nivel_escolar }}
+                            {% if form.nivel_escolar.help_text %}
+                            <div class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i> {{ form.nivel_escolar.help_text }}
+                            </div>
+                            {% endif %}
+                            {% if form.nivel_escolar.errors %}
+                            <div class="invalid-feedback d-block">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {% for error in form.nivel_escolar.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-5 pt-4 border-top">
+                            <a href="{% url 'administrador:area_list' %}" class="btn btn-lg btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-lg {% if object %}btn-warning{% else %}btn-primary{% endif %}">
+                                <i class="fas {% if object %}fa-save{% else %}fa-check-circle{% endif %} me-2"></i>
+                                {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Información sobre áreas -->
+            <div class="card shadow mt-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Información Útil
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">
+                                <i class="fas fa-school me-1"></i> Áreas para Preescolar
+                            </h6>
+                            <ul class="list-unstyled ms-3">
+                                <li><i class="fas fa-check-circle text-success me-2"></i> Desarrollo Personal y Social</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i> Expresión y Comunicación</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i> Exploración del Mundo</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">
+                                <i class="fas fa-university me-1"></i> Áreas para Primaria
+                            </h6>
+                            <ul class="list-unstyled ms-3">
+                                <li><i class="fas fa-check-circle text-success me-2"></i> Ciencias Naturales</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i> Ciencias Sociales</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i> Matemáticas</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i> Lenguaje</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i> Inglés</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Agregar clases Bootstrap a los campos
+    document.querySelectorAll('input[type="text"], select, textarea').forEach(field => {
+        if (!field.classList.contains('form-check-input')) {
+            field.classList.add('form-control');
+        }
+    });
+    
+    // Validación del formulario
+    const form = document.getElementById('areaForm');
+    form.addEventListener('submit', function(e) {
+        let valid = true;
+        
+        // Validar nombre
+        const nombre = document.getElementById('id_nombre');
+        if (!nombre.value.trim()) {
+            valid = false;
+            showError(nombre, 'El nombre del área es obligatorio');
+        } else if (nombre.value.trim().length < 3) {
+            valid = false;
+            showError(nombre, 'El nombre debe tener al menos 3 caracteres');
+        } else {
+            removeError(nombre);
+        }
+        
+        // Validar nivel escolar
+        const nivel = document.getElementById('id_nivel_escolar');
+        if (!nivel.value) {
+            valid = false;
+            showError(nivel, 'Debe seleccionar un nivel escolar');
+        } else {
+            removeError(nivel);
+        }
+        
+        if (!valid) {
+            e.preventDefault();
+            // Mostrar alerta
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Error:</strong> Por favor corrija los errores en el formulario.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            form.prepend(alertDiv);
+        }
+    });
+    
+    function showError(field, message) {
+        field.classList.add('is-invalid');
+        let errorDiv = field.nextElementSibling;
+        if (!errorDiv || !errorDiv.classList.contains('invalid-feedback')) {
+            errorDiv = document.createElement('div');
+            errorDiv.className = 'invalid-feedback d-block';
+            field.parentNode.appendChild(errorDiv);
+        }
+        errorDiv.innerHTML = `<i class="fas fa-exclamation-circle me-1"></i> ${message}`;
+    }
+    
+    function removeError(field) {
+        field.classList.remove('is-invalid');
+        const errorDiv = field.nextElementSibling;
+        if (errorDiv && errorDiv.classList.contains('invalid-feedback')) {
+            errorDiv.remove();
+        }
+    }
+    
+    // Auto-enfoque en el primer campo
+    document.getElementById('id_nombre').focus();
+});
+</script>
+{% endblock %}

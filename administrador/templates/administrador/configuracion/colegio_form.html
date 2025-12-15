@@ -1,0 +1,176 @@
+<!-- administrador/configuracion/colegio_form.html -->
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Configuración{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .form-section {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-left: 4px solid #667eea;
+    }
+    .form-section h6 {
+        color: #495057;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0 text-white">
+                            <i class="fas fa-school me-2"></i>{{ title }}
+                        </h4>
+                        <a href="{% url 'administrador:colegio_list' %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i> Volver
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="form-section">
+                            <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Información Básica</h6>
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                        Nombre del Colegio <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.nombre }}
+                                    {% if form.nombre.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.nombre.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="{{ form.direccion.id_for_label }}" class="form-label">
+                                        Dirección <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.direccion }}
+                                    {% if form.direccion.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.direccion.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h6 class="mb-3"><i class="fas fa-file-alt me-2"></i>Información Legal</h6>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.resolucion.id_for_label }}" class="form-label">
+                                        Resolución <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.resolucion }}
+                                    {% if form.resolucion.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.resolucion.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.dane.id_for_label }}" class="form-label">
+                                        Código DANE <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.dane }}
+                                    {% if form.dane.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.dane.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h6 class="mb-3"><i class="fas fa-cog me-2"></i>Configuración</h6>
+                            
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    {{ form.estado }}
+                                    <label class="form-check-label" for="{{ form.estado.id_for_label }}">
+                                        Colegio Activo
+                                    </label>
+                                </div>
+                                {% if form.estado.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.estado.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'administrador:colegio_list' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block inline_js %}
+<script>
+    // Añadir clases Bootstrap a los campos del formulario
+    document.addEventListener('DOMContentLoaded', function() {
+        const textInputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="url"], input[type="number"], select');
+        textInputs.forEach(input => {
+            input.classList.add('form-control');
+        });
+        
+        // Para el checkbox de estado (switch)
+        const estadoSwitch = document.getElementById('{{ form.estado.id_for_label }}');
+        if (estadoSwitch) {
+            estadoSwitch.classList.add('form-check-input');
+        }
+    });
+</script>
+{% endblock %}

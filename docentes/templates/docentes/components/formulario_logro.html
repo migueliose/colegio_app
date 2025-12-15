@@ -1,0 +1,180 @@
+<!--formulario_logro.html-->
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}{{ accion|default:"Crear" }} Logro - Sistema Docente{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-trophy me-2"></i>
+                        {{ accion|default:"Crear" }} Logro Académico
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="form-container">
+                        <form method="post" id="logroForm">
+                            {% csrf_token %}
+                            
+                            <!-- Información Básica -->
+                            <div class="form-section">
+                                <h5 class="mb-3">Información Básica</h5>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            {{ form.grado.label_tag }}
+                                            {{ form.grado }}
+                                            {% if form.grado.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.grado.errors }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            {{ form.asignatura.label_tag }}
+                                            {{ form.asignatura }}
+                                            {% if form.asignatura.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.asignatura.errors }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            {{ form.periodo_academico.label_tag }}
+                                            {{ form.periodo_academico }}
+                                            {% if form.periodo_academico.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.periodo_academico.errors }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="mb-3">
+                                            {{ form.tema.label_tag }}
+                                            {{ form.tema }}
+                                            {% if form.tema.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.tema.errors }}
+                                                </div>
+                                            {% endif %}
+                                            <small class="form-text text-muted">
+                                                Tema o unidad de aprendizaje para el cual se define el logro.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Desempeños por Nivel -->
+                            <div class="form-section">
+                                <h5 class="mb-3">Desempeños por Nivel</h5>
+                                
+                                <div class="performance-level superior">
+                                    <h6 class="text-success">
+                                        <i class="fas fa-star me-1"></i>Desempeño SUPERIOR (4.6 - 5.0)
+                                    </h6>
+                                    <div class="mb-3">
+                                        {{ form.descripcion_superior }}
+                                        {% if form.descripcion_superior.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.descripcion_superior.errors }}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">
+                                            Describe el logro cuando el estudiante supera ampliamente las expectativas.
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div class="performance-level alto">
+                                    <h6 class="text-info">
+                                        <i class="fas fa-thumbs-up me-1"></i>Desempeño ALTO (4.0 - 4.5)
+                                    </h6>
+                                    <div class="mb-3">
+                                        {{ form.descripcion_alto }}
+                                        {% if form.descripcion_alto.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.descripcion_alto.errors }}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">
+                                            Describe el logro cuando el estudiante cumple ampliamente con las expectativas.
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div class="performance-level basico">
+                                    <h6 class="text-warning">
+                                        <i class="fas fa-check me-1"></i>Desempeño BÁSICO (3.5 - 3.9)
+                                    </h6>
+                                    <div class="mb-3">
+                                        {{ form.descripcion_basico }}
+                                        {% if form.descripcion_basico.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.descripcion_basico.errors }}
+                                            </div>
+                                            {% endif %}
+                                        <small class="form-text text-muted">
+                                            Describe el logro cuando el estudiante cumple con las expectativas mínimas.
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div class="performance-level bajo">
+                                    <h6 class="text-danger">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Desempeño BAJO (0.0 - 3.4)
+                                    </h6>
+                                    <div class="mb-3">
+                                        {{ form.descripcion_bajo }}
+                                        {% if form.descripcion_bajo.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.descripcion_bajo.errors }}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">
+                                            Describe el logro cuando el estudiante no cumple con las expectativas mínimas.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Botones de Acción -->
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'docentes:lista_logros' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>Volver a la Lista
+                                </a>
+                                <div>
+                                    <button type="submit" name="seguir_creando" class="btn btn-outline-primary me-2">
+                                        <i class="fas fa-save me-1"></i>Guardar y Crear Otro
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-check me-1"></i>Guardar Logro
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'gestioncolegio/js/docente_forms.js' %}"></script>
+{% endblock %}

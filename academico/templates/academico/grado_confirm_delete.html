@@ -1,0 +1,132 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Eliminar Grado - {{ object.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger shadow-lg">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación
+                    </h4>
+                </div>
+                <div class="card-body text-center">
+                    <!-- Icono de advertencia -->
+                    <div class="mb-4">
+                        <i class="fas fa-trash-alt fa-4x text-danger mb-3"></i>
+                        <h3 class="text-danger">¿Está seguro?</h3>
+                    </div>
+
+                    <!-- Información del grado a eliminar -->
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-graduation-cap me-2"></i>
+                            {{ object.nombre }}
+                        </h5>
+                        <p class="mb-0">
+                            <strong>Nivel:</strong> {{ object.nivel_escolar.nombre }}<br>
+                            <strong>Fecha de creación:</strong> {{ object.created_at|date:"d/m/Y" }}
+                        </p>
+                    </div>
+
+                    <!-- Advertencias importantes -->
+                    <div class="alert alert-danger">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            ¡Atención! Esta acción no se puede deshacer.
+                        </h6>
+                        <ul class="text-start small mb-0">
+                            <li>Se eliminará permanentemente el grado del sistema</li>
+                            <li>Esto puede afectar a estudiantes matriculados en este grado</li>
+                            <li>Las asignaturas relacionadas podrían quedar sin grado asignado</li>
+                            <li>Los horarios de clase asociados se perderán</li>
+                        </ul>
+                    </div>
+
+                    <!-- Información de dependencias (si existe) -->
+                    {% with dependencias=object.get_dependencias %}
+                    {% if dependencias %}
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-link me-1"></i>
+                            Dependencias encontradas
+                        </h6>
+                        <p class="small mb-0">
+                            Este grado tiene {{ dependencias }} dependencia(s) asociada(s). 
+                            La eliminación afectará estos registros.
+                        </p>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+
+                    <!-- Formulario de confirmación -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <a href="{% url 'academico:grados_list' %}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-1"></i>Sí, Eliminar Grado
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Información adicional -->
+                    <div class="mt-4">
+                        <p class="text-muted small">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            <strong>Recomendación:</strong> 
+                            Considere desactivar el grado en lugar de eliminarlo para preservar la información histórica.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alternativa: Desactivar en lugar de eliminar -->
+            <div class="card mt-4 border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Alternativa Recomendada
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">
+                        En lugar de eliminar el grado, puede considerar marcarlo como inactivo. 
+                        Esto preservará todos los datos históricos y relaciones.
+                    </p>
+                    <div class="d-grid">
+                        <a href="{% url 'academico:grado_update' object.pk %}" class="btn btn-outline-warning">
+                            <i class="fas fa-edit me-1"></i>Editar y Marcar como Inactivo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-width: 2px;
+    }
+    
+    .alert {
+        border-left: 4px solid;
+    }
+    
+    .alert-warning {
+        border-left-color: #ffc107;
+    }
+    
+    .alert-danger {
+        border-left-color: #dc3545;
+    }
+    
+    .alert-info {
+        border-left-color: #0dcaf0;
+    }
+</style>
+{% endblock %}

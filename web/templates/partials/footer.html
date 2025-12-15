@@ -1,0 +1,152 @@
+{% load static %}
+{% load web_extras %}
+
+<!-- footer.html - ACTUALIZADO PARA USAR CLASES CSS EXISTENTES -->
+<footer class="footer-custom pt-5 pb-3">
+  <div class="container">
+    <div class="row gy-4">
+      
+      <!-- Columna 1 - Logo -->
+      <div class="col-lg-3 col-md-6">
+        <div class="d-flex align-items-center mb-3">
+          <img src="{% static 'web/images/logo.png' %}" 
+               alt="Logo Colegio El Shadai" 
+               width="50" 
+               class="me-3">
+          <div>
+            <h5 class="fw-bold mb-0 footer-title">Colegio Cristiano<br>El Shadai</h5>
+          </div>
+        </div>
+        <p class="small footer-text">
+          Formación integral basada en principios cristianos.<br>
+          <em class="footer-quote">"Instruye al niño en su camino…" – Proverbios 22:6</em>
+        </p>
+      </div>
+
+      <!-- Columna 2 - Contacto -->
+      <div class="col-lg-3 col-md-6">
+        <h5 class="fw-bold mb-3 footer-title">Contáctanos</h5>
+        <ul class="list-unstyled small">
+          <li class="mb-2 d-flex align-items-start">
+            <i class="fas fa-location-dot me-2 footer-icon mt-1"></i>
+            <span class="footer-text">Tv 26 No 16E-39, Valledupar</span>
+          </li>
+          <li class="mb-2 d-flex align-items-start">
+            <i class="fas fa-phone me-2 footer-icon mt-1"></i>
+            <span class="footer-text">318 886 8070</span>
+          </li>
+          <li class="d-flex align-items-start">
+            <i class="fas fa-envelope me-2 footer-icon mt-1"></i>
+            <a href="mailto:migueliose@colegiocrishadai.edu.co" 
+               class="footer-link text-decoration-none">
+              migueliose@colegiocrishadai.edu.co
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Columna 3 - Legal -->
+      <div class="col-lg-3 col-md-6">
+        <h5 class="fw-bold mb-3 footer-title">Políticas y Legal</h5>
+        
+        {% get_legal_pages as legal_pages %}
+        <ul class="list-unstyled small">
+          {% for page in legal_pages %}
+          <li class="mb-2">
+            <a href="{% url 'web:pagina_detalle' page.slug %}" 
+               class="footer-link text-decoration-none d-flex align-items-start">
+              <i class="fas fa-file-alt me-2 footer-icon mt-1"></i>
+              <span>{{ page.title }}</span>
+            </a>
+          </li>
+          {% empty %}
+          <li class="mb-2">
+            <a href="#" class="footer-link text-decoration-none d-flex align-items-start">
+              <i class="fas fa-shield-alt me-2 footer-icon mt-1"></i>
+              <span>Política de Privacidad</span>
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="#" class="footer-link text-decoration-none d-flex align-items-start">
+              <i class="fas fa-cookie me-2 footer-icon mt-1"></i>
+              <span>Política de Cookies</span>
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="#" class="footer-link text-decoration-none d-flex align-items-start">
+              <i class="fas fa-gavel me-2 footer-icon mt-1"></i>
+              <span>Aviso Legal</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <!-- Columna 4 - Redes Sociales -->
+      <div class="col-lg-3 col-md-6">
+        <h5 class="fw-bold mb-3 footer-title">Síguenos</h5>
+
+        <div class="social-box mb-4">
+          {% get_social_links as redes_sociales %}
+          {% if redes_sociales %}
+            {% for red in redes_sociales %}
+            <a href="{{ red.link }}" 
+               target="_blank" 
+               class="social-link mx-1" 
+               aria-label="{{ red.name }}" 
+               title="{{ red.name }}">
+              <i class="{{ red.icon_class }}"></i>
+            </a>
+            {% endfor %}
+          {% else %}
+          <a href="https://facebook.com" 
+             target="_blank" 
+             class="social-link mx-1" 
+             aria-label="Facebook" 
+             title="Facebook">
+            <i class="fab fa-facebook-f"></i>
+          </a>
+          <a href="https://instagram.com" 
+             target="_blank" 
+             class="social-link mx-1" 
+             aria-label="Instagram" 
+             title="Instagram">
+            <i class="fab fa-instagram"></i>
+          </a>
+          <a href="https://twitter.com" 
+             target="_blank" 
+             class="social-link mx-1" 
+             aria-label="Twitter" 
+             title="Twitter">
+            <i class="fab fa-twitter"></i>
+          </a>
+          {% endif %}
+        </div>
+
+        <div class="small">
+          <h6 class="fw-bold mb-2 footer-title">Horario de Atención</h6>
+          <p class="mb-2 footer-text d-flex align-items-start">
+            <i class="fas fa-clock me-2 footer-icon mt-1"></i>
+            <span>Lun – Vie: 7:00 AM – 4:00 PM</span>
+          </p>
+          <p class="mb-0 footer-text d-flex align-items-start">
+            <i class="fas fa-clock me-2 footer-icon mt-1"></i>
+            <span>Sábados: 8:00 AM – 12:00 PM</span>
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Línea inferior -->
+    <div class="text-center border-top footer-border mt-4 pt-3">
+      <p class="small mb-0 footer-text">
+        <i class="fas fa-heart text-danger me-1"></i>
+        © {% now "Y" %} Colegio Cristiano El Shadai — Todos los derechos reservados.
+        <span class="d-block d-sm-inline mt-1 mt-sm-0">
+          Desarrollado con ❤️ usando Django
+        </span>
+      </p>
+    </div>
+  </div>
+</footer>

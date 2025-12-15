@@ -1,0 +1,613 @@
+{% extends 'gestioncolegio/base2.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0">{{ title }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_administrador' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'administrador:acudiente_list' %}">Acudientes</a></li>
+                    <li class="breadcrumb-item active">{{ title }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'administrador:acudiente_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Información de la Relación de Acudiente</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="acudiente-form">
+                        {% csrf_token %}
+                        
+                        <!-- Campo oculto para indicar creación de nuevo usuario -->
+                        {{ form.crear_nuevo_usuario }}
+                        
+                        <!-- Mensajes de error del formulario -->
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <strong>Por favor corrija los siguientes errores:</strong>
+                            <ul>
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ field.label }}: {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        <div class="row g-3">
+                            <!-- Selección de Estudiante -->
+                            <div class="col-12">
+                                <label for="id_estudiante" class="form-label">Estudiante *</label>
+                                {{ form.estudiante }}
+                                <small class="form-text text-muted">
+                                    Seleccione el estudiante al que representa este acudiente
+                                </small>
+                            </div>
+
+                            <!-- Sección: Seleccionar Acudiente Existente -->
+                            <div class="col-12" id="seleccionar-acudiente-section">
+                                <div class="card border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-search me-2"></i>
+                                            Buscar Acudiente Existente
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Búsqueda de Usuario Acudiente -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Buscar Acudiente</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="search-acudiente" 
+                                                       placeholder="Buscar por nombre, apellido o documento...">
+                                                <button class="btn btn-outline-primary" type="button" 
+                                                        id="btn-search-acudiente">
+                                                    <i class="fas fa-search"></i> Buscar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Resultados de búsqueda -->
+                                        <div class="alert alert-info d-none" id="search-results">
+                                            <div id="search-results-content"></div>
+                                        </div>
+                                        
+                                        <!-- Selector de acudiente existente -->
+                                        <div class="mb-3">
+                                            <label for="id_acudiente" class="form-label">Acudiente Seleccionado</label>
+                                            {{ form.acudiente }}
+                                            <small class="form-text text-muted">
+                                                Seleccione un acudiente de la lista o busque uno nuevo
+                                            </small>
+                                        </div>
+                                        
+                                        <!-- Botón para crear nuevo acudiente -->
+                                        <div class="text-center">
+                                            <button type="button" class="btn btn-outline-success" id="btn-crear-nuevo">
+                                                <i class="fas fa-user-plus me-1"></i> Crear Nuevo Acudiente
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sección: Crear Nuevo Acudiente (oculta inicialmente) -->
+                            <div class="col-12 d-none" id="crear-nuevo-section">
+                                <div class="card border-success">
+                                    <div class="card-header bg-success text-white">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-user-plus me-2"></i>
+                                            Crear Nuevo Acudiente
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-3">
+                                            <!-- Documento -->
+                                            <div class="col-md-4">
+                                                <label for="id_nuevo_tipo_documento" class="form-label">Tipo de Documento *</label>
+                                                <select name="nuevo_tipo_documento" id="id_nuevo_tipo_documento" 
+                                                        class="form-control">
+                                                    <option value="">Seleccione...</option>
+                                                    {% for tipo in tipos_documento %}
+                                                    <option value="{{ tipo.id }}">{{ tipo.nombre }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <label for="id_nuevo_numero_documento" class="form-label">Número de Documento *</label>
+                                                <div class="input-group">
+                                                    <input type="text" name="nuevo_numero_documento" 
+                                                           id="id_nuevo_numero_documento" class="form-control"
+                                                           placeholder="Ingrese el número de documento">
+                                                    <button type="button" class="btn btn-outline-secondary" 
+                                                            id="verificar-documento-btn">
+                                                        Verificar
+                                                    </button>
+                                                </div>
+                                                <small class="form-text text-muted">
+                                                    El sistema verificará si este documento ya existe
+                                                </small>
+                                            </div>
+
+                                            <!-- Nombres y Apellidos -->
+                                            <div class="col-md-6">
+                                                <label for="id_nuevo_nombres" class="form-label">Nombres *</label>
+                                                <input type="text" name="nuevo_nombres" id="id_nuevo_nombres" 
+                                                       class="form-control" placeholder="Ingrese los nombres">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="id_nuevo_apellidos" class="form-label">Apellidos *</label>
+                                                <input type="text" name="nuevo_apellidos" id="id_nuevo_apellidos" 
+                                                       class="form-control" placeholder="Ingrese los apellidos">
+                                            </div>
+
+                                            <!-- Contacto -->
+                                            <div class="col-md-6">
+                                                <label for="id_nuevo_email" class="form-label">Email</label>
+                                                <input type="email" name="nuevo_email" id="id_nuevo_email" 
+                                                       class="form-control" placeholder="correo@ejemplo.com">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="id_nuevo_telefono" class="form-label">Teléfono</label>
+                                                <input type="text" name="nuevo_telefono" id="id_nuevo_telefono" 
+                                                       class="form-control" placeholder="Ingrese teléfono">
+                                            </div>
+
+                                            <!-- Contraseña -->
+                                            <div class="col-12">
+                                                <label for="id_nuevo_password" class="form-label">Contraseña</label>
+                                                <div class="input-group">
+                                                    <input type="password" name="nuevo_password" id="id_nuevo_password" 
+                                                           class="form-control" placeholder="Dejar en blanco para usar documento">
+                                                    <button type="button" class="btn btn-outline-secondary" 
+                                                            id="toggle-password">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </div>
+                                                <small class="form-text text-muted">
+                                                    Dejar en blanco para usar el número de documento como contraseña
+                                                </small>
+                                            </div>
+
+                                            <!-- Botón para volver a buscar -->
+                                            <div class="col-12 text-center">
+                                                <button type="button" class="btn btn-outline-primary" id="btn-buscar-existente">
+                                                    <i class="fas fa-search me-1"></i> Buscar Acudiente Existente
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Parentesco -->
+                            <div class="col-md-6">
+                                <label for="id_parentesco" class="form-label">Parentesco *</label>
+                                {{ form.parentesco }}
+                                <small class="form-text text-muted">
+                                    Ej: Padre, Madre, Abuelo, Tío, Hermano, etc.
+                                </small>
+                            </div>
+
+                            <!-- Información del Estudiante -->
+                            <div class="col-12">
+                                <div class="card border-info">
+                                    <div class="card-header bg-info text-white py-2">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-user-graduate me-2"></i>
+                                            Información del Estudiante
+                                        </h6>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <div id="estudiante-info">
+                                            {% if object %}
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <p><strong>Nombre:</strong> {{ object.estudiante.usuario.get_full_name }}</p>
+                                                    <p><strong>Documento:</strong> {{ object.estudiante.usuario.numero_documento }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <p><strong>Grado Actual:</strong> 
+                                                        {% if object.estudiante.matricula_actual %}
+                                                        {{ object.estudiante.matricula_actual.grado_año_lectivo.grado.nombre }}
+                                                        {% else %}
+                                                        Sin matrícula activa
+                                                        {% endif %}
+                                                    </p>
+                                                    <p><strong>Acudientes Actuales:</strong> 
+                                                        {{ object.estudiante.acudientes.count }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {% else %}
+                                            <p class="text-muted mb-0">Seleccione un estudiante para ver su información</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'administrador:acudiente_list' %}" 
+                               class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submit-btn">
+                                <i class="fas fa-save"></i> {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información adicional (solo para edición) -->
+            {% if object %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Información Adicional</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Fecha de Creación:</strong> {{ object.created_at|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Última Actualización:</strong> {{ object.updated_at|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Creado por:</strong> 
+                                {% if object.created_by %}
+                                {{ object.created_by.get_full_name }}
+                                {% else %}
+                                Sistema
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Estudiante Activo:</strong> 
+                                {% if object.estudiante.estado %}
+                                <span class="badge bg-success">Sí</span>
+                                {% else %}
+                                <span class="badge bg-danger">No</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Acudiente Activo:</strong> 
+                                {% if object.acudiente.estado %}
+                                <span class="badge bg-success">Sí</span>
+                                {% else %}
+                                <span class="badge bg-danger">No</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Última Modificación:</strong> 
+                                {% if object.updated_by %}
+                                Por {{ object.updated_by.get_full_name }}
+                                {% else %}
+                                No registrada
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Configurar select2 para los campos select
+    $('#id_estudiante, #id_acudiente').select2({
+        theme: 'bootstrap-5',
+        width: '100%'
+    });
+
+    // Variables de estado
+    var crearNuevo = false;
+    var documentoVerificado = false;
+
+    // Mostrar/ocultar secciones
+    function toggleSections() {
+        if (crearNuevo) {
+            $('#seleccionar-acudiente-section').addClass('d-none');
+            $('#crear-nuevo-section').removeClass('d-none');
+            $('#id_crear_nuevo_usuario').val('true');
+        } else {
+            $('#seleccionar-acudiente-section').removeClass('d-none');
+            $('#crear-nuevo-section').addClass('d-none');
+            $('#id_crear_nuevo_usuario').val('false');
+        }
+    }
+
+    // Botón para crear nuevo acudiente
+    $('#btn-crear-nuevo').click(function() {
+        crearNuevo = true;
+        toggleSections();
+    });
+
+    // Botón para buscar acudiente existente
+    $('#btn-buscar-existente').click(function() {
+        crearNuevo = false;
+        toggleSections();
+    });
+
+    // Búsqueda de acudiente existente
+    $('#btn-search-acudiente').click(function() {
+        var searchTerm = $('#search-acudiente').val();
+        
+        if (!searchTerm || searchTerm.length < 3) {
+            alert('Ingrese al menos 3 caracteres para buscar');
+            return;
+        }
+
+        // Mostrar loading
+        $(this).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Buscando...');
+        $(this).prop('disabled', true);
+
+        // Realizar búsqueda AJAX
+        $.ajax({
+            url: '{% url "administrador:buscar_estudiante" %}?q=' + encodeURIComponent(searchTerm),
+            dataType: 'json',
+            success: function(data) {
+                // Restaurar botón
+                $('#btn-search-acudiente').html('<i class="fas fa-search"></i> Buscar');
+                $('#btn-search-acudiente').prop('disabled', false);
+
+                if (data.estudiantes && data.estudiantes.length > 0) {
+                    var html = '<strong>Resultados encontrados:</strong><br><br>';
+                    html += '<div class="list-group">';
+                    
+                    data.estudiantes.forEach(function(usuario) {
+                        html += `
+                            <a href="#" class="list-group-item list-group-item-action select-usuario" 
+                               data-id="${usuario.id}" data-nombre="${usuario.nombre_completo}" 
+                               data-documento="${usuario.documento}">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">${usuario.nombre_completo}</h6>
+                                    <small>${usuario.documento}</small>
+                                </div>
+                                <small class="text-muted">Haga clic para seleccionar</small>
+                            </a>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                    
+                    $('#search-results-content').html(html);
+                    $('#search-results').removeClass('d-none');
+                    
+                    // Configurar eventos para seleccionar usuario
+                    $('.select-usuario').click(function(e) {
+                        e.preventDefault();
+                        var usuarioId = $(this).data('id');
+                        var nombre = $(this).data('nombre');
+                        var documento = $(this).data('documento');
+                        
+                        // Establecer valor en el select
+                        $('#id_acudiente').val(usuarioId).trigger('change');
+                        
+                        // Ocultar resultados
+                        $('#search-results').addClass('d-none');
+                        $('#search-acudiente').val('');
+                    });
+                } else {
+                    $('#search-results-content').html('<strong>No se encontraron usuarios.</strong>');
+                    $('#search-results').removeClass('d-none');
+                }
+            },
+            error: function() {
+                // Restaurar botón
+                $('#btn-search-acudiente').html('<i class="fas fa-search"></i> Buscar');
+                $('#btn-search-acudiente').prop('disabled', false);
+                
+                $('#search-results-content').html('<strong>Error en la búsqueda. Intente nuevamente.</strong>');
+                $('#search-results').removeClass('d-none');
+            }
+        });
+    });
+
+    // Verificar documento para nuevo acudiente
+    $('#verificar-documento-btn').click(function() {
+        var numeroDocumento = $('#id_nuevo_numero_documento').val();
+        
+        if (!numeroDocumento) {
+            alert('Por favor ingrese un número de documento');
+            return;
+        }
+
+        // Mostrar loading
+        $(this).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verificando...');
+        $(this).prop('disabled', true);
+
+        // Realizar petición AJAX
+        $.ajax({
+            url: '{% url "administrador:verificar_usuario" %}',
+            data: {
+                'numero_documento': numeroDocumento,
+                'tipo_usuario': 'Acudiente'
+            },
+            dataType: 'json',
+            success: function(data) {
+                // Restaurar botón
+                $('#verificar-documento-btn').html('Verificar');
+                $('#verificar-documento-btn').prop('disabled', false);
+
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    documentoVerificado = false;
+                } else if (data.existe) {
+                    if (data.usuario.ya_es_tipo) {
+                        alert('Este usuario ya tiene perfil de acudiente. Por favor selecciónelo en la búsqueda.');
+                        documentoVerificado = false;
+                    } else {
+                        if (confirm('Usuario encontrado. ¿Desea cargar sus datos?')) {
+                            if (data.usuario.nombres) $('#id_nuevo_nombres').val(data.usuario.nombres);
+                            if (data.usuario.apellidos) $('#id_nuevo_apellidos').val(data.usuario.apellidos);
+                            if (data.usuario.email) $('#id_nuevo_email').val(data.usuario.email);
+                            if (data.usuario.telefono) $('#id_nuevo_telefono').val(data.usuario.telefono);
+                            if (data.usuario.tipo_documento_id) $('#id_nuevo_tipo_documento').val(data.usuario.tipo_documento_id).trigger('change');
+                        }
+                        documentoVerificado = true;
+                    }
+                } else {
+                    alert('Documento disponible para crear nuevo usuario.');
+                    documentoVerificado = true;
+                }
+            },
+            error: function() {
+                // Restaurar botón
+                $('#verificar-documento-btn').html('Verificar');
+                $('#verificar-documento-btn').prop('disabled', false);
+                
+                alert('Error al verificar documento. Intente nuevamente.');
+                documentoVerificado = false;
+            }
+        });
+    });
+
+    // Mostrar/ocultar contraseña
+    $('#toggle-password').click(function() {
+        var passwordField = $('#id_nuevo_password');
+        var type = passwordField.attr('type');
+        
+        if (type === 'password') {
+            passwordField.attr('type', 'text');
+            $(this).html('<i class="fas fa-eye-slash"></i>');
+        } else {
+            passwordField.attr('type', 'password');
+            $(this).html('<i class="fas fa-eye"></i>');
+        }
+    });
+
+    // Validación del formulario
+    $('#acudiente-form').on('submit', function(e) {
+        var estudiante = $('#id_estudiante').val();
+        var parentesco = $('#id_parentesco').val();
+        
+        if (!estudiante) {
+            e.preventDefault();
+            alert('Debe seleccionar un estudiante');
+            return false;
+        }
+        
+        if (!parentesco || parentesco.trim() === '') {
+            e.preventDefault();
+            alert('Debe especificar el parentesco');
+            return false;
+        }
+        
+        if (crearNuevo) {
+            // Validar campos para nuevo usuario
+            var tipoDocumento = $('#id_nuevo_tipo_documento').val();
+            var numeroDocumento = $('#id_nuevo_numero_documento').val();
+            var nombres = $('#id_nuevo_nombres').val();
+            var apellidos = $('#id_nuevo_apellidos').val();
+            
+            if (!tipoDocumento) {
+                e.preventDefault();
+                alert('Debe seleccionar el tipo de documento');
+                return false;
+            }
+            
+            if (!numeroDocumento || numeroDocumento.trim() === '') {
+                e.preventDefault();
+                alert('Debe ingresar el número de documento');
+                return false;
+            }
+            
+            if (!nombres || nombres.trim() === '') {
+                e.preventDefault();
+                alert('Debe ingresar los nombres');
+                return false;
+            }
+            
+            if (!apellidos || apellidos.trim() === '') {
+                e.preventDefault();
+                alert('Debe ingresar los apellidos');
+                return false;
+            }
+            
+            // Verificar que el documento haya sido verificado
+            if (!documentoVerificado) {
+                if (!confirm('No ha verificado el documento. ¿Desea continuar de todos modos?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        } else {
+            // Validar que se haya seleccionado un acudiente existente
+            var acudiente = $('#id_acudiente').val();
+            if (!acudiente) {
+                e.preventDefault();
+                alert('Debe seleccionar un acudiente o crear uno nuevo');
+                return false;
+            }
+            
+            // Verificar que no sea el mismo usuario
+            if (estudiante === acudiente) {
+                e.preventDefault();
+                alert('El estudiante no puede ser su propio acudiente');
+                return false;
+            }
+        }
+        
+        // Mostrar loading
+        $('#submit-btn').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...');
+        $('#submit-btn').prop('disabled', true);
+    });
+
+    // Actualizar información del estudiante cuando se selecciona
+    $('#id_estudiante').change(function() {
+        var estudianteId = $(this).val();
+        if (estudianteId) {
+            $.ajax({
+                url: '{% url "administrador:buscar_estudiante" %}?q=' + estudianteId,
+                dataType: 'json',
+                success: function(data) {
+                    if (data.estudiantes && data.estudiantes.length > 0) {
+                        var estudiante = data.estudiantes[0];
+                        $('#estudiante-info').html(`
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Nombre:</strong> ${estudiante.nombre_completo}</p>
+                                    <p><strong>Documento:</strong> ${estudiante.documento}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Estado:</strong> <span class="badge bg-success">Activo</span></p>
+                                    <p><strong>Acudientes Actuales:</strong> Cargando...</p>
+                                </div>
+                            </div>
+                        `);
+                    }
+                }
+            });
+        } else {
+            $('#estudiante-info').html('<p class="text-muted mb-0">Seleccione un estudiante para ver su información</p>');
+        }
+    });
+
+    // Inicializar
+    toggleSections();
+});
+</script>
+{% endblock %}

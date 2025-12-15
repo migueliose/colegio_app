@@ -1,0 +1,514 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static matricula_extras  %}
+
+{% block title %}Detalle de Matrícula{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4">
+            <i class="fas fa-user-graduate me-2"></i>Detalle de Matrícula
+        </h1>
+        <div>
+            <a href="{% url 'administrador:matricula_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver
+            </a>
+            <a href="{% url 'administrador:matricula_update' matricula.pk %}" class="btn btn-warning">
+                <i class="fas fa-edit me-1"></i>Editar
+            </a>
+        </div>
+    </div>
+
+    <!-- Encabezado de Matrícula -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-id-card me-2"></i>Matrícula #{{ matricula.codigo_matricula }}
+            </h5>
+            <span class="badge bg-{% if matricula.estado == 'ACT' %}success{% elif matricula.estado == 'PRE' %}warning{% elif matricula.estado == 'PEN' %}info{% elif matricula.estado == 'INA' %}secondary{% else %}danger{% endif %} fs-6">
+                {{ matricula.get_estado_display }}
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-muted">Estudiante</h6>
+                            <h5>{{ matricula.estudiante.usuario.get_full_name }}</h5>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-muted">Documento</h6>
+                            <h5>{{ matricula.estudiante.usuario.numero_documento }}</h5>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6 class="text-muted">Grado</h6>
+                            <span class="badge bg-info fs-6">
+                                {{ matricula.grado_año_lectivo.grado.nombre }}
+                            </span>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6 class="text-muted">Sede</h6>
+                            <p class="mb-0">{{ matricula.sede.nombre }}</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6 class="text-muted">Año Lectivo</h6>
+                            <p class="mb-0">{{ matricula.año_lectivo.anho }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-muted">Fecha de Matrícula</h6>
+                            <p class="mb-0">{{ matricula.fecha_matricula|date:"d/m/Y" }}</p>
+                        </div>
+                        {% if matricula.observaciones %}
+                        <div class="col-12">
+                            <h6 class="text-muted">Observaciones</h6>
+                            <p class="mb-0">{{ matricula.observaciones }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    {% if matricula.estudiante.foto %}
+                    <img src="{{ matricula.estudiante.foto.url }}" 
+                         alt="{{ matricula.estudiante.usuario.get_full_name }}"
+                         class="rounded-circle mb-3" width="150" height="150">
+                    {% else %}
+                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto mb-3"
+                         style="width: 150px; height: 150px;">
+                        <i class="fas fa-user fa-4x text-white"></i>
+                    </div>
+                    {% endif %}
+                    <p class="mb-1">
+                        <i class="fas fa-{{ matricula.estudiante.usuario.sexo|lower }} me-1"></i>
+                        {{ matricula.estudiante.usuario.get_sexo_display }}
+                    </p>
+                    {% if matricula.estudiante.usuario.edad %}
+                    <p class="mb-0">
+                        <i class="fas fa-birthday-cake me-1"></i>
+                        {{ matricula.estudiante.usuario.edad }} años
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs de Información -->
+    <ul class="nav nav-tabs mb-4" id="matriculaTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="acudientes-tab" data-bs-toggle="tab" 
+                    data-bs-target="#acudientes" type="button" role="tab">
+                <i class="fas fa-users me-1"></i>Acudientes
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="academico-tab" data-bs-toggle="tab" 
+                    data-bs-target="#academico" type="button" role="tab">
+                <i class="fas fa-book me-1"></i>Rendimiento Académico
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="comportamiento-tab" data-bs-toggle="tab" 
+                    data-bs-target="#comportamiento" type="button" role="tab">
+                <i class="fas fa-chart-line me-1"></i>Comportamiento
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="asistencia-tab" data-bs-toggle="tab" 
+                    data-bs-target="#asistencia" type="button" role="tab">
+                <i class="fas fa-calendar-check me-1"></i>Asistencia
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="matriculaTabContent">
+        <!-- Acudientes -->
+        <div class="tab-pane fade show active" id="acudientes" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <i class="fas fa-users me-1"></i>Acudientes del Estudiante
+                </div>
+                <div class="card-body">
+                    {% if acudientes %}
+                    <div class="row">
+                        {% for acudiente in acudientes %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-user-tie me-1"></i>
+                                        {{ acudiente.acudiente.get_full_name }}
+                                    </h5>
+                                    <div class="row">
+                                        <div class="col-12 mb-2">
+                                            <strong>Parentesco:</strong>
+                                            <span class="badge bg-info">{{ acudiente.parentesco }}</span>
+                                        </div>
+                                        {% if acudiente.acudiente.telefono %}
+                                        <div class="col-12 mb-2">
+                                            <strong><i class="fas fa-phone me-1"></i>Teléfono:</strong>
+                                            {{ acudiente.acudiente.telefono }}
+                                        </div>
+                                        {% endif %}
+                                        {% if acudiente.acudiente.email %}
+                                        <div class="col-12 mb-2">
+                                            <strong><i class="fas fa-envelope me-1"></i>Email:</strong>
+                                            {{ acudiente.acudiente.email }}
+                                        </div>
+                                        {% endif %}
+                                        {% if acudiente.acudiente.direccion %}
+                                        <div class="col-12">
+                                            <strong><i class="fas fa-home me-1"></i>Dirección:</strong>
+                                            {{ acudiente.acudiente.direccion }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No se encontraron acudientes registrados</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Rendimiento Académico - ACTUALIZADO -->
+        <div class="tab-pane fade" id="academico" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-book me-1"></i>Rendimiento Académico - {{ matricula.año_lectivo.anho }}
+                    </div>
+                    {% if promedios_por_periodo %}
+                    <div>
+                        <small class="text-muted">Promedios por período:</small>
+                        {% for periodo, promedio in promedios_por_periodo.items %}
+                        <span class="badge bg-{% if promedio >= 60 %}success{% elif promedio >= 40 %}warning{% else %}danger{% endif %} ms-2">
+                            {{ periodo }}: {{ promedio|floatformat:1 }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card-body">
+                    {% if notas_por_periodo %}
+                        {% for periodo, notas_periodo in notas_por_periodo.items %}
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="fas fa-calendar-alt me-1"></i>{{ periodo }} Período
+                                {% if promedios_por_periodo and promedios_por_periodo|get_item:periodo %}
+                                <span class="badge bg-{% if promedios_por_periodo|get_item:periodo >= 60 %}success{% elif promedios_por_periodo|get_item:periodo >= 40 %}warning{% else %}danger{% endif %} ms-2">
+                                    Promedio: {{ promedios_por_periodo|get_item:periodo|floatformat:1 }}
+                                </span>
+                                {% endif %}
+                            </h5>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-4">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Asignatura</th>
+                                            <th class="text-center">Calificación</th>
+                                            <th>Observaciones</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for nota in notas_periodo %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ nota.asignatura_grado_año_lectivo.asignatura.nombre }}</strong>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-{% if nota.calificacion >= 60 %}success{% elif nota.calificacion >= 40 %}warning{% else %}danger{% endif %} fs-6">
+                                                    {{ nota.calificacion }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if nota.observaciones %}
+                                                <small>{{ nota.observaciones|truncatewords:5 }}</small>
+                                                {% else %}
+                                                <small class="text-muted">Sin observaciones</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if nota.calificacion >= 3 %}
+                                                <span class="badge bg-success">Aprobado</span>
+                                                {% else %}
+                                                <span class="badge bg-danger">Reprobado</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% endfor %}
+                                                
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-book fa-4x text-muted mb-4"></i>
+                        <h5 class="text-muted">No hay calificaciones registradas</h5>
+                        <p class="text-muted">No se han registrado notas para este año lectivo.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Comportamiento - MEJORADO -->
+        <div class="tab-pane fade" id="comportamiento" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-chart-line me-1"></i>Registro de Comportamiento
+                    </div>
+                    <div>
+                        {% if comportamientos_positivos %}
+                        <span class="badge bg-success me-2">
+                            <i class="fas fa-thumbs-up"></i> {{ comportamientos_positivos|length }} Positivos
+                        </span>
+                        {% endif %}
+                        {% if comportamientos_negativos %}
+                        <span class="badge bg-danger">
+                            <i class="fas fa-thumbs-down"></i> {{ comportamientos_negativos|length }} Negativos
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <!-- Comportamientos Positivos -->
+                        {% if comportamientos_positivos %}
+                        <div class="col-md-6">
+                            <h5 class="text-success mb-3">
+                                <i class="fas fa-thumbs-up me-1"></i>Comportamientos Positivos
+                            </h5>
+                            {% for comportamiento in comportamientos_positivos %}
+                            <div class="card border-success mb-2">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong class="text-success">{{ comportamiento.categoria }}</strong>
+                                            <p class="mb-1 small">{{ comportamiento.descripcion|truncatewords:15 }}</p>
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i>{{ comportamiento.fecha|date:"d/m/Y" }}
+                                            </small>
+                                        </div>
+                                        <div class="text-end">
+                                            <small class="text-muted">
+                                                {% if comportamiento.docente %}
+                                                <i class="fas fa-user-tie me-1"></i>{{ comportamiento.docente.usuario.get_short_name }}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Comportamientos Negativos -->
+                        {% if comportamientos_negativos %}
+                        <div class="col-md-6">
+                            <h5 class="text-danger mb-3">
+                                <i class="fas fa-thumbs-down me-1"></i>Comportamientos Negativos
+                            </h5>
+                            {% for comportamiento in comportamientos_negativos %}
+                            <div class="card border-danger mb-2">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong class="text-danger">{{ comportamiento.categoria }}</strong>
+                                            <p class="mb-1 small">{{ comportamiento.descripcion|truncatewords:15 }}</p>
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i>{{ comportamiento.fecha|date:"d/m/Y" }}
+                                            </small>
+                                        </div>
+                                        <div class="text-end">
+                                            <small class="text-muted">
+                                                {% if comportamiento.docente %}
+                                                <i class="fas fa-user-tie me-1"></i>{{ comportamiento.docente.usuario.get_short_name }}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if not comportamientos_positivos and not comportamientos_negativos %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-line fa-4x text-muted mb-4"></i>
+                        <h5 class="text-muted">No hay registros de comportamiento</h5>
+                        <p class="text-muted">No se han registrado comportamientos para este estudiante.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Asistencia - MEJORADO -->
+        <div class="tab-pane fade" id="asistencia" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-calendar-check me-1"></i>Registro de Asistencia - {{ matricula.año_lectivo.anho }}
+                    </div>
+                    <div class="d-flex align-items-center">
+                        {% if total_asistencias_registradas > 0 %}
+                        <div class="me-4">
+                            <span class="badge bg-success me-2">
+                                <i class="fas fa-check"></i> {{ porcentaje_asistencia }}%
+                            </span>
+                            <span class="text-muted">Asistencia</span>
+                        </div>
+                        <div class="me-4">
+                            <span class="badge bg-danger me-2">
+                                <i class="fas fa-times"></i> {{ total_faltas }}
+                            </span>
+                            <span class="text-muted">Faltas</span>
+                        </div>
+                        <div>
+                            <span class="badge bg-warning me-2">
+                                <i class="fas fa-file-alt"></i> {{ total_justificadas }}
+                            </span>
+                            <span class="text-muted">Justificadas</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if asistencias %}
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Estado</th>
+                                            <th>Justificación</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for asistencia in asistencias %}
+                                        <tr>
+                                            <td>{{ asistencia.fecha|date:"d/m/Y" }}</td>
+                                            <td>
+                                                {% if asistencia.estado == 'A' %}
+                                                <span class="badge bg-success">Asistió</span>
+                                                {% elif asistencia.estado == 'F' %}
+                                                <span class="badge bg-danger">Faltó</span>
+                                                {% elif asistencia.estado == 'J' %}
+                                                <span class="badge bg-warning">Justificada</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if asistencia.justificacion %}
+                                                <small>{{ asistencia.justificacion|truncatewords:5 }}</small>
+                                                {% else %}
+                                                <small class="text-muted">Sin justificación</small>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="fas fa-chart-pie me-1"></i>Estadísticas de Asistencia
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="asistenciaChart" width="300" height="300"></canvas>
+                                    <div class="mt-3">
+                                        <p class="mb-1">
+                                            <span class="badge bg-success me-2">■</span>
+                                            Asistencias: {{ asistencias|length }}
+                                        </p>
+                                        <p class="mb-1">
+                                            <span class="badge bg-danger me-2">■</span>
+                                            Faltas: {{ total_faltas }}
+                                        </p>
+                                        <p class="mb-0">
+                                            <span class="badge bg-warning me-2">■</span>
+                                            Justificadas: {{ total_justificadas }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-check fa-4x text-muted mb-4"></i>
+                        <h5 class="text-muted">No hay registros de asistencia</h5>
+                        <p class="text-muted">No se han registrado asistencias para este año lectivo.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    // Inicializar popovers
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl)
+    });
+    
+    // Gráfico de asistencia
+    {% if total_asistencias_registradas > 0 %}
+    var ctx = document.getElementById('asistenciaChart').getContext('2d');
+    var asistenciaChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Asistencias', 'Faltas', 'Justificadas'],
+            datasets: [{
+                data: [
+                    {{ asistencias|length }},
+                    {{ total_faltas }},
+                    {{ total_justificadas }}
+                ],
+                backgroundColor: [
+                    '#28a745',
+                    '#dc3545',
+                    '#ffc107'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

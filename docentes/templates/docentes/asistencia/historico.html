@@ -1,0 +1,323 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Historial de Asistencia - {{ estudiante.usuario.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="bi bi-clock-history me-2"></i>
+                            Historial de Asistencia: {{ estudiante.usuario.get_full_name }}
+                        </h4>
+                        <div>
+                            <a href="{% url 'docentes:asistencia_principal' %}" class="btn btn-light btn-sm">
+                                <i class="bi bi-arrow-left me-1"></i>Volver
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Información del estudiante -->
+                <div class="card-body border-bottom">
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3 mb-md-0">
+                            <div class="position-relative">
+                                {% if estudiante.foto %}
+                                    <img src="{{ estudiante.foto.url }}" class="rounded-circle" width="120" height="120">
+                                {% else %}
+                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto" style="width:120px;height:120px;">
+                                        <i class="bi bi-person text-white" style="font-size: 3rem;"></i>
+                                    </div>
+                                {% endif %}
+                                <span class="badge {% if matricula_actual.estado == 'ACT' %}bg-success{% else %}bg-warning{% endif %} position-absolute top-0 start-50 translate-middle">
+                                    {{ matricula_actual.get_estado_display|default:"Sin matrícula" }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5 class="mb-3">Datos Personales</h5>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <th width="40%">Documento:</th>
+                                            <td>{{ estudiante.usuario.numero_documento }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Nombre:</th>
+                                            <td>{{ estudiante.usuario.get_full_name }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Curso Actual:</th>
+                                            <td>
+                                                {% if matricula_actual %}
+                                                    {{ matricula_actual.grado_año_lectivo.grado.nombre }} - {{ matricula_actual.sede.nombre }}
+                                                {% else %}
+                                                    Sin matrícula activa
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Año Lectivo:</th>
+                                            <td>
+                                                {% if matricula_actual %}
+                                                    {{ matricula_actual.año_lectivo.anho }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5 class="mb-3">Estadísticas Generales</h5>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <th width="40%">Total Registros:</th>
+                                            <td><span class="badge bg-info">{{ total_asistencias }}</span></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Asistencias:</th>
+                                            <td><span class="badge bg-success">{{ asistencias_count }}</span></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Faltas:</th>
+                                            <td><span class="badge bg-danger">{{ faltas_count }}</span></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Justificadas:</th>
+                                            <td><span class="badge bg-warning">{{ justificadas_count }}</span></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Porcentaje Asistencia:</th>
+                                            <td>
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar {% if porcentaje_asistencia >= 80 %}bg-success{% elif porcentaje_asistencia >= 60 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                         style="width: {{ porcentaje_asistencia }}%">
+                                                        {{ porcentaje_asistencia|floatformat:1 }}%
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtros por periodo -->
+                <div class="card-body bg-light">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h5 class="mb-3">Filtrar por Periodo</h5>
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="{% url 'docentes:asistencia_historico' estudiante.id %}" 
+                                   class="btn btn-sm {% if not periodo_filtrado %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                    Todos los Periodos
+                                </a>
+                                {% for periodo in periodos_estudiante %}
+                                <a href="{% url 'docentes:asistencia_historico' estudiante.id %}?periodo_id={{ periodo.id }}" 
+                                   class="btn btn-sm {% if periodo_filtrado and periodo_filtrado.id == periodo.id %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                    {{ periodo.periodo.nombre }} ({{ periodo.año_lectivo.anho }})
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estadísticas por periodo -->
+                <div class="card-body">
+                    <h5 class="mb-3">Resumen por Periodo</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Periodo</th>
+                                    <th class="text-center">Total Días</th>
+                                    <th class="text-center">Asistencias</th>
+                                    <th class="text-center">Faltas</th>
+                                    <th class="text-center">Justificadas</th>
+                                    <th class="text-center">Porcentaje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stats in estadisticas_periodo %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ stats.periodo.periodo.nombre }}</strong><br>
+                                        <small class="text-muted">{{ stats.periodo.año_lectivo.anho }}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">{{ stats.total }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">{{ stats.asistencias }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-danger">{{ stats.faltas }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-warning">{{ stats.justificadas }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar {% if stats.porcentaje >= 80 %}bg-success{% elif stats.porcentaje >= 60 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                 style="width: {{ stats.porcentaje }}%">
+                                                {{ stats.porcentaje|floatformat:1 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        No hay registros de asistencia para este estudiante.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Lista detallada de asistencias -->
+                <div class="card-body">
+                    <h5 class="mb-3">Registros Detallados</h5>
+                    {% if periodo_filtrado %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Mostrando registros del periodo: <strong>{{ periodo_filtrado.periodo.nombre }}</strong>
+                        ({{ periodo_filtrado.fecha_inicio|date:"d/m/Y" }} - {{ periodo_filtrado.fecha_fin|date:"d/m/Y" }})
+                    </div>
+                    {% endif %}
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Día</th>
+                                    <th>Periodo</th>
+                                    <th>Año Lectivo</th>
+                                    <th>Estado</th>
+                                    <th>Justificación</th>
+                                    <th>Registrado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asistencia in asistencias %}
+                                <tr>
+                                    <td>{{ asistencia.fecha|date:"d/m/Y" }}</td>
+                                    <td>{{ asistencia.fecha|date:"l" }}</td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ asistencia.periodo_academico.periodo.nombre }}
+                                        </span>
+                                    </td>
+                                    <td>{{ asistencia.periodo_academico.año_lectivo.anho }}</td>
+                                    <td>
+                                        {% if asistencia.estado == 'A' %}
+                                            <span class="badge bg-success">Asistió</span>
+                                        {% elif asistencia.estado == 'F' %}
+                                            <span class="badge bg-danger">Faltó</span>
+                                        {% elif asistencia.estado == 'J' %}
+                                            <span class="badge bg-warning">Justificada</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if asistencia.justificacion %}
+                                            <button type="button" class="btn btn-sm btn-outline-info" 
+                                                    data-bs-toggle="tooltip" 
+                                                    title="{{ asistencia.justificacion }}">
+                                                <i class="bi bi-chat-text"></i>
+                                            </button>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ asistencia.created_at|date:"d/m/Y H:i" }}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        No se encontraron registros de asistencia.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Paginación -->
+                    {% if asistencias.has_other_pages %}
+                    <nav aria-label="Paginación de asistencias">
+                        <ul class="pagination justify-content-center">
+                            {% if asistencias.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ asistencias.previous_page_number }}{% if periodo_filtrado %}&periodo_id={{ periodo_filtrado.id }}{% endif %}">
+                                    Anterior
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in asistencias.paginator.page_range %}
+                                {% if asistencias.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num > asistencias.number|add:'-3' and num < asistencias.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if periodo_filtrado %}&periodo_id={{ periodo_filtrado.id }}{% endif %}">{{ num }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if asistencias.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ asistencias.next_page_number }}{% if periodo_filtrado %}&periodo_id={{ periodo_filtrado.id }}{% endif %}">
+                                    Siguiente
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar tooltips de Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Exportar a PDF (funcionalidad básica)
+    document.getElementById('btnExportarPDF')?.addEventListener('click', function() {
+        alert('Funcionalidad de exportar a PDF en desarrollo');
+    });
+
+    // Exportar a Excel (funcionalidad básica)
+    document.getElementById('btnExportarExcel')?.addEventListener('click', function() {
+        alert('Funcionalidad de exportar a Excel en desarrollo');
+    });
+});
+</script>
+{% endblock %}

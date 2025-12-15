@@ -1,0 +1,223 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Detalle Docente - {{ docente.usuario.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="fas fa-chalkboard-teacher me-2"></i>Detalle del Docente
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'usuarios:docentes_list' %}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left me-1"></i>Volver a la Lista
+            </a>
+            <a href="{% url 'usuarios:docente_update' docente.pk %}" class="btn btn-warning me-2">
+                <i class="fas fa-edit me-1"></i>Editar
+            </a>
+            {% if docente.estado %}
+            <a href="{% url 'usuarios:docente_delete' docente.pk %}" class="btn btn-danger">
+                <i class="fas fa-user-slash me-1"></i>Desactivar
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Principal -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-id-card me-2"></i>Información Personal
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <!-- Foto -->
+                    {% if docente.foto %}
+                    <img src="{{ docente.foto.url }}" alt="Foto de {{ docente.usuario.get_full_name }}" 
+                         class="rounded-circle mb-3" width="150" height="150">
+                    {% else %}
+                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" 
+                         style="width: 150px; height: 150px;">
+                        <i class="fas fa-user fa-4x text-white"></i>
+                    </div>
+                    {% endif %}
+
+                    <h4 class="text-primary">{{ docente.usuario.get_full_name }}</h4>
+                    <p class="text-muted mb-1">
+                        <i class="fas fa-user-tag me-1"></i>Docente
+                    </p>
+                    
+                    <!-- Estado -->
+                    {% if docente.estado %}
+                    <span class="badge bg-success mb-3">
+                        <i class="fas fa-check me-1"></i>Activo
+                    </span>
+                    {% else %}
+                    <span class="badge bg-danger mb-3">
+                        <i class="fas fa-times me-1"></i>Inactivo
+                    </span>
+                    {% endif %}
+
+                    <!-- Hoja de Vida -->
+                    <div class="mt-3">
+                        {% if docente.hdv %}
+                        <a href="{{ docente.hdv.url }}" target="_blank" class="btn btn-outline-primary w-100 mb-2">
+                            <i class="fas fa-file-pdf me-1"></i>Ver Hoja de Vida
+                        </a>
+                        {% else %}
+                        <button class="btn btn-outline-warning w-100 mb-2" disabled>
+                            <i class="fas fa-exclamation-triangle me-1"></i>Hoja de Vida No Cargada
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de Contacto -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-address-book me-2"></i>Contacto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item px-0">
+                            <i class="fas fa-envelope text-primary me-2"></i>
+                            <strong>Email:</strong><br>
+                            {{ docente.usuario.email|default:"No registrado" }}
+                        </div>
+                        <div class="list-group-item px-0">
+                            <i class="fas fa-phone text-success me-2"></i>
+                            <strong>Teléfono:</strong><br>
+                            {{ docente.usuario.telefono|default:"No registrado" }}
+                        </div>
+                        <div class="list-group-item px-0">
+                            <i class="fas fa-map-marker-alt text-warning me-2"></i>
+                            <strong>Dirección:</strong><br>
+                            {{ docente.usuario.direccion|default:"No registrada" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información Detallada -->
+        <div class="col-md-8">
+            <!-- Información del Usuario -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-circle me-2"></i>Información del Usuario
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Tipo de Documento:</strong><br>
+                            {{ docente.usuario.tipo_documento.nombre }}</p>
+                            
+                            <p><strong>Número de Documento:</strong><br>
+                            {{ docente.usuario.numero_documento }}</p>
+                            
+                            <p><strong>Fecha de Nacimiento:</strong><br>
+                            {{ docente.usuario.fecha_nacimiento|default:"No registrada" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Género:</strong><br>
+                            {{ docente.usuario.get_sexo_display|default:"No especificado" }}</p>
+                            
+                            <p><strong>Usuario:</strong><br>
+                            {{ docente.usuario.username }}</p>
+                            
+                            <p><strong>Fecha de Registro:</strong><br>
+                            {{ docente.created_at|date:"d/m/Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Asignaturas Asignadas -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-book me-2"></i>Asignaturas Asignadas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if asignaturas_actuales %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Asignatura</th>
+                                    <th>Grado</th>
+                                    <th>Sede</th>
+                                    <th>Año Lectivo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asignatura in asignaturas_actuales %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ asignatura.asignatura.nombre }}</strong>
+                                    </td>
+                                    <td>{{ asignatura.grado_año_lectivo.grado.nombre }}</td>
+                                    <td>{{ asignatura.sede.nombre }}</td>
+                                    <td>{{ asignatura.grado_año_lectivo.año_lectivo.anho }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-book-open fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No tiene asignaturas asignadas actualmente.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Contactos de Emergencia -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-address-card me-2"></i>Contactos de Emergencia
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if contactos %}
+                    <div class="row">
+                        {% for contacto in contactos %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-warning">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ contacto.nombres }} {{ contacto.apellidos }}</h6>
+                                    <p class="card-text mb-1">
+                                        <small>
+                                            <i class="fas fa-phone me-1"></i>{{ contacto.telefono }}<br>
+                                            <i class="fas fa-envelope me-1"></i>{{ contacto.email }}<br>
+                                            <i class="fas fa-users me-1"></i>{{ contacto.relacion }}
+                                        </small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-users fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No hay contactos de emergencia registrados.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

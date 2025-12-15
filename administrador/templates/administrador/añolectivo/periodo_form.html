@@ -1,0 +1,190 @@
+<!-- administrador/añolectivo/periodo_form.html -->
+{% extends 'gestioncolegio/base2.html' %}
+
+{% block title %}{{ title }} - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'administrador:añolectivo_list' %}">Años Lectivos</a></li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'administrador:añolectivo_periodos' año_lectivo.pk %}">
+                    Periodos {{ año_lectivo.anho }}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <!-- Card principal -->
+            <div class="card shadow">
+                <div class="card-header {% if object %}bg-warning{% else %}bg-primary{% endif %} text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas {% if object %}fa-edit{% else %}fa-plus-circle{% endif %} me-2"></i>
+                        {{ title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Información del año lectivo -->
+                        <div class="alert alert-info mb-4">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-calendar-alt me-2"></i>Año Lectivo
+                            </h6>
+                            <p class="mb-0">
+                                <strong>{{ año_lectivo.anho }}</strong> | 
+                                {{ año_lectivo.colegio.nombre }} - {{ año_lectivo.sede.nombre }}
+                            </p>
+                        </div>
+                        
+                        <!-- Periodo -->
+                        <div class="mb-4">
+                            <label for="{{ form.periodo.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-clock me-1"></i> Periodo
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.periodo }}
+                            {% if form.periodo.help_text %}
+                            <div class="form-text text-muted">
+                                {{ form.periodo.help_text }}
+                            </div>
+                            {% endif %}
+                            {% if form.periodo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.periodo.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Fechas -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="{{ form.fecha_inicio.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-play me-1 text-success"></i> Fecha Inicio
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.fecha_inicio }}
+                                {% if form.fecha_inicio.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.fecha_inicio.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.fecha_fin.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-stop me-1 text-danger"></i> Fecha Fin
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.fecha_fin }}
+                                {% if form.fecha_fin.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.fecha_fin.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Estado -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                {{ form.estado }}
+                                <label class="form-check-label fw-bold" for="{{ form.estado.id_for_label }}">
+                                    <i class="fas fa-toggle-on me-1"></i> Activar este periodo
+                                </label>
+                            </div>
+                            {% if form.estado.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.estado.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-5 pt-4 border-top">
+                            <a href="{% url 'administrador:añolectivo_periodos' año_lectivo.pk %}" 
+                               class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn {% if object %}btn-warning{% else %}btn-primary{% endif %}">
+                                <i class="fas {% if object %}fa-save{% else %}fa-check-circle{% endif %} me-2"></i>
+                                {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Agregar clases Bootstrap a los campos
+    document.querySelectorAll('select').forEach(select => {
+        select.classList.add('form-select');
+    });
+    
+    document.querySelectorAll('input[type="text"], input[type="date"]').forEach(input => {
+        input.classList.add('form-control');
+    });
+    
+    // Validación de fechas
+    const fechaInicio = document.getElementById('id_fecha_inicio');
+    const fechaFin = document.getElementById('id_fecha_fin');
+    const form = document.querySelector('form');
+    
+    form.addEventListener('submit', function(e) {
+        let valid = true;
+        
+        // Validar que fecha fin sea posterior a fecha inicio
+        if (fechaInicio.value && fechaFin.value) {
+            const inicio = new Date(fechaInicio.value);
+            const fin = new Date(fechaFin.value);
+            
+            if (fin <= inicio) {
+                valid = false;
+                showError(fechaFin, 'La fecha fin debe ser posterior a la fecha inicio');
+            } else {
+                removeError(fechaFin);
+            }
+        }
+        
+        if (!valid) {
+            e.preventDefault();
+            alert('Por favor corrija los errores en el formulario');
+        }
+    });
+    
+    function showError(field, message) {
+        field.classList.add('is-invalid');
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'invalid-feedback d-block';
+        errorDiv.textContent = message;
+        field.parentNode.appendChild(errorDiv);
+    }
+    
+    function removeError(field) {
+        field.classList.remove('is-invalid');
+        const errorDiv = field.parentNode.querySelector('.invalid-feedback');
+        if (errorDiv) {
+            errorDiv.remove();
+        }
+    }
+});
+</script>
+{% endblock %}

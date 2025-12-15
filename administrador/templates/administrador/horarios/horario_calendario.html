@@ -1,0 +1,226 @@
+{% extends 'gestioncolegio/base.html' %}
+{% load static %}
+
+{% block title %}Calendario de Horarios{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">
+            <i class="fas fa-calendar me-2 text-primary"></i> Calendario de Horarios
+            {% if año_lectivo %}
+            <span class="text-muted fs-6">(Año {{ año_lectivo.anho }})</span>
+            {% endif %}
+        </h2>
+        
+        <div class="btn-group">
+            <a href="{% url 'administrador:horario_list' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-list me-1"></i> Vista Lista
+            </a>
+            <button type="button" class="btn btn-primary btn-sm" onclick="location.reload()">
+                <i class="fas fa-sync-alt me-1"></i> Actualizar
+            </button>
+        </div>
+    </div>
+    
+    {% if not año_lectivo %}
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>No hay un año lectivo activo.</strong> 
+        Active un año lectivo para ver los horarios.
+    </div>
+    {% else %}
+    
+    <!-- Filtros para el calendario -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Filtrar por Grado</label>
+                    <select class="form-select form-select-sm" id="filtroGrado">
+                        <option value="">Todos los grados</option>
+                        {% for grado in grados_disponibles %}
+                        <option value="{{ grado.id }}">{{ grado.grado.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">Filtrar por Docente</label>
+                    <select class="form-select form-select-sm" id="filtroDocente">
+                        <option value="">Todos los docentes</option>
+                        {% for docente in docentes_disponibles %}
+                        <option value="{{ docente.id }}">{{ docente.usuario.get_full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">Filtrar por Asignatura</label>
+                    <select class="form-select form-select-sm" id="filtroAsignatura">
+                        <option value="">Todas las asignaturas</option>
+                        {% for asignatura in asignaturas_disponibles %}
+                        <option value="{{ asignatura.id }}">{{ asignatura.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Calendario -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-light">
+            <h6 class="mb-0 fw-bold text-primary">
+                <i class="fas fa-calendar-alt me-2"></i> Horario Semanal
+            </h6>
+        </div>
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+    
+    <!-- Leyenda -->
+    <div class="card border-left-info shadow-sm mt-4">
+        <div class="card-body">
+            <h6 class="fw-bold text-info">
+                <i class="fas fa-palette me-2"></i> Leyenda de Colores
+            </h6>
+            <div class="row g-2">
+                <div class="col-auto">
+                    <span class="badge" style="background-color: #FF6B6B; color: white;">Prejardin</span>
+                </div>
+                <div class="col-auto">
+                    <span class="badge" style="background-color: #4ECDC4; color: white;">Jardin</span>
+                </div>
+                <div class="col-auto">
+                    <span class="badge" style="background-color: #45B7D1; color: white;">Transicion</span>
+                </div>
+                <div class="col-auto">
+                    <span class="badge" style="background-color: #96CEB4; color: white;">Primero</span>
+                </div>
+                <div class="col-auto">
+                    <span class="badge" style="background-color: #FFEAA7; color: #333;">Segundo</span>
+                </div>
+                <div class="col-auto">
+                    <span class="badge" style="background-color: #DDA0DD; color: white;">Tercero</span>
+                </div>
+                <div class="col-auto">
+                    <span class="badge" style="background-color: #98D8C8; color: white;">Cuarto</span>
+                </div>
+                <div class="col-auto">
+                    <span class="badge" style="background-color: #F7DC6F; color: #333;">Quinto</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block javascript %}
+<!-- FullCalendar -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/locales/es.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Inicializar calendario
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        locale: 'es',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'timeGridWeek,timeGridDay,listWeek'
+        },
+        businessHours: {
+            daysOfWeek: [1, 2, 3, 4, 5], // Lunes a Viernes
+            startTime: '07:00',
+            endTime: '18:00'
+        },
+        slotMinTime: '07:00',
+        slotMaxTime: '18:00',
+        slotDuration: '01:00:00',
+        allDaySlot: false,
+        weekends: false,
+        events: {{ eventos|safe }},
+        eventClick: function(info) {
+            // Mostrar información detallada del evento
+            var contenido = `
+                <div class="p-3">
+                    <h6 class="fw-bold">${info.event.title}</h6>
+                    <hr class="my-2">
+                    <p class="mb-1"><strong>Docente:</strong> ${info.event.extendedProps.docente}</p>
+                    <p class="mb-1"><strong>Salón:</strong> ${info.event.extendedProps.salon}</p>
+                    <p class="mb-1"><strong>Asignatura:</strong> ${info.event.extendedProps.asignatura}</p>
+                    <p class="mb-0"><strong>Grado:</strong> ${info.event.extendedProps.grado}</p>
+                </div>
+            `;
+            
+            // Puedes usar un modal o alert personalizado
+            alert(contenido);
+        }
+    });
+    
+    calendar.render();
+    
+    // Filtros dinámicos
+    function filtrarCalendario() {
+        var filtroGrado = $('#filtroGrado').val();
+        var filtroDocente = $('#filtroDocente').val();
+        var filtroAsignatura = $('#filtroAsignatura').val();
+        
+        // Obtener todos los eventos
+        var eventos = calendar.getEvents();
+        
+        // Filtrar eventos
+        eventos.forEach(function(evento) {
+            var mostrar = true;
+            
+            if (filtroGrado && !evento.extendedProps.grado.toLowerCase().includes(filtroGrado.toLowerCase())) {
+                mostrar = false;
+            }
+            
+            if (filtroDocente && !evento.extendedProps.docente.toLowerCase().includes(filtroDocente.toLowerCase())) {
+                mostrar = false;
+            }
+            
+            if (filtroAsignatura && !evento.extendedProps.asignatura.toLowerCase().includes(filtroAsignatura.toLowerCase())) {
+                mostrar = false;
+            }
+            
+            evento.setProp('display', mostrar ? 'auto' : 'none');
+        });
+    }
+    
+    // Aplicar filtros al cambiar selección
+    $('#filtroGrado, #filtroDocente, #filtroAsignatura').on('change', filtrarCalendario);
+});
+</script>
+
+<style>
+#calendar {
+    min-height: 600px;
+}
+.fc .fc-toolbar-title {
+    font-size: 1.2rem;
+}
+.fc .fc-button {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.875rem;
+}
+.fc .fc-event {
+    cursor: pointer;
+    border-radius: 4px;
+}
+.fc .fc-event-title {
+    font-weight: 500;
+}
+</style>
+{% endblock %}

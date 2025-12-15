@@ -1,0 +1,91 @@
+{% extends 'gestioncolegio/base.html' %}
+
+{% block title %}Eliminar Matrícula{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="text-center font-weight-light my-4">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-graduate fa-4x text-danger mb-3"></i>
+                        <h4>¿Está seguro de eliminar esta matrícula?</h4>
+                    </div>
+                    
+                    <div class="card border-warning mb-4">
+                        <div class="card-body">
+                            <h5>Información de la Matrícula</h5>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Estudiante:</strong><br>
+                                    {{ matricula.estudiante.usuario.get_full_name }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Documento:</strong><br>
+                                    {{ matricula.estudiante.usuario.numero_documento }}
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <strong>Grado:</strong><br>
+                                    <span class="badge bg-info">
+                                        {{ matricula.grado_año_lectivo.grado.nombre }}
+                                    </span>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Sede:</strong><br>
+                                    {{ matricula.sede.nombre }}
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Año Lectivo:</strong><br>
+                                    {{ matricula.año_lectivo.anho }}
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Código:</strong><br>
+                                    {{ matricula.codigo_matricula }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Estado:</strong><br>
+                                    <span class="badge bg-{% if matricula.estado == 'ACT' %}success{% elif matricula.estado == 'PRE' %}warning{% elif matricula.estado == 'PEN' %}info{% elif matricula.estado == 'INA' %}secondary{% else %}danger{% endif %}">
+                                        {{ matricula.get_estado_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Advertencia:</strong> Esta acción no se puede deshacer. 
+                        Se eliminarán todos los registros asociados a esta matrícula.
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'administrador:matricula_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-1"></i>Eliminar Definitivamente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

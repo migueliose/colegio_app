@@ -1,0 +1,75 @@
+{% extends "web/base.html" %}
+{% load static estudiante_filters %}
+
+{% load gestion_extras %}
+
+{% block title %}Mi Perfil | Colegio Cristiano El Shadai{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="card shadow">
+                
+                <!-- Header -->
+                {% include "web/components/perfil/header.html" %}
+                
+                <div class="card-body">
+                    <!-- Información Básica -->
+                    {% include "web/components/perfil/info_basica.html" %}
+
+                    <!-- Superusuario -->
+                    {% include "web/components/perfil/superusuario.html" %}
+
+                    <!-- Información Extendida (si tiene perfil) -->
+                    {% if user|tiene_perfil_extendido and not es_superusuario %}
+                        {% include "web/components/perfil/info_extendida.html" %}
+                    {% endif %}
+
+                    <!-- Secciones específicas por tipo de usuario -->
+                    {% if user|tiene_perfil_extendido and not es_superusuario %}
+                        <!-- Estudiante -->
+                        {% include "web/components/perfil/estudiante.html" %}
+                        
+                        <!-- Docente -->
+                        {% include "web/components/perfil/docente.html" %}
+                        
+                        <!-- Administrador (no superusuario) -->
+                        {% include "web/components/perfil/administrador.html" %}
+                        
+                        <!-- Acudiente -->
+                        {% include "web/components/perfil/acudiente.html" %}
+                        
+                        <!-- Rector -->
+                        {% include "web/components/perfil/rector.html" %}
+                    {% endif %}
+
+                    <!-- Alertas -->
+                    {% include "web/components/perfil/alertas.html" %}
+
+                    <!-- Acciones -->
+                    {% include "web/components/perfil/acciones.html" %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-purple {
+        background-color: #6f42c1 !important;
+    }
+    .text-purple {
+        color: #6f42c1 !important;
+    }
+    .btn-group .btn {
+        flex: 1;
+    }
+    .card {
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}

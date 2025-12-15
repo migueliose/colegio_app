@@ -1,0 +1,129 @@
+<!-- gestioncolegio/components/student_menu.html -->
+<ul class="navbar-nav me-auto">
+    <!-- Inicio -->
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center {% if request.resolver_match.url_name == 'dashboard_estudiante' %}active{% endif %}" 
+           href="{% url 'gestioncolegio:dashboard_estudiante' %}">
+            <i class="fas fa-home me-1"></i>
+            <span>Inicio</span>
+        </a>
+    </li>
+    
+    <!-- Dropdown: Académico -->
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" 
+           data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-graduation-cap me-1"></i>
+            <span>Académico</span>
+        </a>
+        <ul class="dropdown-menu">
+            <li>
+                <a class="dropdown-item d-flex align-items-center" href="{% url 'estudiantes:asignaturas_list' %}">
+                    <i class="fas fa-book text-primary me-2"></i>
+                    <div>
+                        <div>Mis Asignaturas</div>
+                        <small class="text-muted">Materias y docentes</small>
+                    </div>
+                </a>
+            </li>
+            
+            <li>
+                <a class="dropdown-item d-flex align-items-center" href="{% url 'estudiantes:horarios_list' %}">
+                    <i class="fas fa-clock text-info me-2"></i>
+                    <div>
+                        <div>Mi Horario</div>
+                        <small class="text-muted">Horario de clases</small>
+                    </div>
+                </a>
+            </li>
+            
+            <li>
+                <a class="dropdown-item d-flex align-items-center" href="{% url 'estudiantes:estudiante_informe' %}">
+                    <i class="fas fa-chart-line text-success me-2"></i>
+                    <div>
+                        <div>Mis Calificaciones</div>
+                        <small class="text-muted">Notas y promedios</small>
+                    </div>
+                </a>
+            </li>
+        </ul>
+    </li>
+    
+    <!-- Dropdown: Documentos -->
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" 
+           data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-file-alt me-1"></i>
+            <span>Documentos</span>
+        </a>
+        <ul class="dropdown-menu">
+            <li class="dropdown-header">
+                <i class="fas fa-file-pdf me-2"></i>
+                Documentos PDF
+            </li>
+            
+            <li>
+                <a class="dropdown-item d-flex align-items-center" href="{% url 'estudiantes:estudiante_constancia_pdf' %}">
+                    <i class="fas fa-certificate text-primary me-2"></i>
+                    <div>
+                        <div>Constancia de Estudio</div>
+                        <small class="text-muted">Año actual</small>
+                    </div>
+                </a>
+            </li>
+            
+            <!-- Link condicional para reporte de notas - SOLUCIÓN -->
+            {% if periodo_actual and periodo_actual.id %}
+            <li>
+                <a class="dropdown-item d-flex align-items-center" href="{% url 'estudiantes:estudiante_reporte_notas_pdf_periodo' periodo_actual.id %}">
+                    <i class="fas fa-chart-bar text-info me-2"></i>
+                    <div>
+                        <div>Reporte de Notas</div>
+                        <small class="text-muted">Período actual</small>
+                    </div>
+                </a>
+            </li>
+            {% else %}
+            <li>
+                <span class="dropdown-item d-flex align-items-center text-muted">
+                    <i class="fas fa-chart-bar text-info me-2"></i>
+                    <div>
+                        <div>Reporte de Notas</div>
+                        <small>Período no disponible</small>
+                    </div>
+                </span>
+            </li>
+            {% endif %}
+            
+            <li>
+                <a class="dropdown-item d-flex align-items-center" href="{% url 'estudiantes:estudiante_observador_pdf' %}">
+                    <i class="fas fa-user-check text-warning me-2"></i>
+                    <div>
+                        <div>Observador</div>
+                        <small class="text-muted">Comportamiento</small>
+                    </div>
+                </a>
+            </li>
+            
+            <li><hr class="dropdown-divider"></li>
+            
+            <li>
+                <a class="dropdown-item d-flex align-items-center" href="{% url 'estudiantes:seleccionar_año_lectivo' %}">
+                    <i class="fas fa-history text-secondary me-2"></i>
+                    <div>
+                        <div>Historial Académico</div>
+                        <small class="text-muted">Años anteriores</small>
+                    </div>
+                </a>
+            </li>
+        </ul>
+    </li>
+    
+    <!-- Perfil -->
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center" href="{% url 'estudiantes:estudiante_perfil' %}">
+            <i class="fas fa-user me-1"></i>
+            <span>Mi Perfil</span>
+        </a>
+    </li>
+</ul>

@@ -1,0 +1,130 @@
+{% extends 'web/base.html' %}
+{% load static %}
+
+{% block title %}Programas Académicos - Colegio Cristiano El Shadai{% endblock %}
+
+{% block content %}
+<!-- Hero Section - CLASES CORREGIDAS -->
+<section class="programas-hero py-5 text-force-white">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 mx-auto text-center">
+        <h1 class="display-4 fw-bold mb-4 text-force-white">Nuestros Programas Académicos</h1>
+        <p class="lead hero-subtitle text-force-white">
+          Ofrecemos una educación integral basada en valores cristianos para formar 
+          líderes del mañana con excelencia académica y principios sólidos.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="programas-lista py-5">
+  <div class="container">
+    <div class="row g-4">
+      {% for programa in programas %}
+      <div class="col-lg-6">
+        <div class="card programa-card h-100 shadow-sm">
+          <div class="row g-0 h-100">
+            <div class="col-md-4">
+              {% if programa.imagen_principal %}
+                <img src="{{ programa.imagen_principal.url }}" 
+                    class="img-fluid rounded-start h-100 w-100 programa-image" 
+                    alt="{{ programa.nombre }}"
+                    loading="lazy">
+              {% else %}
+                <img src="/media/projects/carousel/1-.JPG"
+                    class="img-fluid rounded-start h-100 w-100 programa-image"
+                    alt="Imagen no disponible"
+                    loading="lazy">
+              {% endif %}
+            </div>
+            <div class="col-md-8">
+              <div class="card-body d-flex flex-column h-100">
+                <div class="mb-2">
+                  <span class="badge programa-badge">{{ programa.get_nivel_display }}</span>
+                </div>
+                <h5 class="card-title programa-title text-color">{{ programa.nombre }}</h5>
+                <p class="card-text programa-descripcion flex-grow-1 text-muted">
+                  {{ programa.descripcion_corta|truncatewords:25 }}
+                </p>
+                <div class="programa-info small programa-meta mb-3 text-muted">
+                  <div class="d-flex justify-content-between">
+                    <span><i class="fas fa-graduation-cap me-1"></i> {{ programa.grados }}</span>
+                    <span><i class="fas fa-clock me-1"></i> {{ programa.horario }}</span>
+                  </div>
+                  {% if programa.edad_minima and programa.edad_maxima %}
+                  <div class="mt-1">
+                    <i class="fas fa-child me-1"></i> 
+                    Edad: {{ programa.edad_minima }} - {{ programa.edad_maxima }} años
+                  </div>
+                  {% endif %}
+                </div>
+                <div class="mt-auto">
+                  <a href="{% url 'web:programa_detalle' programa.slug %}" 
+                     class="btn btn-outline-primary btn-sm programa-btn">
+                    <i class="fas fa-arrow-right me-1"></i>Ver Más Detalles
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12 text-center py-5">
+        <div class="card programa-empty">
+          <div class="card-body py-5">
+            <i class="fas fa-graduation-cap display-1 text-muted mb-4"></i>
+            <h4 class="text-muted mb-3">Próximamente</h4>
+            <p class="text-muted mb-0">Estamos preparando la información de nuestros programas académicos.</p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Sección de Proceso de Admisión -->
+<section class="cta-admision py-5 text-white">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-8">
+        <h3 class="mb-3">¿Interesado en alguno de nuestros programas?</h3>
+        <p class="mb-0 cta-text">Conoce nuestro proceso de admisión y forma parte de la familia El Shadai</p>
+      </div>
+      <div class="col-lg-4 text-lg-end">
+        <a href="{% url 'web:admision' %}" class="btn btn-light btn-lg">
+          <i class="fas fa-clipboard-list me-2"></i>Proceso de Admisión
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Correcciones específicas para programas */
+    .text-color {
+        color: var(--text-color) !important;
+    }
+    
+    .programa-card .card-body {
+        background: var(--card-bg);
+    }
+    
+    .programa-title {
+        color: var(--text-color) !important;
+    }
+    
+    .programa-descripcion {
+        color: var(--text-muted) !important;
+    }
+    
+    .cta-admision .cta-text {
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+</style>
+{% endblock %}
