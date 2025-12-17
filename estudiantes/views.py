@@ -150,14 +150,30 @@ class PerfilEstudianteView(BaseEstudianteView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Obtener estudiante del usuario
-        estudiante = Estudiante.objects.filter(usuario=self.request.user).first()
+        # Obtener estudiante del usuario con prefetch_related
+        estudiante = Estudiante.objects.filter(
+            usuario=self.request.user
+        ).select_related(
+            'usuario',
+            'usuario__tipo_documento',
+            'usuario__tipo_usuario'
+        ).prefetch_related(
+            'acudientes__acudiente'
+        ).first()
+        
         context['estudiante'] = estudiante
+
+        # Obtener matrícula actual con todas las relaciones
+        if estudiante and estudiante.matricula_actual:
+            context['matricula_actual'] = estudiante.matricula_actual
 
         # Obtener período actual
         periodo_actual = PeriodoAcademico.objects.filter(
             año_lectivo__estado=True,
             estado=True
+        ).select_related(
+            'periodo',
+            'año_lectivo'
         ).order_by('-fecha_inicio').first()
 
         context['periodo_actual'] = periodo_actual
@@ -418,7 +434,7 @@ class InformeAcademicoEstudianteView(BaseEstudianteView, PeriodoActualMixin):
         
         return None    
 
-class SeleccionarAñoLectivoView(LoginRequiredMixin, RoleRequiredMixin, TemplateView):
+class SeleccionarAñoLectivoView(LoginRequiredMixin, RoleRequiredMixin, TemplateView, PeriodoActualMixin):
     """Vista para seleccionar año lectivo para reportes"""
     template_name = 'estudiantes/seleccionar_año_lectivo.html'
     allowed_roles = ['Estudiante', 'Administrador', 'Rector', 'Docente']
@@ -2976,5 +2992,5 @@ class MisAsignaturasView(RoleRequiredMixin, TemplateView, PeriodoActualMixin):
         }
         return colors.get(area_nombre, '#6c757d')
     
-class CuentaInactivaView(BaseEstudianteView):
+class CuentaInactivaView(BaseEstudianteView, PeriodoActualMixin):
     template_name = 'estudiantes/cuenta_inactiva.html'

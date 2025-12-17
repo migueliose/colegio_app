@@ -9,15 +9,14 @@ urlpatterns = [
     # ============================
     # PERFIL Y DATOS DEL ESTUDIANTE
     # ============================
-    path('cuenta-inactiva/', views.CuentaInactivaView.as_view(), name='cuenta_inactiva'),
     path('perfil/', views.PerfilEstudianteView.as_view(), name='estudiante_perfil'),
     path('<int:estudiante_id>/perfil/', views.PerfilEstudianteView.as_view(), name='estudiante_perfil_admin'),
 
     # ============================
     # SELECCIÓN DE AÑO LECTIVO
     # ============================
-    path('seleccionar-año-lectivo/', views.SeleccionarAñoLectivoView.as_view(), name='seleccionar_año_lectivo'),
-    path('estudiante/<int:estudiante_id>/seleccionar-año-lectivo/',
+    path('seleccionar-anholectivo/', views.SeleccionarAñoLectivoView.as_view(), name='seleccionar_año_lectivo'),
+    path('<int:estudiante_id>/seleccionar-anholectivo/',
          views.SeleccionarAñoLectivoView.as_view(),
          name='seleccionar_año_lectivo_admin'),
 
@@ -56,11 +55,11 @@ urlpatterns = [
     path('<int:estudiante_id>/reporte-notas/pdf/periodo/<int:periodo_id>/',
          views.ReporteNotasPDFView.as_view(),
          name='estudiante_reporte_notas_pdf_periodo_admin'),
-    path('estudiante/<int:estudiante_id>/reporte-notas/año/<int:año_lectivo_id>/',
+    path('<int:estudiante_id>/reporte-notas/año/<int:año_lectivo_id>/',
          views.ReporteNotasPDFView.as_view(),
          {'tipo': 'notas'},
          name='estudiante_reporte_notas_año_admin'),
-    path('estudiante/<int:estudiante_id>/boletin-final/año/<int:año_lectivo_id>/',
+    path('<int:estudiante_id>/boletin-final/año/<int:año_lectivo_id>/',
          views.ReporteNotasPDFView.as_view(),
          {'tipo': 'final'},
          name='estudiante_boletin_final_año_admin'),
@@ -74,10 +73,10 @@ urlpatterns = [
 
     # Admin/Docente
     path('<int:estudiante_id>/observador/pdf/', views.ObservadorEstudiantePDFView.as_view(), name='estudiante_observador_pdf_admin'),
-    path('estudiante/<int:estudiante_id>/observador/año/<int:año_lectivo_id>/',
+    path('<int:estudiante_id>/observador/año/<int:año_lectivo_id>/',
          views.ObservadorEstudiantePDFView.as_view(),
          name='estudiante_observador_año_admin'),
-    path('estudiante/<int:estudiante_id>/observador-final/año/<int:año_lectivo_id>/',
+    path('<int:estudiante_id>/observador-final/año/<int:año_lectivo_id>/',
          views.ObservadorEstudiantePDFView.as_view(),
          {'tipo': 'boletin_final'},
          name='estudiante_observador_final_año_admin'),
@@ -85,6 +84,9 @@ urlpatterns = [
     # ============================
     # HORARIO Y ASIGNATURAS
     # ============================
-    path('estudiante/horario/', views.MiHorarioView.as_view(), name='horarios_list'),
-    path('estudiante/asignaturas/', views.MisAsignaturasView.as_view(), name='asignaturas_list'),
+    path('horario/', views.MiHorarioView.as_view(), name='horarios_list'),
+    path('asignaturas/', views.MisAsignaturasView.as_view(), name='asignaturas_list'),
+    
+    
+    path('cuenta-inactiva/', views.CuentaInactivaView.as_view(), name='cuenta_inactiva'),
 ]

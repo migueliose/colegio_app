@@ -1,4 +1,3 @@
-<!-- perfil_estudiante.html -->
 {% extends 'gestioncolegio/base.html' %}
 {% load static estudiante_filters %}
 
@@ -14,11 +13,11 @@
                 <div class="card-body">
                     <div class="row align-items-center">
                         
-                        <!-- Foto -->
+                        <!-- Foto - SOLUCIÓN CORREGIDA -->
                         <div class="col-auto">
-                            {% if estudiante.foto.url %}
+                            {% if estudiante.foto and estudiante.foto.url %}
                                 <img src="{{ estudiante.foto.url }}" 
-                                     alt="Foto de {{ estudiante.nombre_completo }}" 
+                                     alt="Foto de {{ estudiante.nombre_completico }}" 
                                      class="rounded-circle" width="100" height="100">
                             {% else %}
                                 <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" 
@@ -30,16 +29,21 @@
 
                         <!-- Información -->
                         <div class="col">
-                            <h1 class="h3 mb-1">{{ estudiante.nombre_completo }}</h1>
+                            <h1 class="h3 mb-1">{{ estudiante.usuario.get_full_name }}</h1>
 
                             <p class="text-muted mb-1">
                                 <i class="bi bi-mortarboard-fill me-2"></i>
-                                {{ estudiante.grado_actual }} - {{ estudiante.año_lectivo }}
+                                {% if estudiante.grado_actual %}
+                                    {{ estudiante.grado_actual.grado.nombre }} - 
+                                    {{ estudiante.matricula_actual.año_lectivo.anho }}
+                                {% else %}
+                                    Sin matrícula activa
+                                {% endif %}
                             </p>
 
                             <p class="text-muted mb-0">
                                 <i class="bi bi-person-badge-fill me-2"></i>
-                                {{ estudiante.usuario.tipo_documento }}: {{ estudiante.usuario.numero_documento }}
+                                {{ estudiante.usuario.tipo_documento.nombre }}: {{ estudiante.usuario.numero_documento }}
                             </p>
                         </div>
 
@@ -84,6 +88,17 @@
                     </div>
 
                     <div class="row">
+                        <div class="col-sm-6 mb-3">
+                            <strong>Fecha Nacimiento:</strong>
+                            <p class="mb-0">{{ estudiante.usuario.fecha_nacimiento|date:"d/m/Y"|default:"No registrada" }}</p>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <strong>Edad:</strong>
+                            <p class="mb-0">{{ estudiante.usuario.edad|default:"No registrada" }} años</p>
+                        </div>
+                    </div>
+
+                    <div class="row">
                         <div class="col-12">
                             <strong>Dirección:</strong>
                             <p class="mb-0">{{ estudiante.usuario.direccion|default:"No registrada" }}</p>
@@ -106,24 +121,59 @@
                     <div class="row">
                         <div class="col-sm-6 mb-3">
                             <strong>Grado Actual:</strong>
-                            <p class="mb-0">{{ estudiante.grado_actual }}</p>
+                            <p class="mb-0">
+                                {% if estudiante.grado_actual %}
+                                    {{ estudiante.grado_actual.grado.nombre }}
+                                {% else %}
+                                    Sin matrícula
+                                {% endif %}
+                            </p>
                         </div>
                         <div class="col-sm-6 mb-3">
                             <strong>Año Lectivo:</strong>
-                            <p class="mb-0">{{ estudiante.matricula_actual.año_lectivo }}</p>
+                            <p class="mb-0">
+                                {% if estudiante.matricula_actual %}
+                                    {{ estudiante.matricula_actual.año_lectivo.anho }}
+                                {% else %}
+                                    Sin año activo
+                                {% endif %}
+                            </p>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-sm-6 mb-3">
                             <strong>Estado:</strong>
-                            <span class="badge bg-success">Activo</span>
+                            {% if estudiante.estado %}
+                                <span class="badge bg-success">Activo</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactivo</span>
+                            {% endif %}
                         </div>
                         <div class="col-sm-6 mb-3">
                             <strong>Matrícula:</strong>
-                            <span class="badge bg-primary">Regular</span>
+                            {% if estudiante.matricula_actual %}
+                                <span class="badge bg-{% if estudiante.matricula_actual.estado == 'ACT' %}success{% elif estudiante.matricula_actual.estado == 'PEN' %}warning{% else %}secondary{% endif %}">
+                                    {{ estudiante.matricula_actual.get_estado_display }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">No matriculado</span>
+                            {% endif %}
                         </div>
                     </div>
+
+                    {% if estudiante.matricula_actual %}
+                    <div class="row">
+                        <div class="col-sm-6 mb-3">
+                            <strong>Sede:</strong>
+                            <p class="mb-0">{{ estudiante.matricula_actual.sede.nombre }}</p>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <strong>Código Matrícula:</strong>
+                            <p class="mb-0">{{ estudiante.matricula_actual.codigo_matricula }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
 
                 </div>
             </div>
@@ -132,7 +182,7 @@
     </div>
 
     <!-- ACUDIENTES -->
-    {% if acudientes %}
+    {% if estudiante.acudientes.exists %}
     <div class="card mb-4 shadow-sm">
         <div class="card-header">
             <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i>Acudientes</h5>
@@ -141,24 +191,24 @@
         <div class="card-body">
             <div class="row">
 
-                {% for acudiente in acudientes %}
+                {% for acudiente_rel in estudiante.acudientes.all %}
                 <div class="col-md-6 mb-3">
                     <div class="border rounded p-3">
 
-                        <h6>{{ acudiente.acudiente.nombres }} {{ acudiente.acudiente.apellidos }}</h6>
+                        <h6>{{ acudiente_rel.acudiente.get_full_name }}</h6>
 
-                        <p class="small mb-1"><strong>Parentesco:</strong> {{ acudiente.parentesco }}</p>
+                        <p class="small mb-1"><strong>Parentesco:</strong> {{ acudiente_rel.parentesco }}</p>
                         <p class="small mb-1">
                             <strong>Documento:</strong> 
-                            {{ acudiente.acudiente.tipo_documento }}: {{ acudiente.acudiente.numero_documento }}
+                            {{ acudiente_rel.acudiente.tipo_documento.nombre }}: {{ acudiente_rel.acudiente.numero_documento }}
                         </p>
 
-                        {% if acudiente.acudiente.telefono %}
-                        <p class="small mb-1"><strong>Teléfono:</strong> {{ acudiente.acudiente.telefono }}</p>
+                        {% if acudiente_rel.acudiente.telefono %}
+                        <p class="small mb-1"><strong>Teléfono:</strong> {{ acudiente_rel.acudiente.telefono }}</p>
                         {% endif %}
 
-                        {% if acudiente.acudiente.email %}
-                        <p class="small mb-0"><strong>Email:</strong> {{ acudiente.acudiente.email }}</p>
+                        {% if acudiente_rel.acudiente.email %}
+                        <p class="small mb-0"><strong>Email:</strong> {{ acudiente_rel.acudiente.email }}</p>
                         {% endif %}
 
                     </div>
@@ -170,10 +220,31 @@
     </div>
     {% endif %}
 
+    <!-- PERIODO ACTUAL -->
+    {% if periodo_actual %}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-calendar-event me-2"></i>Periodo Académico Actual</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Periodo:</strong>
+                    <p class="mb-0">{{ periodo_actual.periodo.nombre }}</p>
+                </div>
+                <div class="col-md-6">
+                    <strong>Fecha:</strong>
+                    <p class="mb-0">{{ periodo_actual.fecha_inicio|date:"d/m/Y" }} - {{ periodo_actual.fecha_fin|date:"d/m/Y" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- REPORTES Y DOCUMENTOS -->
     <div class="card mb-4 shadow-sm">
         <div class="card-header">
-            <h6 class="mb-0">Reportes y Documentos</h6>
+            <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Reportes y Documentos</h5>
         </div>
 
         <div class="card-body">
@@ -188,11 +259,13 @@
                             <p class="small mb-3">Descarga reportes por período o año completo.</p>
 
                             <div class="d-grid gap-2">
+                                {% if estudiante.matricula_actual %}
                                 <a href="{% url 'estudiantes:estudiante_reporte_notas_pdf' %}"
                                    target="_blank"
                                    class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-download me-2"></i>Reporte Actual
                                 </a>
+                                {% endif %}
 
                                 <a href="{% url 'estudiantes:seleccionar_año_lectivo' %}"
                                    class="btn btn-sm btn-primary">
@@ -228,11 +301,13 @@
                             <h5 class="card-title">Certificados</h5>
                             <p class="small mb-3">Certificados de estudio y otros documentos.</p>
 
+                            {% if estudiante.matricula_actual %}
                             <a href="{% url 'estudiantes:estudiante_constancia_pdf' %}" 
                                target="_blank"
                                class="btn btn-sm btn-warning">
                                 <i class="fas fa-download me-2"></i>Constancia Actual
                             </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -245,11 +320,13 @@
                             <h5 class="card-title">Observador</h5>
                             <p class="small mb-3">Descarga el observador del estudiante por año.</p>
 
+                            {% if estudiante.matricula_actual %}
                             <a href="{% url 'estudiantes:estudiante_observador_pdf' %}" 
                                target="_blank"
                                class="btn btn-sm btn-info">
                                 <i class="fas fa-download me-2"></i>Observador Actual
                             </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
