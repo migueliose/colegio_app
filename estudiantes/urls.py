@@ -32,14 +32,6 @@ urlpatterns = [
     path('<int:estudiante_id>/informe/periodo/<int:periodo_id>/', views.InformeAcademicoEstudianteView.as_view(), name='estudiante_informe_periodo_admin'),
 
     # ============================
-    # PDF - INFORME ACADÉMICO
-    # ============================
-    path('informe/pdf/periodo/<int:periodo_id>/', views.ExportarInformePDFView.as_view(), name='estudiante_informe_pdf'),
-    path('<int:estudiante_id>/informe/pdf/periodo/<int:periodo_id>/',
-         views.ExportarInformePDFView.as_view(),
-         name='estudiante_informe_pdf_admin'),
-
-    # ============================
     # CONSTANCIA DE ESTUDIO
     # ============================
     path('constancia/pdf/', views.ConstanciaEstudioPDFView.as_view(), name='estudiante_constancia_pdf'),

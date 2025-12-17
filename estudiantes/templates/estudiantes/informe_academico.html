@@ -382,13 +382,13 @@
                                     <h5>Informe Académico</h5>
                                     <p class="text-muted">PDF detallado del período</p>
                                     {% if request.user.tipo_usuario.nombre == 'Estudiante' %}
-                                        <a href="{% url 'estudiantes:estudiante_informe_pdf' periodo_id=periodo_detalle.id %}" 
+                                        <a href="" 
                                         class="btn btn-primary w-100">
                                             Descargar PDF
                                         </a>
                                     {% else %}
                                         {% if estudiante_obj %}
-                                        <a href="{% url 'estudiantes:estudiante_informe_pdf_admin' estudiante_id=estudiante_obj.id periodo_id=periodo_detalle.id %}" 
+                                        <a href="" 
                                         class="btn btn-primary w-100">
                                             Descargar PDF
                                         </a>

@@ -16,36 +16,37 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 # ===============================
 SECRET_KEY = config('SECRET_KEY')
-
 DEBUG = config('DEBUG', cast=bool)
-# ======================
-# SEGURIDAD PRODUCCIÓN
-# ======================
-SECURE_BROWSER_XSS_FILTER = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = 'DENY'
 
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
+# Configuración de hosts permitidos
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 
-SECURE_SSL_REDIRECT = True 
-#======================
-ALLOWED_HOSTS = config(
-    'ALLOWED_HOSTS',
-    cast=Csv()
-)
-
-CSRF_TRUSTED_ORIGINS = [
-    'https://colegiocrishadai.edu.co',
-    'https://www.colegiocrishadai.edu.co',
-]
-
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = not DEBUG
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
-X_FRAME_OPTIONS = 'DENY'
-
+# Configuración SSL solo en producción
+if not DEBUG:
+    # ======================
+    # SEGURIDAD PRODUCCIÓN
+    # ======================
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    
+    CSRF_TRUSTED_ORIGINS = [
+        'https://colegiocrishadai.edu.co',
+        'https://www.colegiocrishadai.edu.co',
+    ]
+    
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+else:
+    # Configuración para desarrollo
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_PROXY_SSL_HEADER = None
+    
 # ===============================
 # APPLICATIONS
 # ===============================
@@ -186,18 +187,27 @@ LOGIN_REDIRECT_URL = 'web:perfil'
 LOGOUT_REDIRECT_URL = 'web:home'
 
 # ===============================
-# EMAIL
+# EMAIL - CONFIGURACIÓN MEJORADA
 # ===============================
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-
-EMAIL_HOST_USER = config('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
-
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
-SERVER_EMAIL = DEFAULT_FROM_EMAIL
+if DEBUG:
+    # Para desarrollo: mostrar emails en consola
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    EMAIL_HOST = 'localhost'
+    EMAIL_PORT = 1025  # Para usar MailHog si lo prefieres
+    EMAIL_USE_TLS = False
+    EMAIL_HOST_USER = ''
+    EMAIL_HOST_PASSWORD = ''
+    DEFAULT_FROM_EMAIL = 'noreply@localhost'
+else:
+    # Para producción: usar Gmail SMTP
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+    EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+    DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
+    SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 # ===============================
 # CRISPY FORMS
