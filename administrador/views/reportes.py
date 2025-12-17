@@ -83,20 +83,6 @@ class DashboardReportesView(RoleRequiredMixin, TemplateView):
         
         return context
 
-import json
-from datetime import datetime
-from django.db.models import Count
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
-from django.views.generic import TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-
-from gestioncolegio.mixins import RoleRequiredMixin
-from usuarios.models import Usuario
-from estudiantes.models import Estudiante, Matricula
-from gestioncolegio.models import Sede, AñoLectivo
-from academico.models import Grado
-
 class ReporteEstudiantesView(RoleRequiredMixin, TemplateView):
     """Reporte de estudiantes con filtros avanzados"""
     template_name = 'administrador/reportes/estudiantes.html'
