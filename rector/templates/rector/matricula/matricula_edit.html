@@ -1,0 +1,497 @@
+<!-- rector/templates/rector/matricula/matricula_edit.html -->
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+
+{% block title %}Editar Matrícula - {{ matricula.codigo_matricula }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .student-info {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-radius: 10px;
+        padding: 1.5rem;
+        color: white;
+        margin-bottom: 2rem;
+    }
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .section-title {
+        color: #4e54c8;
+        border-bottom: 2px solid #4e54c8;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+    .history-item {
+        border-left: 3px solid #dee2e6;
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow">
+                <div class="card-header text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">
+                                <i class="bi bi-pencil-square me-2"></i>Editar Matrícula
+                            </h4>
+                            <p class="mb-0 opacity-75">Código: {{ matricula.codigo_matricula }}</p>
+                        </div>
+                        <div>
+                            <a href="{% url 'rector:matricula_detail' matricula.id %}" class="btn btn-light">
+                                <i class="bi bi-eye me-1"></i>Ver
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Información del estudiante -->
+                    <div class="student-info">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                {% if matricula.estudiante.foto %}
+                                <img src="{{ matricula.estudiante.foto.url }}" 
+                                     alt="Foto" 
+                                     class="rounded-circle" 
+                                     width="80" 
+                                     height="80">
+                                {% else %}
+                                <div class="rounded-circle bg-white d-flex align-items-center justify-content-center" 
+                                     style="width: 80px; height: 80px;">
+                                    <i class="bi bi-person-fill text-primary" style="font-size: 2rem;"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col">
+                                <h5 class="mb-1">{{ matricula.estudiante.usuario.get_full_name }}</h5>
+                                <p class="mb-1 opacity-75">
+                                    <i class="bi bi-person-badge me-1"></i>{{ matricula.estudiante.usuario.numero_documento }}
+                                </p>
+                                <p class="mb-0 opacity-75">
+                                    <i class="bi bi-calendar me-1"></i>Edad: {{ matricula.estudiante.usuario.edad|default:"N/A" }} años
+                                </p>
+                            </div>
+                            <div class="col-auto">
+                                <span class="badge bg-{% if matricula.estudiante.estado %}success{% else %}danger{% endif %}">
+                                    {% if matricula.estudiante.estado %}Activo{% else %}Inactivo{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Historial de cambios (si aplica) -->
+                    {% if matricula.historial_cambios %}
+                    <div class="alert alert-info mb-4">
+                        <h6><i class="bi bi-clock-history me-2"></i>Historial de Cambios</h6>
+                        {% for cambio in matricula.historial_cambios|slice:":3" %}
+                        <div class="history-item">
+                            <small class="text-muted">{{ cambio.fecha|date:"d/m/Y H:i" }}</small>
+                            <p class="mb-0 small">{{ cambio.descripcion }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Formulario de edición -->
+                    <form method="post" novalidate id="matriculaForm">
+                        {% csrf_token %}
+                        
+                        <!-- Errores generales -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            <p class="mb-0">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="form-section">
+                            <h5 class="section-title">
+                                <i class="bi bi-pencil me-2"></i>Editar Información de Matrícula
+                            </h5>
+                            
+                            <div class="row">
+                                <!-- Año Lectivo (solo lectura si ya tiene notas) -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_año_lectivo" class="form-label required">
+                                        <i class="bi bi-calendar-check me-1"></i>Año Lectivo
+                                    </label>
+                                    {% if notas %}
+                                    <input type="text" 
+                                           class="form-control" 
+                                           value="{{ matricula.año_lectivo.anho }} - {{ matricula.año_lectivo.sede.nombre }}"
+                                           readonly>
+                                    <small class="form-text text-muted">
+                                        No se puede cambiar el año lectivo porque ya hay calificaciones registradas.
+                                    </small>
+                                    {% else %}
+                                    <select name="año_lectivo" id="id_año_lectivo" class="form-select" required>
+                                        {% for año in form.fields.año_lectivo.queryset %}
+                                        <option value="{{ año.id }}" 
+                                                {% if form.año_lectivo.value == año.id %}selected{% endif %}>
+                                            {{ año.anho }} - {{ año.sede.nombre }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Sede -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_sede" class="form-label required">
+                                        <i class="bi bi-building me-1"></i>Sede
+                                    </label>
+                                    <select name="sede" id="id_sede" class="form-select" required>
+                                        {% for sede in form.fields.sede.queryset %}
+                                        <option value="{{ sede.id }}" 
+                                                {% if form.sede.value == sede.id %}selected{% endif %}>
+                                            {{ sede.nombre }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if form.sede.errors %}
+                                    <div class="text-danger small mt-1">{{ form.sede.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <!-- Nivel Escolar -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_nivel" class="form-label">
+                                        <i class="bi bi-diagram-3 me-1"></i>Nivel Escolar
+                                    </label>
+                                    <select id="id_nivel" class="form-select" onchange="filtrarGrados()">
+                                        <option value="">Seleccione un nivel</option>
+                                        {% for nivel in niveles %}
+                                        <option value="{{ nivel.id }}" 
+                                                {% if nivel.id == matricula.grado_año_lectivo.grado.nivel_escolar.id %}selected{% endif %}>
+                                            {{ nivel.nombre }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Grado -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_grado_año_lectivo" class="form-label required">
+                                        <i class="bi bi-mortarboard me-1"></i>Grado
+                                    </label>
+                                    <select name="grado_año_lectivo" id="id_grado_año_lectivo" class="form-select" required>
+                                        <option value="{{ matricula.grado_año_lectivo.id }}" selected>
+                                            {{ matricula.grado_año_lectivo.grado.nombre }} ({{ matricula.grado_año_lectivo.grado.nivel_escolar.nombre }})
+                                        </option>
+                                    </select>
+                                    <div id="grado-loading" class="d-none mt-2">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                        <span class="ms-2">Cargando grados...</span>
+                                    </div>
+                                    {% if form.grado_año_lectivo.errors %}
+                                    <div class="text-danger small mt-1">{{ form.grado_año_lectivo.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <!-- Estado -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_estado" class="form-label required">
+                                        <i class="bi bi-toggle-on me-1"></i>Estado
+                                    </label>
+                                    <select name="estado" id="id_estado" class="form-select" required>
+                                        {% for value, label in form.fields.estado.choices %}
+                                        <option value="{{ value }}" 
+                                                {% if form.estado.value == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if form.estado.errors %}
+                                    <div class="text-danger small mt-1">{{ form.estado.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Fecha de Matrícula -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_fecha_matricula" class="form-label">
+                                        <i class="bi bi-calendar-date me-1"></i>Fecha de Matrícula
+                                    </label>
+                                    <input type="date" 
+                                           name="fecha_matricula" 
+                                           id="id_fecha_matricula"
+                                           class="form-control" 
+                                           value="{{ matricula.fecha_matricula|date:'Y-m-d' }}">
+                                    <small class="form-text text-muted">
+                                        Puede modificar la fecha de registro si es necesario
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Observaciones -->
+                            <div class="mb-3">
+                                <label for="id_observaciones" class="form-label">
+                                    <i class="bi bi-chat-text me-1"></i>Observaciones
+                                </label>
+                                <textarea name="observaciones" 
+                                          id="id_observaciones" 
+                                          class="form-control" 
+                                          rows="3"
+                                          placeholder="Observaciones adicionales (opcional)">{{ form.observaciones.value|default:matricula.observaciones }}</textarea>
+                                {% if form.observaciones.errors %}
+                                <div class="text-danger small mt-1">{{ form.observaciones.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Resumen de cambios -->
+                            <div class="card border-info mb-3">
+                                <div class="card-header bg-info text-white">
+                                    <i class="bi bi-card-checklist me-2"></i>Resumen de Cambios
+                                </div>
+                                <div class="card-body">
+                                    <div class="row" id="resumen-cambios">
+                                        <div class="col-md-6">
+                                            <p class="mb-1">
+                                                <strong>Año Lectivo:</strong> 
+                                                <span class="text-{% if form.año_lectivo.value != matricula.año_lectivo.id %}danger{% else %}success{% endif %}">
+                                                    {% if notas %}(No modificable){% else %}{{ matricula.año_lectivo.anho }}{% endif %}
+                                                </span>
+                                            </p>
+                                            <p class="mb-1">
+                                                <strong>Sede:</strong> 
+                                                <span class="text-{% if form.sede.value != matricula.sede.id %}warning{% else %}success{% endif %}">
+                                                    {{ matricula.sede.nombre }}
+                                                </span>
+                                            </p>
+                                            <p class="mb-1">
+                                                <strong>Nivel:</strong> 
+                                                <span id="resumen-nivel">{{ matricula.grado_año_lectivo.grado.nivel_escolar.nombre }}</span>
+                                            </p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-1">
+                                                <strong>Grado:</strong> 
+                                                <span class="text-{% if form.grado_año_lectivo.value != matricula.grado_año_lectivo.id %}warning{% else %}success{% endif %}" 
+                                                      id="resumen-grado">
+                                                    {{ matricula.grado_año_lectivo.grado.nombre }}
+                                                </span>
+                                            </p>
+                                            <p class="mb-1">
+                                                <strong>Estado:</strong> 
+                                                <span class="text-{% if form.estado.value != matricula.estado %}warning{% else %}success{% endif %}" 
+                                                      id="resumen-estado">
+                                                    {{ matricula.get_estado_display }}
+                                                </span>
+                                            </p>
+                                            <p class="mb-1">
+                                                <strong>Fecha:</strong> 
+                                                <span class="text-{% if 'fecha_matricula' in form.changed_data %}warning{% else %}success{% endif %}">
+                                                    {{ matricula.fecha_matricula|date:"d/m/Y" }}
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Botones -->
+                            <div class="d-flex justify-content-between mt-4">
+                                <div>
+                                    <a href="{% url 'rector:matricula_detail' matricula.id %}" 
+                                       class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                                    </a>
+                                    <a href="{% url 'rector:matricula_list' %}" 
+                                       class="btn btn-outline-primary ms-2">
+                                        <i class="bi bi-list me-1"></i>Volver a Lista
+                                    </a>
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle me-1"></i>Guardar Cambios
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elementos del DOM
+    const selectNivel = document.getElementById('id_nivel');
+    const selectGrado = document.getElementById('id_grado_año_lectivo');
+    const selectAño = document.getElementById('id_año_lectivo');
+    const selectSede = document.getElementById('id_sede');
+    const selectEstado = document.getElementById('id_estado');
+    const inputFecha = document.getElementById('id_fecha_matricula');
+    const loadingDiv = document.getElementById('grado-loading');
+    
+    // Elementos de resumen
+    const resumenNivel = document.getElementById('resumen-nivel');
+    const resumenGrado = document.getElementById('resumen-grado');
+    const resumenEstado = document.getElementById('resumen-estado');
+    
+    // Función para actualizar resumen
+    function actualizarResumen() {
+        const nivelText = selectNivel.options[selectNivel.selectedIndex]?.text || '{{ matricula.grado_año_lectivo.grado.nivel_escolar.nombre }}';
+        const gradoText = selectGrado.options[selectGrado.selectedIndex]?.text || '{{ matricula.grado_año_lectivo.grado.nombre }}';
+        const estadoText = selectEstado.options[selectEstado.selectedIndex]?.text || '{{ matricula.get_estado_display }}';
+        
+        resumenNivel.textContent = nivelText;
+        resumenGrado.textContent = gradoText;
+        resumenEstado.textContent = estadoText;
+        
+        // Resaltar cambios
+        resumenGrado.className = `text-${selectGrado.value != '{{ matricula.grado_año_lectivo.id }}' ? 'warning' : 'success'}`;
+        resumenEstado.className = `text-${selectEstado.value != '{{ matricula.estado }}' ? 'warning' : 'success'}`;
+    }
+    
+    // Función para filtrar grados
+    function filtrarGrados() {
+        const añoId = selectAño.value;
+        const sedeId = selectSede.value;
+        const nivelId = selectNivel.value;
+        
+        if (!añoId || !sedeId || !nivelId) {
+            selectGrado.innerHTML = '<option value="">Seleccione año, sede y nivel primero</option>';
+            actualizarResumen();
+            return;
+        }
+        
+        // Mostrar loading
+        loadingDiv.classList.remove('d-none');
+        selectGrado.disabled = true;
+        
+        // Hacer petición AJAX
+        fetch(`/rector/ajax/grados-por-filtros/?año=${añoId}&sede=${sedeId}&nivel=${nivelId}`)
+            .then(response => response.json())
+            .then(data => {
+                selectGrado.innerHTML = '<option value="">Seleccione un grado</option>';
+                
+                if (data.success && data.grados && data.grados.length > 0) {
+                    data.grados.forEach(grado => {
+                        const option = document.createElement('option');
+                        option.value = grado.id;
+                        option.textContent = grado.nombre;
+                        
+                        // Seleccionar por defecto el grado actual
+                        if (grado.id == '{{ matricula.grado_año_lectivo.id }}') {
+                            option.selected = true;
+                        }
+                        
+                        selectGrado.appendChild(option);
+                    });
+                } else {
+                    selectGrado.innerHTML = '<option value="">No hay grados disponibles para esta combinación</option>';
+                }
+                
+                loadingDiv.classList.add('d-none');
+                selectGrado.disabled = false;
+                actualizarResumen();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                selectGrado.innerHTML = '<option value="">Error al cargar grados</option>';
+                loadingDiv.classList.add('d-none');
+                selectGrado.disabled = false;
+                actualizarResumen();
+            });
+    }
+    
+    // Event listeners
+    selectNivel.addEventListener('change', function() {
+        if (this.value) {
+            filtrarGrados();
+        } else {
+            selectGrado.innerHTML = '<option value="">Seleccione nivel primero</option>';
+            actualizarResumen();
+        }
+    });
+    
+    selectSede.addEventListener('change', function() {
+        if (selectNivel.value) {
+            filtrarGrados();
+        }
+        actualizarResumen();
+    });
+    
+    selectAño.addEventListener('change', function() {
+        if (selectNivel.value) {
+            filtrarGrados();
+        }
+        actualizarResumen();
+    });
+    
+    selectGrado.addEventListener('change', actualizarResumen);
+    selectEstado.addEventListener('change', actualizarResumen);
+    
+    // Inicializar
+    setTimeout(actualizarResumen, 100);
+    
+    // Validación del formulario
+    const matriculaForm = document.getElementById('matriculaForm');
+    
+    matriculaForm.addEventListener('submit', function(event) {
+        const requiredFields = [selectAño, selectSede, selectGrado, selectEstado];
+        let hasError = false;
+        
+        requiredFields.forEach(field => {
+            if (!field.value) {
+                field.classList.add('is-invalid');
+                hasError = true;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        if (hasError) {
+            event.preventDefault();
+            alert('Por favor complete todos los campos requeridos (*)');
+        } else {
+            // Confirmar si hay cambios importantes
+            if (selectEstado.value === 'RET' || selectEstado.value === 'INA') {
+                const confirmacion = confirm(
+                    '¿Está seguro de cambiar el estado a "' + 
+                    selectEstado.options[selectEstado.selectedIndex].text + 
+                    '"? Esta acción puede afectar el acceso del estudiante.'
+                );
+                
+                if (!confirmacion) {
+                    event.preventDefault();
+                }
+            }
+        }
+    });
+    
+    // Fecha por defecto a hoy si está vacía
+    if (!inputFecha.value) {
+        const today = new Date().toISOString().split('T')[0];
+        inputFecha.value = today;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,343 @@
+{% extends 'rector/base_rector2.html' %}
+{% load static %}
+
+{% block title %}{{ grado.nombre }} - Detalle - Módulo Rector{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-graduation-cap me-2"></i>{{ grado.nombre }}
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'rector:grado_list' %}">Grados</a></li>
+                    <li class="breadcrumb-item active">Detalle</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            {% if año_lectivo_actual %}
+            <a href="{% url 'rector:asignatura_grado_create' %}?grado={{ grado.id }}&año={{ año_lectivo_actual.id }}" 
+               class="btn btn-success">
+                <i class="fas fa-plus me-2"></i>Agregar Asignatura
+            </a>
+            {% endif %}
+            <a href="{% url 'rector:grado_list' %}" class="btn btn-secondary ms-2">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Columna principal -->
+        <div class="col-lg-8">
+            <!-- Tarjetas de información -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Nivel Escolar
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ grado.nivel_escolar.nombre }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-layer-group fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Años Activo
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ asignaturas_por_año|length }}
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">Años con asignaturas asignadas</small>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Asignaturas por año -->
+            {% for año_data in asignaturas_por_año %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>Año Lectivo: {{ año_data.año.anho }}
+                        <span class="badge bg-primary ms-2">{{ año_data.total }}</span>
+                    </h6>
+                    <div>
+                        <span class="badge bg-info">{{ año_data.año.sede.nombre }}</span>
+                        {% if año_data.año.estado %}
+                        <span class="badge bg-success ms-2">Activo</span>
+                        {% else %}
+                        <span class="badge bg-secondary ms-2">Inactivo</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if año_data.asignaturas %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Asignatura</th>
+                                    <th class="text-center">Área</th>
+                                    <th class="text-center">Sede</th>
+                                    <th class="text-center">Docente</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asignatura_grado in año_data.asignaturas %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ asignatura_grado.asignatura.nombre }}</strong>
+                                        {% if asignatura_grado.asignatura.ih %}
+                                        <div class="small text-muted">
+                                            {{ asignatura_grado.asignatura.ih }} hora(s) semanal(es)
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">
+                                            {{ asignatura_grado.asignatura.area.nombre }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">{{ asignatura_grado.sede.nombre }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if asignatura_grado.docente %}
+                                            <span class="badge bg-success">
+                                                {{ asignatura_grado.docente.usuario.get_full_name|truncatechars:20 }}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">Sin asignar</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'rector:asignatura_detail' asignatura_grado.asignatura.pk %}" 
+                                               class="btn btn-info" title="Ver asignatura">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'rector:asignatura_grado_edit' asignatura_grado.pk %}" 
+                                               class="btn btn-warning" title="Editar asignación">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% if asignatura_grado.docente %}
+                                            <a href="{% url 'rector:docente_detail' asignatura_grado.docente.pk %}" 
+                                               class="btn btn-secondary" title="Ver docente">
+                                                <i class="fas fa-user-tie"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="fas fa-book fa-3x mb-3"></i>
+                            <h5>No hay asignaturas asignadas</h5>
+                            <p>Este grado no tiene asignaturas para este año lectivo.</p>
+                            <a href="{% url 'rector:asignatura_grado_create' %}?grado={{ grado.id }}&año={{ año_data.año.id }}" 
+                               class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Agregar Asignatura
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="card shadow">
+                <div class="card-body text-center py-5">
+                    <div class="text-muted">
+                        <i class="fas fa-graduation-cap fa-4x mb-3"></i>
+                        <h4>No hay asignaturas asignadas</h4>
+                        <p class="mb-4">Este grado no tiene asignaturas en ningún año lectivo.</p>
+                        {% if año_lectivo_actual %}
+                        <a href="{% url 'rector:asignatura_grado_create' %}?grado={{ grado.id }}&año={{ año_lectivo_actual.id }}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Agregar Primera Asignatura
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Logros recientes -->
+            {% if logros %}
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-trophy me-2"></i>Logros Recientes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for logro in logros %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ logro.asignatura.nombre }}</h6>
+                                <small class="text-muted">{{ logro.periodo_academico.año_lectivo.anho }}</small>
+                            </div>
+                            <p class="mb-1">
+                                <strong>Tema:</strong> {{ logro.tema|truncatechars:100 }}
+                            </p>
+                            <small>
+                                <span class="badge bg-info me-2">{{ logro.periodo_academico.periodo.nombre }}</span>
+                                <a href="{% url 'rector:logro_detail' logro.pk %}" class="text-decoration-none">
+                                    <i class="fas fa-eye me-1"></i>Ver detalle
+                                </a>
+                            </small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'rector:logro_list' %}?grado={{ grado.id }}" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-2"></i>Ver todos los logros
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna lateral -->
+        <div class="col-lg-4">
+            <!-- Estadísticas -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-pie me-2"></i>Estadísticas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Nivel:</span>
+                            <strong class="text-primary">{{ grado.nivel_escolar.nombre }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Años activo:</span>
+                            <strong class="text-success">{{ asignaturas_por_año|length }}</strong>
+                        </li>
+                        {% if año_lectivo_actual %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Matriculados actual:</span>
+                            <strong class="text-info">{{ matriculas_actual|default:"0" }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Docentes actual:</span>
+                            <strong class="text-warning">{{ docentes_actual|default:"0" }}</strong>
+                        </li>
+                        {% endif %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Total logros:</span>
+                            <strong class="text-danger">{{ logros|length }}</strong>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Acciones rápidas -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if año_lectivo_actual %}
+                        <a href="{% url 'rector:asignatura_grado_create' %}?grado={{ grado.id }}&año={{ año_lectivo_actual.id }}" 
+                           class="btn btn-success">
+                            <i class="fas fa-plus me-2"></i>Agregar Asignatura
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'rector:logro_create' %}?grado={{ grado.id }}" 
+                           class="btn btn-info">
+                            <i class="fas fa-trophy me-2"></i>Crear Logro
+                        </a>
+                        
+                        <a href="{% url 'rector:grado_list' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-2"></i>Ver todos los Grados
+                        </a>
+                        
+                        <a href="{% url 'rector:nivel_detail' grado.nivel_escolar.pk %}" class="btn btn-outline-info">
+                            <i class="fas fa-layer-group me-2"></i>Ver Nivel Escolar
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información del grado -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle me-2"></i>Información del Grado
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tbody>
+                            <tr>
+                                <th class="text-muted" width="40%">Nombre:</th>
+                                <td>{{ grado.nombre }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Creado:</th>
+                                <td>{{ grado.created_at|date:"d/m/Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Estado:</th>
+                                <td>
+                                    {% if grado.is_deleted %}
+                                        <span class="badge bg-danger">Eliminado</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">ID interno:</th>
+                                <td>GRD-{{ grado.id|stringformat:"03d" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

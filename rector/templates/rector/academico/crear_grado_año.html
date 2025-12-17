@@ -1,0 +1,383 @@
+<!-- rector/templates/rector/academico/crear_grado_año.html -->
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .section-title {
+        color: #4e54c8;
+        border-bottom: 2px solid #4e54c8;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+    .info-box {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+    }
+    .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+    }
+    .form-check-input:checked + .form-check-label {
+        font-weight: bold;
+        color: #4e54c8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow form-container">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-plus-circle me-2"></i>{{ titulo }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Información del año actual -->
+                    {% if año_lectivo_actual %}
+                    <div class="info-box mb-4">
+                        <h6 class="mb-2">
+                            <i class="bi bi-info-circle me-2"></i>Información del Año Lectivo
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Año:</strong> {{ año_lectivo_actual.anho }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Sede:</strong> {{ año_lectivo_actual.sede.nombre }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Estado:</strong> 
+                                <span class="badge bg-success">Activo</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" novalidate id="crearGradoForm">
+                        {% csrf_token %}
+                        
+                        <!-- Opción de creación -->
+                        <div class="form-section">
+                            <h5 class="section-title">
+                                <i class="bi bi-gear me-2"></i>Método de Creación
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    {{ form.copiar_de_año_anterior }}
+                                    <label class="form-check-label" for="{{ form.copiar_de_año_anterior.id_for_label }}">
+                                        <strong>Copiar grados del año anterior</strong>
+                                    </label>
+                                    <div class="form-text">
+                                        Seleccione esta opción para copiar los grados de un año lectivo anterior.
+                                        Puede copiar todos los grados o seleccionar específicos.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección para crear grado individual -->
+                        <div id="seccion-grado-individual" class="form-section">
+                            <h5 class="section-title">
+                                <i class="bi bi-mortarboard me-2"></i>Crear Grado Individual
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.año_lectivo.id_for_label }}" class="form-label required">
+                                        <i class="bi bi-calendar-check me-1"></i>Año Lectivo
+                                    </label>
+                                    {% render_field form.año_lectivo class="form-select" %}
+                                    {% if form.año_lectivo.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.año_lectivo.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.grado.id_for_label }}" class="form-label">
+                                        <i class="bi bi-mortarboard me-1"></i>Grado
+                                    </label>
+                                    {% render_field form.grado class="form-select" %}
+                                    {% if form.grado.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.grado.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Solo visible si no selecciona "Copiar del año anterior"
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección para copiar del año anterior -->
+                        <div id="seccion-copiar-año" class="form-section d-none">
+                            <h5 class="section-title">
+                                <i class="bi bi-copy me-2"></i>Copiar del Año Anterior
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.año_anterior.id_for_label }}" class="form-label required">
+                                        <i class="bi bi-calendar-minus me-1"></i>Año Anterior a Copiar
+                                    </label>
+                                    {% render_field form.año_anterior class="form-select" %}
+                                    {% if form.año_anterior.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.año_anterior.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-list-check me-1"></i>Grados a Copiar
+                                </label>
+                                <div class="checkbox-grid">
+                                    {% for checkbox in form.grados_seleccionados %}
+                                    <div class="form-check">
+                                        {{ checkbox.tag }}
+                                        <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                            {{ checkbox.choice_label }}
+                                        </label>
+                                    </div>
+                                    {% empty %}
+                                    <div class="text-muted">
+                                        No hay grados disponibles en años anteriores
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="form-text">
+                                    Seleccione los grados específicos a copiar. Si no selecciona ninguno, se copiarán todos.
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="copiar_asignaturas" name="copiar_asignaturas">
+                                    <label class="form-check-label" for="copiar_asignaturas">
+                                        <strong>Copiar también las asignaturas asignadas a estos grados</strong>
+                                    </label>
+                                    <div class="form-text">
+                                        Esta opción copiará las asignaturas que estaban asignadas a estos grados en el año anterior.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resumen -->
+                        <div class="form-section">
+                            <h5 class="section-title">
+                                <i class="bi bi-card-checklist me-2"></i>Resumen
+                            </h5>
+                            
+                            <div id="resumen-creacion" class="alert alert-light">
+                                <p class="mb-0">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Seleccione un método de creación para ver el resumen aquí.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between border-top pt-4 mt-4">
+                            <div>
+                                <a href="{% url 'rector:grado_management' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i>Volver
+                                </a>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i>Crear Grado(s)
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('crearGradoForm');
+    const copiarCheckbox = document.getElementById('id_copiar_de_año_anterior');
+    const seccionIndividual = document.getElementById('seccion-grado-individual');
+    const seccionCopiar = document.getElementById('seccion-copiar-año');
+    const resumenDiv = document.getElementById('resumen-creacion');
+    
+    // Mostrar/ocultar secciones según opción seleccionada
+    function toggleSecciones() {
+        if (copiarCheckbox.checked) {
+            seccionIndividual.style.display = 'none';
+            seccionCopiar.classList.remove('d-none');
+            
+            // Hacer campo grado no requerido
+            const gradoSelect = document.getElementById('id_grado');
+            if (gradoSelect) {
+                gradoSelect.required = false;
+            }
+            
+            // Hacer año anterior requerido
+            const añoAnteriorSelect = document.getElementById('id_año_anterior');
+            if (añoAnteriorSelect) {
+                añoAnteriorSelect.required = true;
+            }
+            
+            actualizarResumenCopiar();
+        } else {
+            seccionIndividual.style.display = 'block';
+            seccionCopiar.classList.add('d-none');
+            
+            // Hacer campo grado requerido
+            const gradoSelect = document.getElementById('id_grado');
+            if (gradoSelect) {
+                gradoSelect.required = true;
+            }
+            
+            // Hacer año anterior no requerido
+            const añoAnteriorSelect = document.getElementById('id_año_anterior');
+            if (añoAnteriorSelect) {
+                añoAnteriorSelect.required = false;
+            }
+            
+            actualizarResumenIndividual();
+        }
+    }
+    
+    // Actualizar resumen para creación individual
+    function actualizarResumenIndividual() {
+        const añoSelect = document.getElementById('id_año_lectivo');
+        const gradoSelect = document.getElementById('id_grado');
+        
+        if (añoSelect.value && gradoSelect.value) {
+            const añoText = añoSelect.options[añoSelect.selectedIndex].text;
+            const gradoText = gradoSelect.options[gradoSelect.selectedIndex].text;
+            
+            resumenDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-check-circle me-2"></i>Resumen de Creación
+                    </h6>
+                    <p class="mb-0">
+                        Se creará el grado <strong>${gradoText}</strong> en el año lectivo <strong>${añoText}</strong>.
+                    </p>
+                </div>
+            `;
+        } else {
+            resumenDiv.innerHTML = `
+                <div class="alert alert-light">
+                    <p class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Complete los campos para ver el resumen.
+                    </p>
+                </div>
+            `;
+        }
+    }
+    
+    // Actualizar resumen para copiar del año anterior
+    function actualizarResumenCopiar() {
+        const añoSelect = document.getElementById('id_año_lectivo');
+        const añoAnteriorSelect = document.getElementById('id_año_anterior');
+        const gradosCheckboxes = document.querySelectorAll('input[name="grados_seleccionados"]:checked');
+        const copiarAsignaturas = document.getElementById('copiar_asignaturas').checked;
+        
+        if (añoSelect.value && añoAnteriorSelect.value) {
+            const añoText = añoSelect.options[añoSelect.selectedIndex].text;
+            const añoAnteriorText = añoAnteriorSelect.options[añoAnteriorSelect.selectedIndex].text;
+            const totalGrados = gradosCheckboxes.length;
+            
+            let gradosText = 'todos los grados';
+            if (totalGrados > 0) {
+                const gradosNombres = Array.from(gradosCheckboxes).map(cb => {
+                    const label = document.querySelector(`label[for="${cb.id}"]`);
+                    return label ? label.textContent.trim() : '';
+                }).filter(name => name);
+                
+                gradosText = gradosNombres.length > 2 ? 
+                    `${gradosNombres.slice(0, 2).join(', ')} y ${gradosNombres.length - 2} más` :
+                    gradosNombres.join(', ');
+            }
+            
+            resumenDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-copy me-2"></i>Resumen de Copia
+                    </h6>
+                    <p class="mb-1">
+                        Se copiarán <strong>${gradosText}</strong> del año <strong>${añoAnteriorText}</strong> 
+                        al año <strong>${añoText}</strong>.
+                    </p>
+                    ${copiarAsignaturas ? 
+                        '<p class="mb-0"><i class="bi bi-check-circle me-1"></i>También se copiarán las asignaturas asignadas.</p>' : 
+                        '<p class="mb-0"><i class="bi bi-x-circle me-1"></i>No se copiarán las asignaturas.</p>'}
+                </div>
+            `;
+        } else {
+            resumenDiv.innerHTML = `
+                <div class="alert alert-light">
+                    <p class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Complete los campos para ver el resumen.
+                    </p>
+                </div>
+            `;
+        }
+    }
+    
+    // Event listeners
+    copiarCheckbox.addEventListener('change', toggleSecciones);
+    
+    // Escuchar cambios en campos relevantes
+    document.getElementById('id_año_lectivo')?.addEventListener('change', function() {
+        if (!copiarCheckbox.checked) {
+            actualizarResumenIndividual();
+        } else {
+            actualizarResumenCopiar();
+        }
+    });
+    
+    document.getElementById('id_grado')?.addEventListener('change', actualizarRes

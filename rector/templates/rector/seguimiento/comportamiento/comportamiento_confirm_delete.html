@@ -1,0 +1,187 @@
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Eliminar Comportamiento - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:seguimiento_dashboard' %}">Seguimiento</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:comportamiento_list' %}">Comportamientos</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:comportamiento_detail' object.pk %}">#{{ object.id }}</a></li>
+        <li class="breadcrumb-item active">Eliminar</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Eliminación
+                </h5>
+            </div>
+            
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="display-1 text-danger mb-3">
+                        <i class="bi bi-trash"></i>
+                    </div>
+                    <h4 class="text-danger">¿Está seguro de eliminar este registro?</h4>
+                    <p class="text-muted">Esta acción no se puede deshacer.</p>
+                </div>
+                
+                <!-- Información del registro a eliminar -->
+                <div class="card border-warning mb-4">
+                    <div class="card-header bg-warning bg-opacity-10">
+                        <h6 class="mb-0">
+                            <i class="bi bi-info-circle me-2"></i>Detalles del Registro
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-2">
+                                    <strong>Estudiante:</strong><br>
+                                    {{ object.estudiante.usuario.get_full_name }}
+                                </p>
+                                <p class="mb-2">
+                                    <strong>Tipo:</strong><br>
+                                    {% if object.tipo == 'Positivo' %}
+                                    <span class="badge bg-success">Positivo</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Negativo</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-2">
+                                    <strong>Fecha:</strong><br>
+                                    {{ object.fecha|date:"d/m/Y" }}
+                                </p>
+                                <p class="mb-2">
+                                    <strong>Categoría:</strong><br>
+                                    <span class="badge bg-info">{{ object.get_categoria_display }}</span>
+                                </p>
+                            </div>
+                        </div>
+                        <hr>
+                        <p class="mb-0">
+                            <strong>Descripción:</strong><br>
+                            {{ object.descripcion|truncatechars:150 }}
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Consecuencias -->
+                <div class="alert alert-warning">
+                    <div class="d-flex">
+                        <div class="me-3">
+                            <i class="bi bi-exclamation-triangle fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="alert-heading">Consecuencias de esta acción:</h6>
+                            <ul class="mb-0">
+                                <li>El registro será eliminado permanentemente</li>
+                                <li>No afectará otras áreas del sistema</li>
+                                <li>Se mantendrán los demás registros del estudiante</li>
+                                <li>Esta acción quedará registrada en el historial</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'rector:comportamiento_detail' object.pk %}" 
+                           class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i>Confirmar Eliminación
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Información del estudiante -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-person-badge me-2"></i>Información del Estudiante
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar-lg bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" 
+                         style="width: 50px; height: 50px;">
+                        <i class="bi bi-person"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">{{ object.estudiante.usuario.get_full_name }}</h5>
+                        <small class="text-muted">{{ object.estudiante.usuario.numero_documento }}</small>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-2">
+                            <strong>Grado Actual:</strong><br>
+                            {% with matricula=object.estudiante.matricula_actual %}
+                            {% if matricula %}
+                            <span class="badge bg-primary">{{ matricula.grado_año_lectivo.grado.nombre }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Sin matrícula</span>
+                            {% endif %}
+                            {% endwith %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-2">
+                            <strong>Total Comportamientos:</strong><br>
+                            <span class="badge bg-secondary">{{ total_comportamientos }}</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <a href="{% url 'rector:estudiante_detail' object.estudiante.pk %}" 
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye me-1"></i>Ver perfil completo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-lg {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.display-1 {
+    font-size: 4rem;
+}
+
+.alert ul {
+    padding-left: 1rem;
+    margin-bottom: 0;
+}
+
+.alert ul li {
+    margin-bottom: 0.25rem;
+}
+</style>
+{% endblock %}

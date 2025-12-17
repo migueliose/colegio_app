@@ -1,0 +1,1266 @@
+<!-- rector/templates/rector/academico/docente_detail.html -->
+{% extends 'rector/base_rector2.html' %}
+{% load static %}
+
+{% block title %}{{ docente.usuario.get_full_name }} - Docente{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header-docente {
+        background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+        border-radius: 15px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+    }
+    .docente-avatar {
+        width: 120px;
+        height: 120px;
+        border: 4px solid white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .info-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .contact-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+    .contact-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    .asignatura-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #4e54c8;
+    }
+    .asignatura-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .nav-tabs-custom .nav-link {
+        color: #6c757d;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+    }
+    .nav-tabs-custom .nav-link.active {
+        color: #4e54c8;
+        border-bottom: 3px solid #4e54c8;
+        background: transparent;
+    }
+    .action-buttons {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 1000;
+    }
+    .floating-btn {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    /* Estilos para formularios tradicionales */
+    .form-container {
+        background: white;
+        border-radius: 10px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    .form-actions {
+        border-top: 1px solid #dee2e6;
+        padding-top: 1.5rem;
+        margin-top: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Botones flotantes de acción -->
+    <div class="action-buttons">
+        <div class="btn-group-vertical" role="group">
+            <a href="{% url 'rector:docente_asignar_asignatura' docente.pk %}" 
+            class="btn btn-primary floating-btn mb-2" title="Asignar Asignatura">
+                <i class="bi bi-book"></i>
+            </a>
+            <a href="{% url 'rector:docente_asignar_sede' docente.pk %}" 
+            class="btn btn-success floating-btn mb-2" title="Asignar Sede">
+                <i class="bi bi-building"></i>
+            </a>
+            <a href="{% url 'rector:docente_informacion_personal' docente.pk %}" 
+            class="btn btn-warning floating-btn" title="Editar Información Personal">
+                <i class="bi bi-person"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Header del docente -->
+    <div class="profile-header-docente">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <div class="position-relative">
+                    {% if docente.foto %}
+                    <img src="{{ docente.foto.url }}" alt="Foto" class="docente-avatar rounded-circle">
+                    {% else %}
+                    <div class="docente-avatar rounded-circle bg-white d-flex align-items-center justify-content-center">
+                        <i class="bi bi-person-fill text-primary" style="font-size: 3rem;"></i>
+                    </div>
+                    {% endif %}
+                    <span class="position-absolute bottom-0 end-0 p-2 bg-{% if docente.estado %}success{% else %}danger{% endif %} rounded-circle border border-white"
+                          style="width: 24px; height: 24px;"></span>
+                </div>
+            </div>
+            <div class="col">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h1 class="h2 mb-1">{{ docente.usuario.get_full_name }}</h1>
+                        <p class="mb-1 opacity-75">
+                            <i class="bi bi-person-badge me-1"></i>
+                            {{ docente.usuario.tipo_documento.nombre }}: {{ docente.usuario.numero_documento }}
+                        </p>
+                        <p class="mb-0 opacity-75">
+                            <i class="bi bi-award me-1"></i>
+                            Docente {% if docente.estado %}<span class="text-success">● Activo</span>{% else %}<span class="text-danger">● Inactivo</span>{% endif %}
+                        </p>
+                    </div>
+                    <div class="text-end">
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'rector:docente_edit' docente.pk %}" class="btn btn-light">
+                                <i class="bi bi-pencil me-1"></i>Editar Perfil
+                            </a>
+                            <form method="post" action="{% url 'rector:docente_toggle_estado' docente.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-{% if docente.estado %}danger{% else %}success{% endif %}">
+                                    {% if docente.estado %}
+                                    <i class="bi bi-person-x me-1"></i>Desactivar
+                                    {% else %}
+                                    <i class="bi bi-person-check me-1"></i>Activar
+                                    {% endif %}
+                                </button>
+                            </form>
+                            <a href="{% url 'rector:docente_list' %}" class="btn btn-light">
+                                <i class="bi bi-arrow-left me-1"></i>Volver
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario para asignar asignatura (visible/invisible según se necesite) -->
+    {% if show_form_asignatura %}
+    <div id="form-asignar-asignatura" class="form-container mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="mb-0 text-primary">
+                <i class="bi bi-book me-2"></i>Asignar Asignatura
+            </h3>
+            <a href="{% url 'rector:docente_asignar_asignatura' docente.pk %}" 
+                class="btn btn-primary floating-btn mb-2" title="Asignar Asignatura">
+                <i class="bi bi-x-lg"></i> Cerrar
+            </a>
+        </div>
+        
+        <form method="post" action="{% url 'rector:docente_asignar_asignatura' docente.pk %}">
+            {% csrf_token %}
+            
+            <!-- Mostrar errores del formulario -->
+            {% if form_asignatura.errors %}
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Por favor corrija los errores a continuación.
+            </div>
+            {% endif %}
+            
+            <div class="row">
+                <!-- Asignatura -->
+                <div class="col-md-6 mb-3">
+                    <label for="id_asignatura" class="form-label">Asignatura <span class="text-danger">*</span></label>
+                    <select name="asignatura" id="id_asignatura" class="form-control" required>
+                        <option value="">Seleccione una asignatura</option>
+                        {% for asignatura in form_asignatura.asignatura.field.queryset %}
+                        <option value="{{ asignatura.id }}" {% if form_asignatura.asignatura.value == asignatura.id %}selected{% endif %}>
+                            {{ asignatura.nombre }} - {{ asignatura.area.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if form_asignatura.asignatura.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form_asignatura.asignatura.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Grado Año Lectivo -->
+                <div class="col-md-6 mb-3">
+                    <label for="id_grado_año_lectivo" class="form-label">Grado <span class="text-danger">*</span></label>
+                    <select name="grado_año_lectivo" id="id_grado_año_lectivo" class="form-control" required>
+                        <option value="">Seleccione un grado</option>
+                        {% for grado in form_asignatura.grado_año_lectivo.field.queryset %}
+                        <option value="{{ grado.id }}" {% if form_asignatura.grado_año_lectivo.value == grado.id %}selected{% endif %}>
+                            {{ grado.grado.nombre }} - {{ grado.año_lectivo.anho }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if form_asignatura.grado_año_lectivo.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form_asignatura.grado_año_lectivo.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Sede -->
+                <div class="col-md-6 mb-3">
+                    <label for="id_sede" class="form-label">Sede <span class="text-danger">*</span></label>
+                    <select name="sede" id="id_sede" class="form-control" required>
+                        <option value="">Seleccione una sede</option>
+                        {% for sede in form_asignatura.sede.field.queryset %}
+                        <option value="{{ sede.id }}" {% if form_asignatura.sede.value == sede.id %}selected{% endif %}>
+                            {{ sede.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if form_asignatura.sede.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form_asignatura.sede.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Docente (oculto, ya está predefinido) -->
+                <input type="hidden" name="docente" value="{{ docente.id }}">
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                Solo se muestran asignaturas disponibles para el año lectivo actual.
+            </div>
+            
+            <div class="form-actions">
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'rector:docente_detail' docente.pk %}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Asignar Asignatura</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Formulario para asignar sede (visible/invisible según se necesite) -->
+    {% if show_form_sede %}
+    <div id="form-asignar-sede" class="form-container mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="mb-0 text-success">
+                <i class="bi bi-building me-2"></i>Asignar Sede
+            </h3>
+            <a href="{% url 'rector:docente_detail' docente.pk %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-x-lg"></i> Cerrar
+            </a>
+        </div>
+        
+        <form method="post" action="{% url 'rector:docente_asignar_sede' docente.pk %}">
+            {% csrf_token %}
+            
+            {% if form_sede.errors %}
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Por favor corrija los errores a continuación.
+            </div>
+            {% endif %}
+            
+            <div class="row">
+                <!-- Sede -->
+                <div class="col-md-6 mb-3">
+                    <label for="id_sede" class="form-label">Sede <span class="text-danger">*</span></label>
+                    <select name="sede" id="id_sede" class="form-control" required>
+                        <option value="">Seleccione una sede</option>
+                        {% for sede in form_sede.sede.field.queryset %}
+                        <option value="{{ sede.id }}" {% if form_sede.sede.value == sede.id %}selected{% endif %}>
+                            {{ sede.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if form_sede.sede.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form_sede.sede.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Año Lectivo -->
+                <div class="col-md-6 mb-3">
+                    <label for="id_año_lectivo" class="form-label">Año Lectivo <span class="text-danger">*</span></label>
+                    <select name="año_lectivo" id="id_año_lectivo" class="form-control" required>
+                        <option value="">Seleccione un año lectivo</option>
+                        {% for año in form_sede.año_lectivo.field.queryset %}
+                        <option value="{{ año.id }}" {% if form_sede.año_lectivo.value == año.id %}selected{% endif %}>
+                            {{ año.anho }} - {{ año.sede.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if form_sede.año_lectivo.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form_sede.año_lectivo.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Docente (oculto) -->
+                <input type="hidden" name="docente" value="{{ docente.id }}">
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                Asigne al docente a una sede para el año lectivo seleccionado.
+            </div>
+            
+            <div class="form-actions">
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'rector:docente_detail' docente.pk %}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-success">Asignar Sede</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Información principal -->
+    <div class="row">
+        <!-- Columna izquierda - Información personal -->
+        <div class="col-lg-4">
+            <div class="info-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0 text-primary">
+                        <i class="bi bi-person-lines-fill me-2"></i>Información Personal
+                    </h5>
+                    <a href="{% url 'rector:docente_informacion_personal' docente.pk %}" 
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil-square"></i>
+                    </a>
+                </div>
+                
+                <!-- Resto de la información personal... -->
+                <!-- (Mantener igual que tu versión original) -->
+                
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="bi bi-envelope text-primary"></i>
+                    </div>
+                    <div>
+                        <strong class="d-block text-muted mb-1">Email</strong>
+                        <span>{{ docente.usuario.email|default:"No registrado" }}</span>
+                    </div>
+                </div>
+                
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="bi bi-telephone text-primary"></i>
+                    </div>
+                    <div>
+                        <strong class="d-block text-muted mb-1">Teléfono</strong>
+                        <span>{{ docente.usuario.telefono|default:"No registrado" }}</span>
+                    </div>
+                </div>
+                
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="bi bi-geo-alt text-primary"></i>
+                    </div>
+                    <div>
+                        <strong class="d-block text-muted mb-1">Dirección</strong>
+                        <span>{{ docente.usuario.direccion|default:"No registrada" }}</span>
+                    </div>
+                </div>
+                
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="bi bi-calendar-event text-primary"></i>
+                    </div>
+                    <div>
+                        <strong class="d-block text-muted mb-1">Fecha de Nacimiento</strong>
+                        <span>
+                            {% if docente.usuario.fecha_nacimiento %}
+                                {{ docente.usuario.fecha_nacimiento|date:"d/m/Y" }}
+                                ({{ docente.usuario.edad }} años)
+                            {% else %}
+                                No registrada
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="bi bi-gender-ambiguous text-primary"></i>
+                    </div>
+                    <div>
+                        <strong class="d-block text-muted mb-1">Género</strong>
+                        <span>{{ docente.usuario.get_sexo_display|default:"No especificado" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información profesional -->
+            <div class="info-section">
+                <h5 class="mb-3 text-info">
+                    <i class="bi bi-briefcase me-2"></i>Información Profesional
+                </h5>
+                
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="bi bi-calendar-check text-info"></i>
+                    </div>
+                    <div>
+                        <strong class="d-block text-muted mb-1">Estado</strong>
+                        <span class="badge bg-{% if docente.estado %}success{% else %}danger{% endif %}">
+                            {% if docente.estado %}Activo{% else %}Inactivo{% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="bi bi-calendar-date text-info"></i>
+                    </div>
+                    <div>
+                        <strong class="d-block text-muted mb-1">Registrado desde</strong>
+                        <span>{{ docente.created_at|date:"d/m/Y" }}</span>
+                    </div>
+                </div>
+                
+                {% if docente.hdv %}
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="bi bi-file-earmark-text text-info"></i>
+                    </div>
+                    <div>
+                        <strong class="d-block text-muted mb-1">Hoja de Vida</strong>
+                        <a href="{{ docente.hdv.url }}" target="_blank" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-download me-1"></i>Descargar
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Contactos de emergencia -->
+            {% if contactos %}
+            <div class="info-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0 text-info">
+                        <i class="bi bi-telephone-forward me-2"></i>Contactos de Emergencia
+                    </h5>
+                    <button onclick="mostrarFormularioContacto()" class="btn btn-sm btn-outline-info">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                </div>
+                {% for contacto in contactos %}
+                <div class="card mb-3 border-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title mb-0">{{ sede_asignada.sede.nombre }}</h6>
+                            <form method="post"
+                                action="{% if sede_asignada.estado %}
+                                        {% url 'rector:sede_quitar' sede_asignada.id %}
+                                        {% else %}
+                                        {% url 'rector:sede_reactivar' sede_asignada.id %}
+                                        {% endif %}"
+                                class="d-inline"
+                                onsubmit="return confirm(
+                                    '{% if sede_asignada.estado %}
+                                        ¿Está seguro de desactivar esta sede?
+                                    {% else %}
+                                        ¿Desea activar nuevamente esta sede?
+                                    {% endif %}'
+                                );">
+                                {% csrf_token %}
+
+                                <button type="submit"
+                                        class="btn btn-sm
+                                            {% if sede_asignada.estado %}
+                                                btn-outline-danger
+                                            {% else %}
+                                                btn-outline-success
+                                            {% endif %}"
+                                        aria-label="{% if sede_asignada.estado %}Desactivar sede{% else %}Activar sede{% endif %}"
+                                        title="{% if sede_asignada.estado %}Desactivar sede{% else %}Activar sede{% endif %}">
+                                    
+                                    <i class="bi
+                                    {% if sede_asignada.estado %}
+                                        bi-x-circle
+                                    {% else %}
+                                        bi-check-circle
+                                    {% endif %}">
+                                    </i>
+                                </button>
+                            </form>
+                        </div>
+                        <p class="card-text small mb-1">
+                            <i class="bi bi-person-heart me-1"></i>{{ contacto.relacion }}
+                        </p>
+                        <p class="card-text small mb-1">
+                            <i class="bi bi-telephone me-1"></i>{{ contacto.telefono }}
+                        </p>
+                        <p class="card-text small mb-0">
+                            <i class="bi bi-envelope me-1"></i>{{ contacto.email }}
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna derecha - Información académica -->
+        <div class="col-lg-8">
+            <!-- Pestañas de navegación -->
+            <ul class="nav nav-tabs nav-tabs-custom mb-4" id="docenteTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="asignaturas-tab" data-bs-toggle="tab" data-bs-target="#asignaturas">
+                        <i class="bi bi-journal-text me-1"></i>Asignaturas
+                        {% if asignaturas_actuales %}
+                        <span class="badge bg-primary ms-1">{{ asignaturas_actuales.count }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="sedes-tab" data-bs-toggle="tab" data-bs-target="#sedes">
+                        <i class="bi bi-buildings me-1"></i>Sedes Asignadas
+                        {% if sedes_asignadas %}
+                        <span class="badge bg-success ms-1">{{ sedes_asignadas.count }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="comportamientos-tab" data-bs-toggle="tab" data-bs-target="#comportamientos">
+                        <i class="bi bi-activity me-1"></i>Comportamientos
+                        {% if comportamientos_registrados %}
+                        <span class="badge bg-warning ms-1">{{ comportamientos_registrados|length }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="estadisticas-tab" data-bs-toggle="tab" data-bs-target="#estadisticas">
+                        <i class="bi bi-bar-chart me-1"></i>Estadísticas
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="docenteTabsContent">
+                <!-- Pestaña de Asignaturas -->
+                <div class="tab-pane fade show active" id="asignaturas">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h5 class="mb-0">
+                                <i class="bi bi-journal-check me-2"></i>Asignaturas Dictadas
+                            </h5>
+                            {% if año_lectivo_actual %}
+                            <small class="text-muted">
+                                Año Lectivo Actual: {{ año_lectivo_actual.anho }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'rector:docente_asignar_asignatura' docente.pk %}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i>Asignar Asignatura
+                        </a>
+                    </div>
+
+                    <!-- Asignaturas actuales -->
+                    {% if asignaturas_actuales %}
+                    <div class="row">
+                        {% for asignatura in asignaturas_actuales %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card asignatura-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <!-- CORRECCIÓN: Mostrar nombre de la asignatura, no de la sede -->
+                                        <h6 class="card-title mb-0">{{ asignatura.asignatura.nombre }}</h6>
+                                        <!-- CORRECCIÓN: Usar url para quitar asignatura, no sede -->
+                                        <form method="post" action="{% url 'rector:asignatura_quitar' asignatura.id %}" 
+                                            class="d-inline" onsubmit="return confirm('¿Está seguro de quitar la asignatura \"{{ asignatura.asignatura.nombre }}\"?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <div class="small text-muted mb-2">
+                                        <i class="bi bi-layers me-1"></i>Grado: {{ asignatura.grado_año_lectivo.grado.nombre }}
+                                    </div>
+                                    <div class="small text-muted mb-3">
+                                        <i class="bi bi-building me-1"></i>Sede: {{ asignatura.sede.nombre }}
+                                    </div>
+                                    {% if asignatura.asignatura.ih %}
+                                    <div class="small">
+                                        <span class="badge bg-info">
+                                            IH: {{ asignatura.asignatura.ih }}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="card-footer bg-transparent py-2">
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        Asignado el {{ asignatura.created_at|date:"d/m/Y" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5 border rounded">
+                        <i class="bi bi-journal-x text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3 text-muted">No tiene asignaturas asignadas</h5>
+                        <p class="text-muted mb-3">Este docente no tiene asignaturas asignadas en el año lectivo actual.</p>
+                        <a href="{% url 'rector:docente_asignar_asignatura' docente.pk %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i>Asignar Primera Asignatura
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <!-- Historial de asignaturas -->
+                    {% if historial_asignaturas %}
+                    <div class="mt-5">
+                        <h6 class="mb-3">
+                            <i class="bi bi-clock-history me-2"></i>Historial de Asignaturas
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Año</th>
+                                        <th>Asignatura</th>
+                                        <th>Grado</th>
+                                        <th>Sede</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for hist in historial_asignaturas %}
+                                    <tr>
+                                        <td>{{ hist.grado_año_lectivo.año_lectivo.anho }}</td>
+                                        <td>{{ hist.asignatura.nombre }}</td>
+                                        <td>{{ hist.grado_año_lectivo.grado.nombre }}</td>
+                                        <td>{{ hist.sede.nombre }}</td>
+                                        <td>
+                                            {% if hist.grado_año_lectivo.año_lectivo.estado %}
+                                            <span class="badge bg-success">Activo</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">Finalizado</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Pestaña de Sedes -->
+                <div class="tab-pane fade" id="sedes">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="mb-0">
+                            <i class="bi bi-buildings me-2"></i>Sedes Asignadas
+                        </h5>
+                        <a href="{% url 'rector:docente_asignar_sede' docente.pk %}" class="btn btn-sm btn-success">
+                            <i class="bi bi-plus-circle me-1"></i>Asignar Sede
+                        </a>
+                    </div>
+                    
+                    {% if sedes_asignadas %}
+                    <div class="row">
+                        {% for sede_asignada in sedes_asignadas %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-primary h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-0">{{ sede_asignada.sede.nombre }}</h6>
+
+                                        <form method="post"
+                                            action="{% if sede_asignada.estado %}
+                                                    {% url 'rector:sede_quitar' sede_asignada.id %}
+                                                    {% else %}
+                                                    {% url 'rector:sede_reactivar' sede_asignada.id %}
+                                                    {% endif %}"
+                                            class="d-inline"
+                                            onsubmit="return confirm(
+                                                '{% if sede_asignada.estado %}
+                                                    ¿Está seguro de desactivar esta sede?
+                                                {% else %}
+                                                    ¿Desea activar nuevamente esta sede?
+                                                {% endif %}'
+                                            );">
+                                            {% csrf_token %}
+
+                                            <button type="submit"
+                                                    class="btn btn-sm
+                                                        {% if sede_asignada.estado %}
+                                                            btn-outline-danger
+                                                        {% else %}
+                                                            btn-outline-success
+                                                        {% endif %}"
+                                                    aria-label="{% if sede_asignada.estado %}Desactivar sede{% else %}Activar sede{% endif %}"
+                                                    title="{% if sede_asignada.estado %}Desactivar sede{% else %}Activar sede{% endif %}">
+                                                
+                                                <i class="bi
+                                                {% if sede_asignada.estado %}
+                                                    bi-x-circle
+                                                {% else %}
+                                                    bi-check-circle
+                                                {% endif %}">
+                                                </i>
+                                            </button>
+                                        </form>
+                                    </div>
+
+                                    <div class="small text-muted mb-2">
+                                        <i class="bi bi-calendar-week me-1"></i>
+                                        Año: {{ sede_asignada.año_lectivo.anho }}
+                                    </div>
+
+                                    <div class="small text-muted mb-2">
+                                        <i class="bi bi-calendar-plus me-1"></i>
+                                        Asignado: {{ sede_asignada.fecha_asignacion|date:"d/m/Y" }}
+                                    </div>
+
+                                    <div class="small">
+                                        <span class="badge bg-{% if sede_asignada.estado %}success{% else %}secondary{% endif %}">
+                                            {% if sede_asignada.estado %}Activo{% else %}Inactivo{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5 border rounded">
+                        <i class="bi bi-building-x text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3 text-muted">No tiene sedes asignadas</h5>
+                        <p class="text-muted mb-3">Este docente no tiene sedes asignadas.</p>
+                        <a href="{% url 'rector:docente_asignar_sede' docente.pk %}" class="btn btn-success">
+                            <i class="bi bi-plus-circle me-1"></i>Asignar Primera Sede
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Pestaña de Comportamientos -->
+                <div class="tab-pane fade" id="comportamientos">
+                    <h5 class="mb-4">
+                        <i class="bi bi-activity me-2"></i>Comportamientos Registrados
+                    </h5>
+                    
+                    {% if comportamientos_registrados %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Estudiante</th>
+                                    <th>Tipo</th>
+                                    <th>Categoría</th>
+                                    <th>Descripción</th>
+                                    <th>Periodo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for comportamiento in comportamientos_registrados %}
+                                <tr>
+                                    <td>{{ comportamiento.fecha|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <strong>{{ comportamiento.estudiante.usuario.get_full_name }}</strong>
+                                        <div class="small text-muted">
+                                            {% if comportamiento.estudiante.grado_actual %}
+                                            Grado: {{ comportamiento.estudiante.grado_actual.grado.nombre|default:"-" }}
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if comportamiento.tipo == 'Positivo' %}success{% else %}danger{% endif %}">
+                                            {{ comportamiento.get_tipo_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ comportamiento.get_categoria_display }}</td>
+                                    <td>
+                                        <small>{{ comportamiento.descripcion|truncatechars:80 }}</small>
+                                    </td>
+                                    <td>
+                                        {% if comportamiento.periodo_academico %}
+                                        <small>{{ comportamiento.periodo_academico.periodo.nombre }}</small>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Estadísticas -->
+                    {% if estadisticas_comportamientos %}
+                    <div class="row mt-4">
+                        <div class="col-md-3">
+                            <div class="card border-primary">
+                                <div class="card-body text-center">
+                                    <h4 class="text-primary">
+                                        {{ estadisticas_comportamientos.total }}
+                                    </h4>
+                                    <p class="text-muted mb-0">Total Registros</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <h4 class="text-success">
+                                        {{ estadisticas_comportamientos.positivos }}
+                                    </h4>
+                                    <p class="text-muted mb-0">Positivos</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-danger">
+                                <div class="card-body text-center">
+                                    <h4 class="text-danger">
+                                        {{ estadisticas_comportamientos.negativos }}
+                                    </h4>
+                                    <p class="text-muted mb-0">Negativos</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-info">
+                                <div class="card-body text-center">
+                                    <h4 class="text-info">
+                                        {{ estadisticas_comportamientos.porcentaje_positivo }}%
+                                    </h4>
+                                    <p class="text-muted mb-0">% Positivo</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-center py-5 border rounded">
+                        <i class="bi bi-emoji-smile text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3 text-muted">No ha registrado comportamientos</h5>
+                        <p class="text-muted mb-3">Este docente aún no ha registrado comportamientos de estudiantes.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Pestaña de Estadísticas -->
+                <div class="tab-pane fade" id="estadisticas">
+                    <h5 class="mb-4">
+                        <i class="bi bi-bar-chart me-2"></i>Estadísticas del Docente
+                    </h5>
+                    
+                    <div class="row">
+                        <!-- Resumen General -->
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0">Resumen General</h6>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm">
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>Asignaturas Actuales:</strong></td>
+                                                <td>
+                                                    <span class="badge bg-primary">{{ asignaturas_actuales.count }}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Sedes Asignadas:</strong></td>
+                                                <td>
+                                                    <span class="badge bg-success">{{ sedes_asignadas.count }}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Contactos de Emergencia:</strong></td>
+                                                <td>
+                                                    <span class="badge bg-info">{{ contactos.count }}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Estado:</strong></td>
+                                                <td>
+                                                    <span class="badge bg-{% if docente.estado %}success{% else %}danger{% endif %}">
+                                                        {% if docente.estado %}Activo{% else %}Inactivo{% endif %}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Actividad -->
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0">Actividad</h6>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm">
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>Comportamientos Registrados:</strong></td>
+                                                <td>
+                                                    <span class="badge bg-warning">{{ comportamientos_registrados|length }}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Registrado desde:</strong></td>
+                                                <td>{{ docente.created_at|date:"d/m/Y" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Última Actualización:</strong></td>
+                                                <td>{{ docente.updated_at|date:"d/m/Y H:i" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Años de Experiencia:</strong></td>
+                                                <td>
+                                                    {% with años_experiencia=docente.created_at|date:"Y"|add:"0" %}
+                                                        {% now "Y" as current_year %}
+                                                        {{ current_year|add:"-"|add:años_experiencia }} años
+                                                    {% endwith %}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Historial por Año -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0">
+                                <i class="bi bi-calendar-check me-2"></i>Historial por Año
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% if historial_asignaturas %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Año</th>
+                                            <th>Asignaturas</th>
+                                            <th>Sedes</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% regroup historial_asignaturas by grado_año_lectivo.año_lectivo as años_list %}
+                                        {% for año in años_list %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ año.grouper.anho }}</strong>
+                                                <div class="small text-muted">
+                                                    {{ año.grouper.sede.nombre }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">{{ año.list|length }}</span>
+                                                <div class="small text-muted mt-1">
+                                                    {% for asignatura in año.list|slice:":3" %}
+                                                    {{ asignatura.asignatura.nombre }}{% if not forloop.last %}, {% endif %}
+                                                    {% endfor %}
+                                                    {% if año.list|length > 3 %}...{% endif %}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% with sedes=año.list|dictsort:"sede.nombre" %}
+                                                    {% for sede in sedes|slice:":2" %}
+                                                        <span class="badge bg-secondary mb-1">{{ sede.sede.nombre }}</span>
+                                                    {% endfor %}
+                                                    {% if sedes|length > 2 %}
+                                                        <span class="badge bg-light text-dark">+{{ sedes|length|add:"-2" }}</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {% if año.grouper.estado %}
+                                                <span class="badge bg-success">Activo</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">Finalizado</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-3">
+                                <p class="text-muted mb-0">No hay historial de asignaturas</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Distribución de Comportamientos -->
+                    {% if estadisticas_comportamientos and estadisticas_comportamientos.total > 0 %}
+                    <div class="card">
+                        <div class="card-header bg-warning text-white">
+                            <h6 class="mb-0">
+                                <i class="bi bi-pie-chart me-2"></i>Distribución de Comportamientos
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="text-center">
+                                        <canvas id="comportamientosChart" width="200" height="200"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mt-3">
+                                        <h6>Detalle de Comportamientos</h6>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Positivos:</span>
+                                            <span class="badge bg-success">{{ estadisticas_comportamientos.positivos }}</span>
+                                        </div>
+                                        <div class="progress mb-3" style="height: 10px;">
+                                            <div class="progress-bar bg-success" 
+                                                style="width: {% widthratio estadisticas_comportamientos.positivos estadisticas_comportamientos.total 100 %}%"></div>
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Negativos:</span>
+                                            <span class="badge bg-danger">{{ estadisticas_comportamientos.negativos }}</span>
+                                        </div>
+                                        <div class="progress mb-3" style="height: 10px;">
+                                            <div class="progress-bar bg-danger" 
+                                                style="width: {% widthratio estadisticas_comportamientos.negativos estadisticas_comportamientos.total 100 %}%"></div>
+                                        </div>
+                                        
+                                        <div class="alert alert-info">
+                                            <small>
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                Porcentaje de comportamientos positivos: 
+                                                <strong>{{ estadisticas_comportamientos.porcentaje_positivo }}%</strong>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>                
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Activar las pestañas
+    const triggerTabList = [].slice.call(document.querySelectorAll('#docenteTabs button'));
+    triggerTabList.forEach(function (triggerEl) {
+        const tabTrigger = new bootstrap.Tab(triggerEl);
+        triggerEl.addEventListener('click', function (event) {
+            event.preventDefault();
+            tabTrigger.show();
+        });
+    });
+    
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Validación de formularios
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const requiredFields = form.querySelectorAll('[required]');
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    isValid = false;
+                    
+                    // Agregar mensaje de error si no existe
+                    if (!field.nextElementSibling || !field.nextElementSibling.classList.contains('invalid-feedback')) {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'invalid-feedback';
+                        errorDiv.textContent = 'Este campo es requerido';
+                        field.parentNode.appendChild(errorDiv);
+                    }
+                } else {
+                    field.classList.remove('is-invalid');
+                    // Remover mensaje de error si existe
+                    const errorDiv = field.parentNode.querySelector('.invalid-feedback');
+                    if (errorDiv) {
+                        errorDiv.remove();
+                    }
+                }
+            });
+            
+            if (!isValid) {
+                e.preventDefault();
+                // Desplazarse al primer error
+                const firstError = form.querySelector('.is-invalid');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
+    });
+    
+    // Limpiar errores cuando se escribe en los campos
+    document.querySelectorAll('input, select, textarea').forEach(field => {
+        field.addEventListener('input', function() {
+            if (this.classList.contains('is-invalid')) {
+                this.classList.remove('is-invalid');
+                const errorDiv = this.parentNode.querySelector('.invalid-feedback');
+                if (errorDiv) {
+                    errorDiv.remove();
+                }
+            }
+        });
+    });
+    
+    // Scroll automático a formularios si hay parámetro en la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const formParam = urlParams.get('form');
+    
+    if (formParam === 'asignatura') {
+        const formElement = document.getElementById('form-asignar-asignatura');
+        if (formElement) {
+            setTimeout(() => {
+                formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    } else if (formParam === 'sede') {
+        const formElement = document.getElementById('form-asignar-sede');
+        if (formElement) {
+            setTimeout(() => {
+                formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    }
+});
+
+// Función para mostrar/ocultar formulario de contacto
+function mostrarFormularioContacto() {
+    // Implementar si necesitas formulario dinámico para contactos
+    alert('Función para agregar contacto - Implementar según necesidad');
+}
+
+// Función para quitar asignatura (usando formulario tradicional ahora)
+function quitarAsignatura(asignaturaId, nombre) {
+    if (confirm(`¿Está seguro de quitar la asignatura "${nombre}"?`)) {
+        // El formulario se maneja directamente con submit tradicional
+        return true;
+    }
+    return false;
+}
+
+// Función para quitar sede
+function quitarSede(sedeId, nombre) {
+    if (confirm(`¿Está seguro de quitar la sede "${nombre}"?`)) {
+        return true;
+    }
+    return false;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de comportamientos
+    const comportamientosChart = document.getElementById('comportamientosChart');
+    if (comportamientosChart) {
+        const ctx = comportamientosChart.getContext('2d');
+        const positivos = {{ estadisticas_comportamientos.positivos|default:0 }};
+        const negativos = {{ estadisticas_comportamientos.negativos|default:0 }};
+        
+        if (positivos > 0 || negativos > 0) {
+            const chart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Positivos', 'Negativos'],
+                    datasets: [{
+                        data: [positivos, negativos],
+                        backgroundColor: [
+                            'rgba(40, 167, 69, 0.8)',
+                            'rgba(220, 53, 69, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(40, 167, 69, 1)',
+                            'rgba(220, 53, 69, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    // Activar las pestañas
+    const triggerTabList = [].slice.call(document.querySelectorAll('#docenteTabs button'));
+    triggerTabList.forEach(function (triggerEl) {
+        const tabTrigger = new bootstrap.Tab(triggerEl);
+        triggerEl.addEventListener('click', function (event) {
+            event.preventDefault();
+            tabTrigger.show();
+        });
+    });
+    
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,833 @@
+<!-- rector/templates/rector/seguimiento/inconsistencia/inconsistencia_list.html -->
+{% extends 'rector/base_rector.html' %}
+{% load static seguimiento_filters  %}
+
+{% block title %}Inconsistencias - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:seguimiento_dashboard' %}">Seguimiento</a></li>
+        <li class="breadcrumb-item active">Inconsistencias</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-exclamation-triangle text-danger me-2"></i>
+                    Inconsistencias Académicas
+                </h1>
+                <p class="text-muted mb-0">Registro y seguimiento de inconsistencias e incidencias</p>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown">
+                    <i class="bi bi-plus-circle me-1"></i>Nueva Inconsistencia
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'rector:inconsistencia_create' %}">
+                            <i class="bi bi-pencil-square me-2"></i>Registro Manual
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="bi bi-upload me-2"></i>Importar Excel
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="#" id="btn-exportar-lista">
+                            <i class="bi bi-download me-2"></i>Exportar Lista
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas rápidas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-danger bg-opacity-10 border-danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-danger mb-1">Total Registros</h6>
+                        <h3 class="mb-0">{{ total_registros }}</h3>
+                        <small class="text-muted">Inconsistencias</small>
+                    </div>
+                    <i class="bi bi-exclamation-triangle text-danger fs-2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning bg-opacity-10 border-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-warning mb-1">Últimos 30 días</h6>
+                        <h3 class="mb-0" id="count-30-dias">--</h3>
+                        <small class="text-muted">Recientes</small>
+                    </div>
+                    <i class="bi bi-clock-history text-warning fs-2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info bg-opacity-10 border-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-info mb-1">Tipos Únicos</h6>
+                        <h3 class="mb-0" id="count-tipos-unicos">--</h3>
+                        <small class="text-muted">Clasificaciones</small>
+                    </div>
+                    <i class="bi bi-tags text-info fs-2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success bg-opacity-10 border-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-success mb-1">Resueltas</h6>
+                        <h3 class="mb-0" id="count-resueltas">--</h3>
+                        <small class="text-muted">Cerradas</small>
+                    </div>
+                    <i class="bi bi-check-circle text-success fs-2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros y búsqueda -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="bi bi-funnel me-2"></i>Filtros y Búsqueda
+        </h6>
+    </div>
+    <div class="card-body">
+        <form method="get" id="filtro-form" class="row g-3">
+            <div class="col-md-4">
+                <label for="{{ filtro_form.estudiante.id_for_label }}" class="form-label">
+                    <i class="bi bi-person me-1"></i>Estudiante
+                </label>
+                {{ filtro_form.estudiante }}
+                {% if filtro_form.estudiante.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ filtro_form.estudiante.errors }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-3">
+                <label for="{{ filtro_form.tipo.id_for_label }}" class="form-label">
+                    <i class="bi bi-tag me-1"></i>Tipo
+                </label>
+                {{ filtro_form.tipo }}
+                {% if filtro_form.tipo.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ filtro_form.tipo.errors }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-2">
+                <label for="{{ filtro_form.fecha_inicio.id_for_label }}" class="form-label">
+                    <i class="bi bi-calendar me-1"></i>Desde
+                </label>
+                {{ filtro_form.fecha_inicio }}
+                {% if filtro_form.fecha_inicio.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ filtro_form.fecha_inicio.errors }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-2">
+                <label for="{{ filtro_form.fecha_fin.id_for_label }}" class="form-label">
+                    <i class="bi bi-calendar me-1"></i>Hasta
+                </label>
+                {{ filtro_form.fecha_fin }}
+                {% if filtro_form.fecha_fin.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ filtro_form.fecha_fin.errors }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-1 d-flex align-items-end">
+                <div class="d-grid gap-2 w-100">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Filtros activos -->
+        {% if request.GET.estudiante or request.GET.tipo or request.GET.fecha_inicio or request.GET.fecha_fin %}
+        <div class="mt-3">
+            <small class="text-muted">
+                <i class="bi bi-funnel-fill me-1"></i>
+                Filtros activos:
+                {% if request.GET.estudiante %}
+                <span class="badge bg-primary">{{ request.GET.estudiante }}</span>
+                {% endif %}
+                {% if request.GET.tipo %}
+                <span class="badge bg-primary">{{ request.GET.tipo }}</span>
+                {% endif %}
+                {% if request.GET.fecha_inicio %}
+                <span class="badge bg-primary">Desde: {{ request.GET.fecha_inicio }}</span>
+                {% endif %}
+                {% if request.GET.fecha_fin %}
+                <span class="badge bg-primary">Hasta: {{ request.GET.fecha_fin }}</span>
+                {% endif %}
+                <a href="{% url 'rector:inconsistencia_list' %}" class="text-danger ms-2">
+                    <i class="bi bi-x-circle"></i> Limpiar
+                </a>
+            </small>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Tipos más comunes -->
+{% if tipos_comunes %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-bar-chart me-2"></i>Tipos de Inconsistencias Más Comunes
+                </h6>
+                <small class="text-muted">Top 10</small>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for tipo in tipos_comunes %}
+                    <div class="col-md-4 mb-3">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
+                            <div class="flex-grow-1">
+                                <small class="text-muted">{{ tipo.tipo }}</small>
+                                <div class="progress" style="height: 5px;">
+                                    {% with porcentaje=tipo.total|divisibleby:total_registros|multiply:100 %}
+                                    <div class="progress-bar bg-info" role="progressbar" 
+                                         style="width: {{ porcentaje }}%"
+                                         aria-valuenow="{{ porcentaje }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                    </div>
+                                    {% endwith %}
+                                </div>
+                            </div>
+                            <div class="flex-shrink-0 ms-2">
+                                <span class="badge bg-primary">{{ tipo.total }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Lista de inconsistencias -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+            <i class="bi bi-list me-2"></i>Lista de Inconsistencias
+            <span class="badge bg-secondary ms-2">{{ inconsistencias|length }}</span>
+        </h6>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                    data-bs-toggle="dropdown">
+                <i class="bi bi-gear me-1"></i>Acciones
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <a class="dropdown-item" href="#" id="btn-seleccionar-todos">
+                        <i class="bi bi-check-square me-2"></i>Seleccionar todos
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="#" id="btn-marcar-resueltas">
+                        <i class="bi bi-check-circle me-2"></i>Marcar como resueltas
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="#" id="btn-eliminar-seleccion">
+                        <i class="bi bi-trash me-2"></i>Eliminar seleccionados
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="card-body p-0">
+        {% if inconsistencias %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th width="40">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="select-all">
+                            </div>
+                        </th>
+                        <th>Estudiante</th>
+                        <th>Tipo</th>
+                        <th>Descripción</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inconsistencia in inconsistencias %}
+                    <tr class="{% if forloop.counter|divisibleby:2 %}table-light{% endif %}">
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input select-item" type="checkbox" 
+                                       value="{{ inconsistencia.id }}" 
+                                       id="select-{{ inconsistencia.id }}">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="avatar-sm bg-danger bg-opacity-10 text-danger rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 36px; height: 36px;">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-0">
+                                        <a href="{% url 'rector:inconsistencia_detail' inconsistencia.pk %}" 
+                                           class="text-decoration-none">
+                                            {{ inconsistencia.estudiante.usuario.get_full_name }}
+                                        </a>
+                                    </h6>
+                                    <small class="text-muted">
+                                        {{ inconsistencia.estudiante.usuario.numero_documento }}
+                                    </small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-warning">{{ inconsistencia.tipo|truncatechars:30 }}</span>
+                        </td>
+                        <td>
+                            <div class="descripcion-truncada" 
+                                 style="max-width: 300px;"
+                                 data-full-text="{{ inconsistencia.descripcion|escape }}">
+                                {{ inconsistencia.descripcion|truncatechars:50 }}
+                                {% if inconsistencia.descripcion|length > 50 %}
+                                <a href="javascript:void(0)" 
+                                    class="text-primary"
+                                    data-bs-toggle="tooltip"
+                                    title="{{ inconsistencia.descripcion }}">
+                                <i class="bi bi-eye"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {{ inconsistencia.fecha|date:"d/m/Y" }}<br>
+                                <span class="text-muted">{{ inconsistencia.created_at|timesince }}</span>
+                            </small>
+                        </td>
+                        <td>
+                            {% if inconsistencia.estado == 'pendiente' %}
+                            <span class="badge bg-warning">
+                                <i class="bi bi-clock me-1"></i>Pendiente
+                            </span>
+                            {% elif inconsistencia.estado == 'resuelta' %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle me-1"></i>Resuelta
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-dash-circle me-1"></i>Sin estado
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'rector:inconsistencia_detail' inconsistencia.pk %}" 
+                                   class="btn btn-outline-primary" 
+                                   data-bs-toggle="tooltip" 
+                                   title="Ver detalles">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'rector:inconsistencia_edit' inconsistencia.pk %}" 
+                                   class="btn btn-outline-warning" 
+                                   data-bs-toggle="tooltip" 
+                                   title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-outline-danger btn-eliminar" 
+                                        data-id="{{ inconsistencia.pk }}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        {% if is_paginated %}
+        <div class="card-footer">
+            <nav aria-label="Navegación de páginas">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <div class="text-center mt-2">
+                    <small class="text-muted">
+                        Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ page_obj.paginator.count }} registros
+                    </small>
+                </div>
+            </nav>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-exclamation-triangle text-muted display-6"></i>
+            <h5 class="text-muted mt-3">No se encontraron inconsistencias</h5>
+            <p class="text-muted">No hay registros de inconsistencias con los filtros aplicados</p>
+            <a href="{% url 'rector:inconsistencia_create' %}" class="btn btn-primary mt-2">
+                <i class="bi bi-plus-circle me-1"></i>Crear primera inconsistencia
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.descripcion-truncada {
+    cursor: pointer;
+}
+
+.avatar-sm {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.badge {
+    font-size: 0.85em;
+}
+
+.progress {
+    border-radius: 10px;
+}
+
+.page-link {
+    border: none;
+    color: #6c757d;
+}
+
+.page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ========== INICIALIZAR TOOLTIPS ==========
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    
+    // ========== SELECCIÓN MULTIPLE ==========
+    const selectAll = document.getElementById('select-all');
+    const selectItems = document.querySelectorAll('.select-item');
+    
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            selectItems.forEach(item => {
+                item.checked = this.checked;
+            });
+        });
+        
+        // Verificar si todos están seleccionados
+        selectItems.forEach(item => {
+            item.addEventListener('change', function() {
+                const allChecked = Array.from(selectItems).every(i => i.checked);
+                selectAll.checked = allChecked;
+            });
+        });
+    }
+    
+    // ========== ELIMINACIÓN INDIVIDUAL ==========
+    let deleteUrl = '';
+    
+    document.querySelectorAll('.btn-eliminar').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const id = this.dataset.id;
+
+            if (!confirm('¿Está seguro de eliminar esta inconsistencia?')) return;
+
+            fetch(`{% url 'rector:inconsistencia_delete' 0 %}`.replace('0', id), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken()
+                }
+            })
+            .then(() => location.reload())
+            .catch(() => showToast('Error al eliminar', 'danger'));
+        });
+    });
+    
+    // ========== ELIMINACIÓN MULTIPLE ==========
+    const btnEliminarSeleccion = document.getElementById('btn-eliminar-seleccion');
+    
+    if (btnEliminarSeleccion) {
+        btnEliminarSeleccion.addEventListener('click', function() {
+            const selectedIds = Array.from(selectItems)
+                .filter(item => item.checked)
+                .map(item => item.value);
+            
+            if (selectedIds.length === 0) {
+                showToast('Seleccione al menos una inconsistencia', 'warning');
+                return;
+            }
+            
+            if (confirm(`¿Está seguro de eliminar ${selectedIds.length} inconsistencia(s)?`)) {
+                eliminarMultiple(selectedIds);
+            }
+        });
+    }
+    
+    function eliminarMultiple(ids) {
+        fetch('{% url "rector:ajax_eliminar_inconsistencias" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({ ids: ids })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(`${ids.length} inconsistencia(s) eliminadas`, 'success');
+                // Recargar la página después de 1 segundo
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                showToast('Error al eliminar: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showToast('Error de conexión', 'danger');
+            console.error('Error:', error);
+        });
+    }
+    
+    // ========== MARCAR COMO RESUELTAS ==========
+    const btnMarcarResueltas = document.getElementById('btn-marcar-resueltas');
+    
+    if (btnMarcarResueltas) {
+        btnMarcarResueltas.addEventListener('click', function() {
+            const selectedIds = Array.from(selectItems)
+                .filter(item => item.checked)
+                .map(item => item.value);
+            
+            if (selectedIds.length === 0) {
+                showToast('Seleccione al menos una inconsistencia', 'warning');
+                return;
+            }
+            
+            if (confirm(`¿Marcar ${selectedIds.length} inconsistencia(s) como resueltas?`)) {
+                marcarResueltas(selectedIds);
+            }
+        });
+    }
+    
+    function marcarResueltas(ids) {
+        fetch('{% url "rector:ajax_marcar_inconsistencias_resueltas" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({ ids: ids })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(`${ids.length} inconsistencia(s) marcadas como resueltas`, 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                showToast('Error: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showToast('Error de conexión', 'danger');
+            console.error('Error:', error);
+        });
+    }
+    
+    // ========== SELECCIONAR TODOS ==========
+    const btnSeleccionarTodos = document.getElementById('btn-seleccionar-todos');
+    
+    if (btnSeleccionarTodos) {
+        btnSeleccionarTodos.addEventListener('click', function() {
+            selectItems.forEach(item => {
+                item.checked = true;
+            });
+            selectAll.checked = true;
+            showToast('Todos seleccionados', 'info');
+        });
+    }
+    
+    // ========== EXPORTAR LISTA ==========
+    const btnExportarLista = document.getElementById('btn-exportar-lista');
+    
+    if (btnExportarLista) {
+        btnExportarLista.addEventListener('click', function() {
+            const params = new URLSearchParams(window.location.search);
+            params.set('exportar', 'excel');
+            
+            fetch(`{% url "rector:inconsistencia_list" %}?${params.toString()}`)
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `inconsistencias_${new Date().toISOString().split('T')[0]}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                })
+                .catch(error => {
+                    showToast('Error al exportar', 'danger');
+                    console.error('Error:', error);
+                });
+        });
+    }
+    
+    // ========== ACTUALIZAR ESTADÍSTICAS EN TIEMPO REAL ==========
+    function actualizarEstadisticas() {
+        fetch('{% url "rector:ajax_estadisticas_inconsistencias" %}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('count-30-dias').textContent = data.ultimos_30_dias || 0;
+                    document.getElementById('count-tipos-unicos').textContent = data.tipos_unicos || 0;
+                    document.getElementById('count-resueltas').textContent = data.resueltas || 0;
+                }
+            })
+            .catch(error => {
+                console.error('Error al obtener estadísticas:', error);
+            });
+    }
+    
+    // Actualizar cada 30 segundos
+    setInterval(actualizarEstadisticas, 30000);
+    actualizarEstadisticas(); // Llamar inmediatamente
+    
+    // ========== FUNCIONES UTILITARIAS ==========
+    function getCsrfToken() {
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    function showToast(message, type = 'info') {
+        // Crear contenedor si no existe
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Crear toast
+        const toastId = 'toast-' + Date.now();
+        const toast = document.createElement('div');
+        toast.id = toastId;
+        toast.className = `toast align-items-center text-bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        
+        // Icono según el tipo
+        let icon = 'bi-info-circle';
+        if (type === 'success') icon = 'bi-check-circle';
+        if (type === 'warning') icon = 'bi-exclamation-triangle';
+        if (type === 'danger') icon = 'bi-x-circle';
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi ${icon} me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Eliminar después de que se oculte
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+    
+    // ========== AUTO-COMPLETE PARA ESTUDIANTES ==========
+    const estudianteInput = document.querySelector('#{{ filtro_form.estudiante.id_for_label }}');
+    
+    if (estudianteInput) {
+        // Implementar autocomplete usando Select2
+        if ($ && $.fn.select2) {
+            $(estudianteInput).select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Buscar estudiante...',
+                ajax: {
+                    url: '{% url "rector:ajax_buscar_estudiantes" %}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            q: params.term,
+                            page: params.page
+                        };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data.results
+                        };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 2,
+                width: '100%'
+            });
+        }
+    }
+    
+    // ========== AUTO-COMPLETE PARA TIPOS ==========
+    const tipoInput = document.querySelector('#{{ filtro_form.tipo.id_for_label }}');
+    
+    if (tipoInput) {
+        // Obtener tipos únicos existentes
+        fetch('{% url "rector:ajax_tipos_inconsistencias" %}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.tipos) {
+                    // Crear datalist
+                    const datalist = document.createElement('datalist');
+                    datalist.id = 'tipos-sugerencias';
+                    
+                    data.tipos.forEach(tipo => {
+                        const option = document.createElement('option');
+                        option.value = tipo;
+                        datalist.appendChild(option);
+                    });
+                    
+                    tipoInput.parentNode.appendChild(datalist);
+                    tipoInput.setAttribute('list', 'tipos-sugerencias');
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar tipos:', error);
+            });
+    }
+});
+</script>
+{% endblock %}

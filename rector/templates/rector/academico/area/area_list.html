@@ -1,0 +1,327 @@
+{% extends 'rector/base_rector.html' %}
+    {% load static academico_filters %}
+
+{% block title %}Áreas del Conocimiento - Módulo Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:academico_dashboard' %}">Académico</a></li>
+        <li class="breadcrumb-item active"><i class="fas fa-chalkboard-teacher me-2"></i>Áreas del Conocimiento</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">            
+        </h1>
+        <div>
+            <a href="{% url 'rector:area_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Nueva Área
+            </a>
+            <a href="{% url 'rector:asignatura_bulk_create' %}" class="btn btn-outline-primary ms-2">
+                <i class="fas fa-layer-group me-2"></i>Múltiples Asignaturas
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas de estadísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Áreas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_areas }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Niveles Escolares
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ niveles.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-graduation-cap fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Áreas Preescolar
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% with areas_preescolar=areas|filter_by_nivel:"Preescolar" %}
+                                    {{ areas_preescolar|length }}
+                                {% endwith %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-baby fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Áreas Primaria
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% with areas_primaria=areas|filter_by_nivel:"Primaria" %}
+                                    {{ areas_primaria|length }}
+                                {% endwith %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-school fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter me-2"></i>Filtros
+            </h6>
+            <div>
+                {% if filter_nivel or filter_search %}
+                    <a href="{% url 'rector:area_list' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Limpiar filtros
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Nivel Escolar</label>
+                    <select name="nivel" class="form-control select2">
+                        <option value="todos">Todos los niveles</option>
+                        {% for nivel in niveles %}
+                            <option value="{{ nivel.id }}" {% if filter_nivel == nivel.id|stringformat:"i" %}selected{% endif %}>
+                                {{ nivel.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Buscar por nombre de área o nivel..."
+                           value="{{ filter_search|default:'' }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-2"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Áreas -->
+    <div class="card shadow">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list me-2"></i>Lista de Áreas
+                <span class="badge bg-primary ms-2">{{ areas.paginator.count }}</span>
+            </h6>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-download me-1"></i>Exportar
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf me-2"></i>PDF</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-file-excel me-2"></i>Excel</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="5%">#</th>
+                            <th>Nombre del Área</th>
+                            <th>Nivel Escolar</th>
+                            <th class="text-center">Asignaturas</th>
+                            <th class="text-center">Grados</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for area in areas %}
+                        <tr>
+                            <td class="text-muted">
+                                {% get_start_index page_obj forloop.counter %}
+                            </td>
+                            <td>
+                                <strong>{{ area.nombre }}</strong>
+                                <div class="small text-muted">Creado: {{ area.created_at|date:"d/m/Y" }}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ area.nivel_escolar.nombre }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-primary">{{ area.total_asignaturas }}</span>
+                                {% if area.total_asignaturas > 0 %}
+                                    <div class="small text-muted mt-1">
+                                        <a href="{% url 'rector:asignatura_list' %}?area={{ area.id }}" 
+                                           class="text-decoration-none">
+                                            Ver asignaturas
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">{{ area.total_grados }}</span>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'rector:area_detail' area.pk %}" 
+                                       class="btn btn-sm btn-info" title="Ver detalle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'rector:area_edit' area.pk %}" 
+                                       class="btn btn-sm btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'rector:asignatura_create' %}?area={{ area.id }}" 
+                                       class="btn btn-sm btn-success" title="Agregar asignatura">
+                                        <i class="fas fa-plus"></i>
+                                    </a>
+                                    {% if area.total_asignaturas == 0 %}
+                                    <a href="{% url 'rector:area_delete' area.pk %}" 
+                                       class="btn btn-sm btn-danger" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% else %}
+                                    <button class="btn btn-sm btn-danger" disabled title="No se puede eliminar (tiene asignaturas)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <h5>No hay áreas registradas</h5>
+                                    <p>Crea tu primera área del conocimiento</p>
+                                    <a href="{% url 'rector:area_create' %}" class="btn btn-primary mt-2">
+                                        <i class="fas fa-plus me-2"></i>Crear Área
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            {% if areas.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if areas.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if filter_nivel %}&nivel={{ filter_nivel }}{% endif %}{% if filter_search %}&search={{ filter_search }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ areas.previous_page_number }}{% if filter_nivel %}&nivel={{ filter_nivel }}{% endif %}{% if filter_search %}&search={{ filter_search }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in areas.paginator.page_range %}
+                        {% if areas.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > areas.number|add:'-3' and num < areas.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if filter_nivel %}&nivel={{ filter_nivel }}{% endif %}{% if filter_search %}&search={{ filter_search }}{% endif %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if areas.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ areas.next_page_number }}{% if filter_nivel %}&nivel={{ filter_nivel }}{% endif %}{% if filter_search %}&search={{ filter_search }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ areas.paginator.num_pages }}{% if filter_nivel %}&nivel={{ filter_nivel }}{% endif %}{% if filter_search %}&search={{ filter_search }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializar select2
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            width: '100%'
+        });
+        
+        // Confirmación para eliminar
+        $('.btn-danger[href*="delete"]').click(function(e) {
+            if (!confirm('¿Está seguro de eliminar esta área? Esta acción no se puede deshacer.')) {
+                e.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}

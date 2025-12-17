@@ -1,0 +1,44 @@
+<!-- rector/templates/rector/academico/grado/base_grado.html -->
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    /* Estilos específicos para módulo de grados */
+    .grado-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #007bff;
+    }
+    .grado-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .nivel-card {
+        border-left: 4px solid #28a745;
+    }
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+    }
+    .table-grados th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    .badge-grado {
+        font-size: 0.8em;
+        padding: 0.4em 0.8em;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:academico_dashboard' %}">Académico</a></li>
+        <li class="breadcrumb-item active">Grados y Niveles</li>
+    </ol>
+</nav>
+{% endblock %}

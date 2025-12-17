@@ -1,0 +1,122 @@
+{% extends 'rector/base_rector2.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} - Módulo Rector{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chalkboard-teacher me-2"></i>{{ titulo }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row g-3">
+                            <!-- Nombre del Área -->
+                            <div class="col-md-12">
+                                <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                    {{ form.nombre.label }} *
+                                </label>
+                                {{ form.nombre }}
+                                {% if form.nombre.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.nombre.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Ej: Matemáticas, Ciencias Naturales, Humanidades, Lenguaje
+                                </div>
+                            </div>
+                            
+                            <!-- Nivel Escolar -->
+                            <div class="col-md-12">
+                                <label for="{{ form.nivel_escolar.id_for_label }}" class="form-label">
+                                    {{ form.nivel_escolar.label }} *
+                                </label>
+                                {{ form.nivel_escolar }}
+                                {% if form.nivel_escolar.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.nivel_escolar.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Información adicional -->
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <h6 class="alert-heading">
+                                        <i class="fas fa-info-circle me-2"></i>Información importante
+                                    </h6>
+                                    <ul class="mb-0">
+                                        <li>Las áreas organizan las asignaturas por nivel escolar</li>
+                                        <li>Una vez creada, podrás agregar asignaturas a esta área</li>
+                                        <li>Las áreas con asignaturas no pueden ser eliminadas</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'rector:area_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>{{ accion }}
+                                </button>
+                                {% if accion == 'Editar' %}
+                                <a href="{% url 'rector:asignatura_create' %}?area={{ object.id }}" 
+                                   class="btn btn-success ms-2">
+                                    <i class="fas fa-plus me-2"></i>Agregar Asignatura
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializar select2
+        $('#id_nivel_escolar').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Seleccione un nivel escolar',
+            allowClear: false
+        });
+        
+        // Validación en tiempo real
+        $('#id_nombre').on('input', function() {
+            if ($(this).val().length > 0) {
+                $(this).removeClass('is-invalid').addClass('is-valid');
+            } else {
+                $(this).removeClass('is-valid').addClass('is-invalid');
+            }
+        });
+    });
+</script>
+{% endblock %}

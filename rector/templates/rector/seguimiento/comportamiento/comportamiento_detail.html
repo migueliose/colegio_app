@@ -1,0 +1,447 @@
+{% extends 'rector/base_rector.html' %}
+{% load static seguimiento_filters %}
+
+{% block title %}Detalle de Comportamiento - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:seguimiento_dashboard' %}">Seguimiento</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:comportamiento_list' %}">Comportamientos</a></li>
+        <li class="breadcrumb-item active">Detalle #{{ object.id }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Información principal -->
+        <div class="card mb-4">
+            <div class="card-header {% if object.tipo == 'Positivo' %}bg-success text-white{% else %}bg-danger text-white{% endif %} d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi {% if object.tipo == 'Positivo' %}bi-check-circle{% else %}bi-x-circle{% endif %} me-2"></i>
+                    Comportamiento #{{ object.id }}
+                </h5>
+                <div class="btn-group">
+                    <a href="{% url 'rector:comportamiento_edit' object.pk %}" 
+                       class="btn btn-light btn-sm">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                    </a>
+                    <a href="{% url 'rector:comportamiento_delete' object.pk %}"
+                       class="btn btn-outline-light btn-sm"
+                       onclick="return confirm('¿Está seguro de eliminar este registro de comportamiento?');">
+                        <i class="bi bi-trash me-1"></i>Eliminar
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <div class="row">
+                    <!-- Estudiante -->
+                    <div class="col-md-6">
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-2">
+                                <i class="bi bi-person me-2"></i>Estudiante
+                            </h6>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-lg bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                     style="width: 60px; height: 60px;">
+                                    <i class="bi bi-person fs-4"></i>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0">
+                                        <a href="{% url 'rector:estudiante_detail' object.estudiante.pk %}" 
+                                           class="text-decoration-none">
+                                            {{ object.estudiante.usuario.get_full_name }}
+                                        </a>
+                                    </h4>
+                                    <small class="text-muted">
+                                        {{ object.estudiante.usuario.numero_documento }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fechas -->
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-calendar me-2"></i>Fechas
+                        </h6>
+                        <div class="mb-3">
+                            <p class="mb-1">
+                                <strong>Fecha del comportamiento:</strong><br>
+                                {{ object.fecha|date:"d/m/Y" }}
+                            </p>
+                            <p class="mb-1">
+                                <strong>Registrado:</strong><br>
+                                {{ object.created_at|date:"d/m/Y H:i" }}
+                            </p>
+                            <p class="mb-0">
+                                <strong>Actualizado:</strong><br>
+                                {{ object.updated_at|date:"d/m/Y H:i" }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- Detalles del comportamiento -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-tags me-2"></i>Tipo
+                        </h6>
+                        {% if object.tipo == 'Positivo' %}
+                        <span class="badge bg-success fs-5 p-2">
+                            <i class="bi bi-check-circle me-1"></i>Positivo
+                        </span>
+                        {% else %}
+                        <span class="badge bg-danger fs-5 p-2">
+                            <i class="bi bi-x-circle me-1"></i>Negativo
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-grid me-2"></i>Categoría
+                        </h6>
+                        <span class="badge bg-info fs-5 p-2">{{ object.get_categoria_display }}</span>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-calendar-range me-2"></i>Periodo
+                        </h6>
+                        <div>
+                            <span class="badge bg-secondary">
+                                {{ object.periodo_academico.periodo.nombre }}
+                            </span>
+                            <br>
+                            <small class="text-muted">{{ object.periodo_academico.año_lectivo.anho }}</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Descripción -->
+                <div class="mb-4">
+                    <h6 class="text-muted mb-2">
+                        <i class="bi bi-card-text me-2"></i>Descripción
+                    </h6>
+                    <div class="card {% if object.tipo == 'Positivo' %}border-success{% else %}border-danger{% endif %}">
+                        <div class="card-body">
+                            <p class="mb-0 fs-5">{{ object.descripcion|linebreaks }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Docente Responsable -->
+                {% if object.docente %}
+                <div class="mb-4">
+                    <h6 class="text-muted mb-2">
+                        <i class="bi bi-person-badge me-2"></i>Docente Responsable
+                    </h6>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-sm bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center me-2">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <div>
+                            <a href="{% url 'rector:docente_detail' object.docente.pk %}" 
+                               class="text-decoration-none">
+                                {{ object.docente.usuario.get_full_name }}
+                            </a>
+                            <br>
+                            <small class="text-muted">
+                                {{ object.docente.usuario.numero_documento }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Historial del estudiante -->
+        {% if historial_comportamiento %}
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Historial Reciente del Estudiante
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Categoría</th>
+                                <th>Descripción</th>
+                                <th>Docente</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comportamiento in historial_comportamiento %}
+                            <tr>
+                                <td>{{ comportamiento.fecha|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if comportamiento.tipo == 'Positivo' %}
+                                    <span class="badge bg-success">Positivo</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Negativo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ comportamiento.get_categoria_display }}</span>
+                                </td>
+                                <td>{{ comportamiento.descripcion|truncatechars:50 }}</td>
+                                <td>
+                                    {% if comportamiento.docente %}
+                                    <small>{{ comportamiento.docente.usuario.get_full_name|truncatechars:15 }}</small>
+                                    {% else %}
+                                    <span class="text-muted">Sistema</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{% url 'rector:comportamiento_list' %}?estudiante={{ object.estudiante.pk }}" 
+                       class="btn btn-sm btn-outline-primary">
+                        Ver todo el historial
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Información del estudiante -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-person-badge me-2"></i>Información del Estudiante
+                </h6>
+            </div>
+            <div class="card-body">
+                {% with matricula=object.estudiante.matricula_actual %}
+                <div class="mb-3">
+                    <strong>Grado Actual:</strong><br>
+                    {% if matricula %}
+                    <span class="badge bg-primary">{{ matricula.grado_año_lectivo.grado.nombre }}</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Sin matrícula</span>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Sede:</strong><br>
+                    {% if matricula %}
+                    {{ matricula.sede.nombre }}
+                    {% else %}
+                    <span class="text-muted">N/A</span>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Contacto:</strong><br>
+                    <small class="text-muted">
+                        {% if object.estudiante.usuario.telefono %}
+                        <i class="bi bi-telephone me-1"></i>{{ object.estudiante.usuario.telefono }}<br>
+                        {% endif %}
+                        {% if object.estudiante.usuario.email %}
+                        <i class="bi bi-envelope me-1"></i>{{ object.estudiante.usuario.email }}
+                        {% endif %}
+                    </small>
+                </div>
+                {% endwith %}
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'rector:estudiante_detail' object.estudiante.pk %}" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye me-1"></i>Ver perfil completo
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Estadísticas del estudiante -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Estadísticas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Total Comportamientos:</strong>
+                    <span class="badge bg-secondary float-end">{{ total_comportamientos }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Comportamientos Positivos:</strong>
+                    <span class="badge bg-success float-end">{{ total_positivos }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Comportamientos Negativos:</strong>
+                    <span class="badge bg-danger float-end">{{ total_negativos }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Balance:</strong>
+                    <span class="badge {% if total_positivos >= total_negativos %}bg-success{% else %}bg-danger{% endif %} float-end">
+                        {{ total_positivos|add:total_negativos|abs }}
+                    </span>
+                </div>
+                
+                <div class="progress mb-3" style="height: 20px;">
+                    {% if total_comportamientos > 0 %}
+                    {% widthratio total_positivos total_comportamientos 100 as positivo_pct %}
+                    {% widthratio total_negativos total_comportamientos 100 as negativo_pct %}
+                    <div class="progress-bar bg-success" style="width: {{ positivo_pct }}%">
+                        {{ positivo_pct }}%
+                    </div>
+                    <div class="progress-bar bg-danger" style="width: {{ negativo_pct }}%">
+                        {{ negativo_pct }}%
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Acciones rápidas -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightning me-2"></i>Acciones Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'rector:comportamiento_create' %}?estudiante={{ object.estudiante.pk }}" 
+                       class="btn btn-success">
+                        <i class="bi bi-plus-circle me-1"></i>Nuevo Comportamiento
+                    </a>
+                    
+                    <a href="{% url 'rector:asistencia_create' %}" 
+                       class="btn btn-info">
+                        <i class="bi bi-calendar-check me-1"></i>Registrar Asistencia
+                    </a>
+                    
+                    <a href="{% url 'rector:inconsistencia_create' %}?estudiante={{ object.estudiante.pk }}" 
+                       class="btn btn-warning">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Registrar Inconsistencia
+                    </a>
+                    
+                    <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i>Imprimir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-lg {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+}
+
+.badge.fs-5 {
+    font-size: 1.1em !important;
+    padding: 0.6em 1.2em;
+}
+
+.progress-bar.bg-success {
+    background-color: #198754 !important;
+}
+
+.progress-bar.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Función para mostrar notificaciones
+    function showToast(message, type = 'info') {
+        const toastContainer = document.getElementById('toast-container') || 
+            (function() {
+                const container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'toast-container position-fixed top-0 end-0 p-3';
+                document.body.appendChild(container);
+                return container;
+            })();
+        
+        const toastId = 'toast-' + Date.now();
+        const toast = document.createElement('div');
+        toast.id = toastId;
+        toast.className = `toast align-items-center text-bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        
+        let icon = 'bi-info-circle';
+        if (type === 'success') icon = 'bi-check-circle';
+        if (type === 'warning') icon = 'bi-exclamation-triangle';
+        if (type === 'danger') icon = 'bi-x-circle';
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi ${icon} me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+    
+    // Ejemplo de funcionalidad adicional
+    const printBtn = document.querySelector('[onclick="window.print()"]');
+    if (printBtn) {
+        printBtn.addEventListener('click', function() {
+            showToast('Preparando para imprimir...', 'info');
+        });
+    }
+});
+</script>
+{% endblock %}

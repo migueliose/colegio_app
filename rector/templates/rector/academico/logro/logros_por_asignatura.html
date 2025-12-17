@@ -1,0 +1,651 @@
+<!-- rector/templates/rector/academico/logros_por_asignatura.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Logros por Asignatura - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:academico_dashboard' %}">Académico</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:logro_list' %}">Logros</a></li>
+        <li class="breadcrumb-item active">Por Asignatura</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-trophy text-warning me-2"></i>
+                    Logros por Asignatura
+                </h1>
+                <p class="text-muted mb-0">Logros académicos agrupados por asignatura</p>
+            </div>
+            <div>
+                <a href="{% url 'rector:logro_list' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-list me-1"></i>Ver Todos los Logros
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Año Lectivo</label>
+                <select name="año" class="form-select select2" onchange="this.form.submit()">
+                    <option value="todos">Todos los años</option>
+                    {% for año in años_lectivos %}
+                    <option value="{{ año.id }}" {% if filter_año == año.id|stringformat:"s" %}selected{% endif %}>
+                        {{ año.anho }} - {{ año.sede.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Período Académico</label>
+                <select name="periodo" class="form-select select2" onchange="this.form.submit()">
+                    <option value="todos">Todos los períodos</option>
+                    {% for periodo in periodos %}
+                    <option value="{{ periodo.id }}" {% if filter_periodo == periodo.id|stringformat:"s" %}selected{% endif %}>
+                        {{ periodo.periodo.nombre }} - {{ periodo.año_lectivo.anho }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Nivel Escolar</label>
+                <select name="nivel" class="form-select select2" onchange="this.form.submit()">
+                    <option value="todos">Todos los niveles</option>
+                    {% for nivel in niveles %}
+                    <option value="{{ nivel.id }}" {% if filter_nivel == nivel.id|stringformat:"s" %}selected{% endif %}>
+                        {{ nivel.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Total Logros</h6>
+                        <h3 class="mb-0 text-white">{{ total_logros }}</h3>
+                        <small class="text-white-75">En sistema</small>
+                    </div>
+                    <i class="bi bi-trophy stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Asignaturas</h6>
+                        <h3 class="mb-0 text-white">{{ asignaturas|length }}</h3>
+                        <small class="text-white-75">Con logros</small>
+                    </div>
+                    <i class="bi bi-book stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Períodos</h6>
+                        <h3 class="mb-0 text-white">{{ periodos|length }}</h3>
+                        <small class="text-white-75">Activos</small>
+                    </div>
+                    <i class="bi bi-calendar-check stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Año Actual</h6>
+                        <h3 class="mb-0 text-white">{{ año_lectivo_actual.anho|default:"N/A" }}</h3>
+                        <small class="text-white-75">Año lectivo</small>
+                    </div>
+                    <i class="bi bi-calendar-date stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de asignaturas con logros -->
+<div class="row">
+    <div class="col-12">
+        {% if asignaturas %}
+        <div class="accordion" id="accordionLogros">
+            {% for asignatura in asignaturas %}
+            <div class="accordion-item mb-3">
+                <h2 class="accordion-header" id="heading{{ asignatura.id }}">
+                    <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" 
+                            type="button" data-bs-toggle="collapse" 
+                            data-bs-target="#collapse{{ asignatura.id }}" 
+                            aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" 
+                            aria-controls="collapse{{ asignatura.id }}">
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <div>
+                                <strong>{{ asignatura.nombre }}</strong>
+                                <span class="badge bg-info ms-2">{{ asignatura.area.nombre }}</span>
+                                <span class="badge bg-secondary ms-1">{{ asignatura.area.nivel_escolar.nombre }}</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary">{{ asignatura.total_logros }} logros</span>
+                                <span class="text-muted small ms-2">
+                                    <i class="bi bi-clock me-1"></i>
+                                    {{ asignatura.ultima_actualizacion|date:"d/m/Y"|default:"Sin actualizar" }}
+                                </span>
+                            </div>
+                        </div>
+                    </button>
+                </h2>
+                <div id="collapse{{ asignatura.id }}" 
+                     class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" 
+                     aria-labelledby="heading{{ asignatura.id }}" 
+                     data-bs-parent="#accordionLogros">
+                    <div class="accordion-body">
+                        <!-- Estadísticas de la asignatura -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h6>Resumen de Logros</h6>
+                                <table class="table table-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Total Logros:</strong></td>
+                                            <td>{{ asignatura.total_logros }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Por Período:</strong></td>
+                                            <td>{{ asignatura.logros_por_periodo }} períodos</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Por Grado:</strong></td>
+                                            <td>{{ asignatura.logros_por_grado }} grados</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Último Logro:</strong></td>
+                                            <td>{{ asignatura.ultimo_logro_creado|date:"d/m/Y H:i"|default:"No registrado" }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Distribución por Período</h6>
+                                <div class="list-group list-group-flush">
+                                    {% for periodo, count in asignatura.logros_distribucion.items %}
+                                    <div class="list-group-item border-0 px-0 py-1">
+                                        <div class="d-flex justify-content-between">
+                                            <span>{{ periodo }}</span>
+                                            <span class="badge bg-info">{{ count }}</span>
+                                        </div>
+                                        <div class="progress" style="height: 4px;">
+                                            <div class="progress-bar bg-info" 
+                                                 style="width: {% widthratio count asignatura.total_logros 100 %}%">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% empty %}
+                                    <div class="text-muted small">Sin distribución por período</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Lista detallada de logros -->
+                        <h6 class="border-bottom pb-2 mb-3">Logros Detallados</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th width="30%">Tema</th>
+                                        <th>Período</th>
+                                        <th>Grado</th>
+                                        <th>Niveles de Desempeño</th>
+                                        <th>Creado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for logro in asignatura.logros_detallados %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">{{ logro.tema|truncatechars:50 }}</div>
+                                            <small class="text-muted">ID: {{ logro.id }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">
+                                                {{ logro.periodo_academico.periodo.nombre }}
+                                            </span>
+                                            <br>
+                                            <small class="text-muted">{{ logro.periodo_academico.año_lectivo.anho }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ logro.grado.nombre }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button type="button" class="btn btn-outline-success" 
+                                                        data-bs-toggle="tooltip" title="Superior"
+                                                        onclick="mostrarDescripcion('{{ logro.descripcion_superior|escapejs }}', 'Superior')">
+                                                    S
+                                                </button>
+                                                <button type="button" class="btn btn-outline-info" 
+                                                        data-bs-toggle="tooltip" title="Alto"
+                                                        onclick="mostrarDescripcion('{{ logro.descripcion_alto|escapejs }}', 'Alto')">
+                                                    A
+                                                </button>
+                                                <button type="button" class="btn btn-outline-warning" 
+                                                        data-bs-toggle="tooltip" title="Básico"
+                                                        onclick="mostrarDescripcion('{{ logro.descripcion_basico|escapejs }}', 'Básico')">
+                                                    B
+                                                </button>
+                                                <button type="button" class="btn btn-outline-danger" 
+                                                        data-bs-toggle="tooltip" title="Bajo"
+                                                        onclick="mostrarDescripcion('{{ logro.descripcion_bajo|escapejs }}', 'Bajo')">
+                                                    B
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ logro.created_at|date:"d/m/Y" }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'rector:logro_detail' logro.id %}" 
+                                                   class="btn btn-outline-primary" 
+                                                   data-bs-toggle="tooltip" title="Ver detalle">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{% url 'rector:logro_update' logro.id %}" 
+                                                   class="btn btn-outline-warning" 
+                                                   data-bs-toggle="tooltip" title="Editar">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-outline-danger"
+                                                        onclick="confirmarEliminarLogro({{ logro.id }}, '{{ logro.tema|escapejs }}')"
+                                                        data-bs-toggle="tooltip" title="Eliminar">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center py-3">
+                                            <div class="text-muted">
+                                                <i class="bi bi-trophy display-6"></i>
+                                                <p class="mt-2">No hay logros registrados para esta asignatura</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Botón para crear nuevo logro -->
+                        <div class="text-end mt-3">
+                            <a href="{% url 'rector:logro_create' %}?asignatura={{ asignatura.id }}" 
+                               class="btn btn-sm btn-success">
+                                <i class="bi bi-plus-circle me-1"></i>Nuevo Logro para {{ asignatura.nombre }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card text-center py-5">
+            <i class="bi bi-trophy display-4 text-muted mb-3"></i>
+            <h5 class="text-muted">No hay asignaturas con logros registrados</h5>
+            <p class="text-muted mb-3">No se encontraron asignaturas con logros académicos.</p>
+            <div class="d-flex justify-content-center gap-2">
+                <a href="{% url 'rector:logro_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>Crear Primer Logro
+                </a>
+                <a href="{% url 'rector:asignatura_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-book me-1"></i>Ver Asignaturas
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Gráfica de distribución (opcional) -->
+{% if asignaturas_con_estadisticas %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-bar-chart me-2"></i>
+            Distribución de Logros por Asignatura
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Asignatura</th>
+                        <th>Total Logros</th>
+                        <th>Por Período</th>
+                        <th>Por Grado</th>
+                        <th>Última Actualización</th>
+                        <th>Porcentaje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for estadistica in asignaturas_con_estadisticas %}
+                    <tr>
+                        <td>
+                            <strong>{{ estadistica.asignatura__nombre }}</strong>
+                            <br>
+                            <small class="text-muted">{{ estadistica.asignatura__area__nombre }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">{{ estadistica.total }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ estadistica.periodos }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-success">{{ estadistica.grados }}</span>
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ estadistica.ultimo|date:"d/m/Y"|default:"-" }}</small>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1" style="height: 8px;">
+                                    <div class="progress-bar bg-warning" 
+                                         style="width: {{ estadistica.porcentaje }}%">
+                                    </div>
+                                </div>
+                                <small class="ms-2">{{ estadistica.porcentaje|floatformat:1 }}%</small>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal para mostrar descripción de logros -->
+<div class="modal fade" id="modalDescripcion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDescripcionLabel">Descripción del Logro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert" id="nivelDescripcionAlert">
+                    <h6><i class="bi bi-info-circle me-2"></i>Nivel: <span id="nivelNombre"></span></h6>
+                </div>
+                <div class="border rounded p-3 bg-light" id="descripcionContenido">
+                    <!-- Contenido cargado dinámicamente -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para confirmar eliminación -->
+<div class="modal fade" id="modalEliminarLogro" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de eliminar el logro <strong id="logroNombreEliminar"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-octagon me-2"></i>
+                    Esta acción no se puede deshacer. Se eliminará permanentemente el logro y toda su información.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="" id="formEliminarLogro" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializar tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Inicializar select2
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Seleccione una opción'
+        });
+    });
+    
+    function mostrarDescripcion(descripcion, nivel) {
+        const modal = new bootstrap.Modal(document.getElementById('modalDescripcion'));
+        const alert = document.getElementById('nivelDescripcionAlert');
+        const contenido = document.getElementById('descripcionContenido');
+        const nivelNombre = document.getElementById('nivelNombre');
+        
+        // Configurar color según nivel
+        let alertClass = '';
+        switch(nivel) {
+            case 'Superior':
+                alertClass = 'alert-success';
+                break;
+            case 'Alto':
+                alertClass = 'alert-info';
+                break;
+            case 'Básico':
+                alertClass = 'alert-warning';
+                break;
+            case 'Bajo':
+                alertClass = 'alert-danger';
+                break;
+            default:
+                alertClass = 'alert-secondary';
+        }
+        
+        // Actualizar contenido
+        alert.className = `alert ${alertClass}`;
+        nivelNombre.textContent = nivel;
+        
+        if (descripcion && descripcion.trim() !== '') {
+            contenido.innerHTML = `<p>${descripcion}</p>`;
+        } else {
+            contenido.innerHTML = `
+                <div class="text-center py-3">
+                    <i class="bi bi-x-circle text-muted display-4"></i>
+                    <p class="text-muted mt-2">No hay descripción disponible para este nivel</p>
+                </div>
+            `;
+        }
+        
+        modal.show();
+    }
+    
+    function confirmarEliminarLogro(logroId, tema) {
+        const modal = new bootstrap.Modal(document.getElementById('modalEliminarLogro'));
+        const form = document.getElementById('formEliminarLogro');
+        const nombreElement = document.getElementById('logroNombreEliminar');
+        
+        // Configurar el formulario
+        form.action = `{% url 'rector:logro_delete' 0 %}`.replace('0', logroId);
+        nombreElement.textContent = `"${tema}"`;
+        
+        modal.show();
+    }
+    
+    // Función para expandir/colapsar todos los acordeones
+    function toggleAllAcordeones(expandir) {
+        const accordionButtons = document.querySelectorAll('.accordion-button');
+        accordionButtons.forEach(button => {
+            if (expandir && button.classList.contains('collapsed')) {
+                button.click();
+            } else if (!expandir && !button.classList.contains('collapsed')) {
+                button.click();
+            }
+        });
+    }
+    
+    // Botones para expandir/colapsar todo
+    document.addEventListener('DOMContentLoaded', function() {
+        // Agregar botones si hay acordeones
+        if (document.querySelector('.accordion')) {
+            const header = document.querySelector('.d-flex.justify-content-between.align-items-center');
+            if (header) {
+                const container = header.querySelector('div:last-child');
+                if (container) {
+                    const buttonGroup = document.createElement('div');
+                    buttonGroup.className = 'btn-group btn-group-sm ms-2';
+                    buttonGroup.innerHTML = `
+                        <button type="button" class="btn btn-outline-secondary" onclick="toggleAllAcordeones(true)">
+                            <i class="bi bi-arrows-expand me-1"></i>Expandir Todo
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="toggleAllAcordeones(false)">
+                            <i class="bi bi-arrows-collapse me-1"></i>Colapsar Todo
+                        </button>
+                    `;
+                    container.appendChild(buttonGroup);
+                }
+            }
+        }
+    });
+    
+    // Filtrar por búsqueda en tiempo real
+    function filtrarAsignaturas(busqueda) {
+        const accordionItems = document.querySelectorAll('.accordion-item');
+        const searchTerm = busqueda.toLowerCase().trim();
+        
+        let visibleCount = 0;
+        
+        accordionItems.forEach(item => {
+            const header = item.querySelector('.accordion-button');
+            const texto = header.textContent.toLowerCase();
+            
+            if (texto.includes(searchTerm) || searchTerm === '') {
+                item.style.display = '';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Mostrar mensaje si no hay resultados
+        const noResults = document.getElementById('noResultsMessage');
+        if (visibleCount === 0 && searchTerm !== '') {
+            if (!noResults) {
+                const accordion = document.getElementById('accordionLogros');
+                const message = document.createElement('div');
+                message.id = 'noResultsMessage';
+                message.className = 'card text-center py-5';
+                message.innerHTML = `
+                    <i class="bi bi-search display-4 text-muted mb-3"></i>
+                    <h5 class="text-muted">No se encontraron asignaturas</h5>
+                    <p class="text-muted mb-3">No hay asignaturas que coincidan con "${busqueda}"</p>
+                `;
+                accordion.parentNode.insertBefore(message, accordion.nextSibling);
+            }
+        } else if (noResults) {
+            noResults.remove();
+        }
+    }
+    
+    // Agregar campo de búsqueda
+    document.addEventListener('DOMContentLoaded', function() {
+        const filtrosCard = document.querySelector('.card.mb-4 .card-body');
+        if (filtrosCard) {
+            const searchRow = document.createElement('div');
+            searchRow.className = 'row g-3 mt-2';
+            searchRow.innerHTML = `
+                <div class="col-md-12">
+                    <label class="form-label">Buscar Asignatura</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control" 
+                               placeholder="Buscar por nombre de asignatura..." 
+                               onkeyup="filtrarAsignaturas(this.value)">
+                        <button class="btn btn-outline-secondary" type="button" onclick="filtrarAsignaturas('')">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            filtrosCard.appendChild(searchRow);
+        }
+    });
+</script>
+
+<style>
+    .accordion-button:not(.collapsed) {
+        background-color: #f8f9fa;
+        color: #212529;
+    }
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(0,0,0,.125);
+    }
+    .progress {
+        border-radius: 10px;
+    }
+    .progress-bar {
+        border-radius: 10px;
+    }
+    .table-logros th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    .badge-estadistica {
+        font-size: 0.9em;
+        padding: 0.4em 0.8em;
+    }
+</style>
+{% endblock %}

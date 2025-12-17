@@ -1,0 +1,319 @@
+<!-- rector/templates/rector/academico/grado/grado_list.html -->
+{% extends 'rector/academico/grado/base_grado.html' %}
+
+{% block title %}Grados - Rector{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-mortarboard-fill text-primary me-2"></i>
+                Gestión de Grados
+            </h1>
+            <div>
+                <a href="{% url 'rector:nivel_list' %}" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-layers me-1"></i>Niveles Escolares
+                </a>
+                <a href="{% url 'rector:grado_añoelectivo_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>Asignar Grado
+                </a>
+            </div>
+        </div>
+        <p class="text-muted mb-0">Gestione los grados académicos y su asignación a años lectivos</p>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Año Lectivo</label>
+                <select name="año" class="form-select select2" onchange="this.form.submit()">
+                    <option value="todos">Todos los años</option>
+                    {% for año in años_lectivos %}
+                    <option value="{{ año.id }}" {% if filter_año == año.id|stringformat:"s" %}selected{% endif %}>
+                        {{ año.anho }} - {{ año.sede.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Sede</label>
+                <select name="sede" class="form-select select2" onchange="this.form.submit()">
+                    <option value="todos">Todas las sedes</option>
+                    {% for sede in sedes %}
+                    <option value="{{ sede.id }}" {% if filter_sede == sede.id|stringformat:"s" %}selected{% endif %}>
+                        {{ sede.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Nivel Escolar</label>
+                <select name="nivel" class="form-select select2" onchange="this.form.submit()">
+                    <option value="todos">Todos los niveles</option>
+                    {% for nivel in niveles %}
+                    <option value="{{ nivel.id }}" {% if filter_nivel == nivel.id|stringformat:"s" %}selected{% endif %}>
+                        {{ nivel.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-funnel me-1"></i>Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+{% if año_lectivo_actual %}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-white-50 mb-1">Año Lectivo Actual</h6>
+                    <h3 class="mb-0">{{ año_lectivo_actual.anho }}</h3>
+                    <small class="text-white-75">{{ año_lectivo_actual.sede.nombre }}</small>
+                </div>
+                <i class="bi bi-calendar-check stat-icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-white-50 mb-1">Grados Asignados</h6>
+                    <h3 class="mb-0">{{ grados_asignados|default:0 }}</h3>
+                    <small class="text-white-75">de {{ total_grados }} totales</small>
+                </div>
+                <i class="bi bi-mortarboard stat-icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-white-50 mb-1">Estudiantes Totales</h6>
+                    <h3 class="mb-0">{{ estudiantes_totales|default:0 }}</h3>
+                    <small class="text-white-75">en año actual</small>
+                </div>
+                <i class="bi bi-people stat-icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-white-50 mb-1">Promedio General</h6>
+                    <h3 class="mb-0">{{ "N/A" }}</h3>
+                    <small class="text-white-75">rendimiento académico</small>
+                </div>
+                <i class="bi bi-graph-up stat-icon"></i>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tabla de grados -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-grados">
+                <thead>
+                    <tr>
+                        <th>Grado</th>
+                        <th>Nivel</th>
+                        <th>Asignado a Año</th>
+                        <th>Estudiantes</th>
+                        <th>Docentes</th>
+                        <th>Promedio</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for grado in grados %}
+                    <tr>
+                        <td>
+                            <strong>{{ grado.nombre }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ grado.nivel_escolar.nombre }}</span>
+                        </td>
+                        <td>
+                            {% if grado.asignado_a_año %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle me-1"></i>Asignado
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-x-circle me-1"></i>No asignado
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="fw-bold">{{ grado.total_estudiantes|default:0 }}</span>
+                            <small class="text-muted">estudiantes</small>
+                        </td>
+                        <td>
+                            <span class="fw-bold">{{ grado.total_docentes|default:0 }}</span>
+                            <small class="text-muted">docentes</small>
+                        </td>
+                        <td>
+                            {% if grado.promedio > 0 %}
+                            <span class="badge {% if grado.promedio >= 3.5 %}bg-success{% elif grado.promedio >= 3.0 %}bg-warning{% else %}bg-danger{% endif %}">
+                                {{ grado.promedio|floatformat:1 }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">Sin datos</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'rector:grado_detail' grado.id %}" 
+                                class="btn btn-sm btn-outline-success" title="Ver detalle">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-info"
+                                        onclick="verEstadisticas({{ grado.id }}, '{{ año_lectivo_actual.id }}', '{{ filter_sede }}')"
+                                        data-bs-toggle="tooltip" title="Ver estadísticas">
+                                    <i class="bi bi-bar-chart"></i>
+                                </button>
+                                
+                                {% if grado.asignado_a_año %}
+                                <a href="{% url 'rector:grado_añoelectivo_update' grado.grado_año_lectivo_id %}" 
+                                   class="btn btn-outline-warning" data-bs-toggle="tooltip" title="Modificar asignación">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-danger"
+                                        onclick="confirmarEliminar('{% url 'rector:grado_añoelectivo_delete' grado.grado_año_lectivo_id %}', '{{ grado.nombre }}')"
+                                        data-bs-toggle="tooltip" title="Remover del año">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% else %}
+                                <a href="{% url 'rector:grado_añoelectivo_create' %}?año={{ año_lectivo_actual.id }}&grado={{ grado.id }}" 
+                                   class="btn btn-outline-success" data-bs-toggle="tooltip" title="Asignar a año">
+                                    <i class="bi bi-plus-circle"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="bi bi-mortarboard display-6 text-muted"></i>
+                            <p class="text-muted mt-2">No hay grados disponibles</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para estadísticas -->
+<div class="modal fade" id="estadisticasModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="estadisticasModalLabel">Estadísticas del Grado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="estadisticasContent">
+                <!-- Contenido cargado via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function verEstadisticas(gradoId, añoId, sedeId) {
+        $.ajax({
+            url: '{% url "rector:ajax_estadisticas_grado" %}',
+            data: {
+                'grado_id': gradoId,
+                'año_id': añoId,
+                'sede_id': sedeId || 'todos'
+            },
+            success: function(data) {
+                if (data.success) {
+                    const estadisticas = data.estadisticas;
+                    
+                    let contenido = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Información del Grado</h6>
+                                <p><strong>Nombre:</strong> ${data.grado.nombre}</p>
+                                <p><strong>Nivel:</strong> ${data.grado.nivel}</p>
+                                <p><strong>Año Lectivo:</strong> ${data.año_lectivo.nombre}</p>
+                                <p><strong>Sede:</strong> ${data.año_lectivo.sede}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Estadísticas</h6>
+                                <div class="list-group">
+                                    <div class="list-group-item d-flex justify-content-between">
+                                        <span>Total Estudiantes:</span>
+                                        <span class="fw-bold">${estadisticas.total_estudiantes}</span>
+                                    </div>
+                                    <div class="list-group-item d-flex justify-content-between">
+                                        <span>Masculinos:</span>
+                                        <span>${estadisticas.estudiantes_masculinos}</span>
+                                    </div>
+                                    <div class="list-group-item d-flex justify-content-between">
+                                        <span>Femeninos:</span>
+                                        <span>${estadisticas.estudiantes_femeninos}</span>
+                                    </div>
+                                    <div class="list-group-item d-flex justify-content-between">
+                                        <span>Promedio Notas:</span>
+                                        <span class="badge bg-primary">${estadisticas.promedio_notas}</span>
+                                    </div>
+                                    <div class="list-group-item d-flex justify-content-between">
+                                        <span>Asignaturas:</span>
+                                        <span>${estadisticas.total_asignaturas}</span>
+                                    </div>
+                                    <div class="list-group-item d-flex justify-content-between">
+                                        <span>Docentes Asignados:</span>
+                                        <span>${estadisticas.docentes_asignados}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    $('#estadisticasContent').html(contenido);
+                    $('#estadisticasModal').modal('show');
+                } else {
+                    showToast(data.error, 'danger');
+                }
+            },
+            error: function() {
+                showToast('Error al cargar estadísticas', 'danger');
+            }
+        });
+    }
+    
+    function confirmarEliminar(url, nombre) {
+        if (confirm(`¿Está seguro de remover el grado "${nombre}" del año lectivo?`)) {
+            window.location.href = url;
+        }
+    }
+    
+    // Inicializar tooltips
+    $(document).ready(function() {
+        $('[data-bs-toggle="tooltip"]').tooltip();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,220 @@
+{% extends 'rector/base_rector2.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .profile-preview {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin: 0 auto 20px;
+        border: 3px solid #dee2e6;
+    }
+    .profile-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .upload-btn {
+        position: relative;
+        overflow: hidden;
+    }
+    .upload-btn input[type="file"] {
+        position: absolute;
+        top: 0;
+        right: 0;
+        min-width: 100%;
+        min-height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card form-card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil-square me-2"></i>{{ titulo }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Previsualización de foto -->
+                        <div class="text-center mb-4">
+                            <div class="profile-preview">
+                                {% if estudiante.foto %}
+                                    <img src="{{ estudiante.foto.url }}" id="foto-preview" alt="Foto del estudiante">
+                                {% else %}
+                                    <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                                        <i class="bi bi-person-fill text-secondary" style="font-size: 4rem;"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <button type="button" class="btn btn-outline-primary upload-btn">
+                                <i class="bi bi-camera me-1"></i>Cambiar Foto
+                                <input type="file" name="foto" id="id_foto" accept="image/*" class="form-control">
+                            </button>
+                            {% if form.foto.errors %}
+                                <div class="text-danger small mt-2">{{ form.foto.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Estado del estudiante -->
+                        <div class="mb-4">
+                            <label for="{{ form.estado.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-toggle2-on me-1"></i>Estado del Estudiante
+                            </label>
+                            <div class="form-check form-switch">
+                                {% render_field form.estado class="form-check-input" %}
+                                <label class="form-check-label" for="{{ form.estado.id_for_label }}">
+                                    {% if form.estado.value %}
+                                        <span class="text-success">Activo</span>
+                                    {% else %}
+                                        <span class="text-danger">Inactivo</span>
+                                    {% endif %}
+                                </label>
+                            </div>
+                            {% if form.estado.help_text %}
+                                <div class="form-text">{{ form.estado.help_text }}</div>
+                            {% endif %}
+                            {% if form.estado.errors %}
+                                <div class="text-danger small">{{ form.estado.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Información adicional -->
+                        <div class="card border-info mb-4">
+                            <div class="card-header bg-info text-white py-2">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-info-circle me-2"></i>Información del Usuario Asociado
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Nombre Completo</label>
+                                        <p class="form-control-plaintext">{{ estudiante.usuario.get_full_name }}</p>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Documento</label>
+                                        <p class="form-control-plaintext">
+                                            {{ estudiante.usuario.tipo_documento.nombre }}: {{ estudiante.usuario.numero_documento }}
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Email</label>
+                                        <p class="form-control-plaintext">{{ estudiante.usuario.email|default:"No registrado" }}</p>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Teléfono</label>
+                                        <p class="form-control-plaintext">{{ estudiante.usuario.telefono|default:"No registrado" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Matrícula actual -->
+                        {% if estudiante.matricula_actual %}
+                        <div class="card border-success mb-4">
+                            <div class="card-header bg-success text-white py-2">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-journal-text me-2"></i>Matrícula Actual
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-bold">Año Lectivo</label>
+                                        <p class="form-control-plaintext">{{ estudiante.matricula_actual.año_lectivo.anho }}</p>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-bold">Grado</label>
+                                        <p class="form-control-plaintext">{{ estudiante.matricula_actual.grado_año_lectivo.grado.nombre }}</p>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-bold">Sede</label>
+                                        <p class="form-control-plaintext">{{ estudiante.matricula_actual.sede.nombre }}</p>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold">Estado de Matrícula</label>
+                                        <p>
+                                            <span class="badge bg-{% if estudiante.matricula_actual.estado == 'ACT' %}success{% elif estudiante.matricula_actual.estado == 'PEN' %}warning{% else %}secondary{% endif %}">
+                                                {{ estudiante.matricula_actual.get_estado_display }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'rector:estudiante_detail' estudiante.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i>Guardar Cambios
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Previsualización de foto
+        const fotoInput = document.getElementById('id_foto');
+        const fotoPreview = document.getElementById('foto-preview');
+        
+        if (fotoInput && fotoPreview) {
+            fotoInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        fotoPreview.src = e.target.result;
+                    };
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+
+        // Cambiar texto del switch según estado
+        const estadoSwitch = document.querySelector('.form-check-input');
+        const estadoLabel = document.querySelector('.form-check-label span');
+        
+        if (estadoSwitch) {
+            estadoSwitch.addEventListener('change', function() {
+                if (this.checked) {
+                    estadoLabel.textContent = 'Activo';
+                    estadoLabel.className = 'text-success';
+                } else {
+                    estadoLabel.textContent = 'Inactivo';
+                    estadoLabel.className = 'text-danger';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

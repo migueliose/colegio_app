@@ -33,6 +33,7 @@
              href="{% url 'web:about' %}">Nosotros</a>
         </li>
         
+        <!-- PROGRMAS DROPDOWN - CON MANEJO DE ERRORES -->
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle {% if 'programas' in request.path %}active fw-bold{% endif %}" 
              href="#" id="programasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -41,20 +42,21 @@
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="programasDropdown">
             <li><a class="dropdown-item" href="{% url 'web:programas' %}">Todos los Programas</a></li>
             <li><hr class="dropdown-divider"></li>
-            {% with programas_destacados=programas|default:"" %}
-              {% if programas_destacados %}
-                {% for programa in programas_destacados %}
+            {% if programas %}
+              {% for programa in programas|slice:":5" %}
+                {% if programa.is_active %}
                   <li>
                     <a class="dropdown-item" href="{% url 'web:programa_detalle' programa.slug %}">
                       {{ programa.nombre }}
                     </a>
                   </li>
-                {% endfor %}
-              {% else %}
-                <li><a class="dropdown-item" href="{% url 'web:programas' %}">Preescolar</a></li>
-                <li><a class="dropdown-item" href="{% url 'web:programas' %}">Primaria</a></li>
-              {% endif %}
-            {% endwith %}
+                {% endif %}
+              {% endfor %}
+            {% else %}
+              <!-- Opciones por defecto si no hay programas en el contexto -->
+              <li><a class="dropdown-item" href="{% url 'web:programas' %}">Preescolar</a></li>
+              <li><a class="dropdown-item" href="{% url 'web:programas' %}">Primaria</a></li>
+            {% endif %}
           </ul>
         </li>
 
@@ -123,16 +125,17 @@
                           <i class="fas fa-chalkboard-teacher me-2"></i>Dashboard Docente
                       </a>
                     {% elif user|es_estudiante %}                    
-                      {% if estudiante.estado %}
-                        <a class="dropdown-item" href="{% url 'gestioncolegio:dashboard_estudiante' %}">
-                            <i class="fas fa-user-graduate me-2"></i>Dashboard Estudiante
-                        </a>
-                      {% else %}
-                        <a class="dropdown-item" href="{% url 'estudiantes:cuenta_inactiva' %}">
-                            <i class="fas fa-user-graduate me-2"></i>Dashboard Inactivo
-                        </a>
-                      
-                      {% endif %}
+                      {% with estudiante=user.estudiante_profile.first %}
+                        {% if estudiante and estudiante.estado %}
+                          <a class="dropdown-item" href="{% url 'gestioncolegio:dashboard_estudiante' %}">
+                              <i class="fas fa-user-graduate me-2"></i>Dashboard Estudiante
+                          </a>
+                        {% else %}
+                          <a class="dropdown-item" href="{% url 'estudiantes:cuenta_inactiva' %}">
+                              <i class="fas fa-user-graduate me-2"></i>Dashboard Inactivo
+                          </a>
+                        {% endif %}
+                      {% endwith %}
                     {% elif user|es_acudiente %}
                       <a class="dropdown-item" href="{% url 'gestioncolegio:dashboard_acudiente' %}">
                           <i class="fas fa-user-friends me-2"></i>Dashboard Acudiente

@@ -1,0 +1,153 @@
+<!-- rector/templates/rector/academico/grado/nivel_list.html -->
+{% extends 'rector/academico/grado/base_grado.html' %}
+
+{% block title %}Niveles Escolares - Rector{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-layers text-primary me-2"></i>
+                Niveles Escolares
+            </h1>
+            <div>
+                <a href="{% url 'rector:grado_list' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-mortarboard me-1"></i>Ver Grados
+                </a>
+            </div>
+        </div>
+        <p class="text-muted mb-0">Gestione los niveles escolares del sistema</p>
+    </div>
+</div>
+
+<!-- Cards de niveles -->
+<div class="row">
+    {% for nivel in niveles %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card nivel-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5 class="card-title mb-1">{{ nivel.nombre }}</h5>
+                        <p class="text-muted small mb-0">Nivel Escolar</p>
+                    </div>
+                    <span class="badge bg-primary">{{ nivel.total_grados }} grados</span>
+                </div>
+                
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="border rounded p-2 text-center">
+                            <div class="text-primary fw-bold h5 mb-1">{{ nivel.total_estudiantes }}</div>
+                            <small class="text-muted">Estudiantes</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2 text-center">
+                            <div class="text-success fw-bold h5 mb-1">{{ nivel.total_areas }}</div>
+                            <small class="text-muted">Áreas</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-1">Asignaturas:</small>
+                    <span class="badge bg-info">{{ nivel.total_asignaturas }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'rector:nivel_detail' nivel.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye me-1"></i>Detalles
+                    </a>
+                    <span class="text-muted small align-self-center">
+                        ID: {{ nivel.id }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card text-center py-5">
+            <i class="bi bi-layers display-4 text-muted mb-3"></i>
+            <h5 class="text-muted">No hay niveles escolares configurados</h5>
+            <p class="text-muted mb-0">Configure los niveles escolares en la administración</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Resumen -->
+<div class="card mt-4">
+    <div class="card-body">
+        <h6 class="card-subtitle mb-3">Resumen del Sistema</h6>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-layers text-primary"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">{{ niveles|length }}</h5>
+                        <small class="text-muted">Niveles</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-mortarboard text-success"></i>
+                    </div>
+                    <div>
+                        {% with total_grados=0 %}
+                        {% for nivel in niveles %}
+                        {% widthratio nivel.total_grados 1 1 as nivel_grados %}
+                        {% with total_grados=total_grados|add:nivel_grados %}
+                        {% endwith %}
+                        {% endfor %}
+                        <h5 class="mb-0">{{ total_grados }}</h5>
+                        {% endwith %}
+                        <small class="text-muted">Grados Totales</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-book text-info"></i>
+                    </div>
+                    <div>
+                        {% with total_asignaturas=0 %}
+                        {% for nivel in niveles %}
+                        {% widthratio nivel.total_asignaturas 1 1 as nivel_asignaturas %}
+                        {% with total_asignaturas=total_asignaturas|add:nivel_asignaturas %}
+                        {% endwith %}
+                        {% endfor %}
+                        <h5 class="mb-0">{{ total_asignaturas }}</h5>
+                        {% endwith %}
+                        <small class="text-muted">Asignaturas</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-people text-warning"></i>
+                    </div>
+                    <div>
+                        {% with total_estudiantes=0 %}
+                        {% for nivel in niveles %}
+                        {% widthratio nivel.total_estudiantes 1 1 as nivel_estudiantes %}
+                        {% with total_estudiantes=total_estudiantes|add:nivel_estudiantes %}
+                        {% endwith %}
+                        {% endfor %}
+                        <h5 class="mb-0">{{ total_estudiantes }}</h5>
+                        {% endwith %}
+                        <small class="text-muted">Estudiantes</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

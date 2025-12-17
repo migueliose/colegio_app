@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 """
 Vistas AJAX corregidas - SIN USAR distinct(field)
 """
@@ -93,40 +95,49 @@ def obtener_notas_estudiantes(request):
         return JsonResponse({'error': 'Faltan parámetros'}, status=400)
     
     try:
-        # Verificar que el usuario sea docente
         docente = Docente.objects.get(usuario=request.user)
         
-        # Verificar que el docente enseña esta asignatura en este grado
-        asignatura_grado = get_object_or_404(
-            AsignaturaGradoAñoLectivo,
+        # 🔥 Obtener año lectivo actual
+        from gestioncolegio.models import AñoLectivo
+        año_lectivo_actual = AñoLectivo.objects.filter(estado=True).first()
+        
+        if not año_lectivo_actual:
+            return JsonResponse({'error': 'No hay año lectivo activo'}, status=400)
+        
+        # 🔥 CORREGIDO: Filtrar por año lectivo actual
+        asignatura_grado = AsignaturaGradoAñoLectivo.objects.filter(
             docente=docente,
             grado_año_lectivo__grado_id=grado_id,
             asignatura_id=asignatura_id,
-            grado_año_lectivo__año_lectivo__estado=True
-        )
+            grado_año_lectivo__año_lectivo=año_lectivo_actual  # ← CRUCIAL
+        ).first()
         
-        # Obtener año lectivo actual
-        from gestioncolegio.models import AñoLectivo
-        año_lectivo_actual = AñoLectivo.objects.filter(estado=True).first()
-        if not año_lectivo_actual:
-            return JsonResponse({'error': 'No hay año lectivo activo'}, status=400)
+        if not asignatura_grado:
+            asignatura_grado = AsignaturaGradoAñoLectivo.objects.filter(
+                grado_año_lectivo__grado_id=grado_id,
+                asignatura_id=asignatura_id,
+                grado_año_lectivo__año_lectivo=año_lectivo_actual  # ← CRUCIAL
+            ).first()
+        
+        if not asignatura_grado:
+            return JsonResponse({
+                'error': f'No se encontró la asignatura para este grado en el año {año_lectivo_actual.anho}'
+            }, status=404)
         
         # Obtener estudiantes matriculados en el grado en el año actual
         from estudiantes.models import Matricula
         estudiantes_ids = Matricula.objects.filter(
             grado_año_lectivo__grado_id=grado_id,
             año_lectivo=año_lectivo_actual,
-            estado__in=['ACT', 'PEN', 'INA', 'RET', 'OTRO']
+            estado__in=['ACT', 'PEN']
         ).values_list('estudiante_id', flat=True).distinct()
         
         estudiantes = Estudiante.objects.filter(
             id__in=estudiantes_ids,
-            #estado=True
         ).select_related('usuario')
         
         estudiantes_data = []
         for estudiante in estudiantes:
-            # Buscar nota existente
             nota = Nota.objects.filter(
                 estudiante=estudiante,
                 asignatura_grado_año_lectivo=asignatura_grado,
@@ -139,12 +150,23 @@ def obtener_notas_estudiantes(request):
                 'observaciones': nota.observaciones if nota else ''
             })
         
-        # Contexto para el template
+        # Verificar que el período pertenezca al año actual
+        periodo = get_object_or_404(PeriodoAcademico, id=periodo_id)
+        if periodo.año_lectivo != año_lectivo_actual:
+            return JsonResponse({
+                'error': f'El período seleccionado no corresponde al año lectivo actual ({año_lectivo_actual.anho})'
+            }, status=400)
+        
         context = {
             'estudiantes_data': estudiantes_data,
             'grado_seleccionado': asignatura_grado.grado_año_lectivo.grado,
             'asignatura_seleccionada': asignatura_grado.asignatura,
-            'periodo_seleccionado': get_object_or_404(PeriodoAcademico, id=periodo_id)
+            'periodo_seleccionado': periodo,
+            'grado_id': grado_id,
+            'asignatura_id': asignatura_id,
+            'periodo_id': periodo_id,
+            'asignatura_grado_id': asignatura_grado.id,
+            'año_lectivo': año_lectivo_actual.anho,
         }
         
         html = render_to_string(
@@ -158,12 +180,13 @@ def obtener_notas_estudiantes(request):
     except Docente.DoesNotExist:
         return JsonResponse({'error': 'No es docente'}, status=403)
     except Exception as e:
+        logger.error(f"Error en obtener_notas_estudiantes: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
 
 @require_POST
 @login_required
 def guardar_notas(request):
-    """Guarda las calificaciones de estudiantes"""
+    """Guarda las calificaciones de estudiantes - CORREGIDO"""
     try:
         # Obtener datos del formulario
         grado_id = request.POST.get('grado_id')
@@ -176,15 +199,42 @@ def guardar_notas(request):
         # Verificar que el usuario sea docente
         docente = Docente.objects.get(usuario=request.user)
         
-        # Verificar que el docente enseña esta asignatura
-        asignatura_grado = get_object_or_404(
-            AsignaturaGradoAñoLectivo,
+        # 🔥 CRÍTICO: Obtener el año lectivo actual
+        from gestioncolegio.models import AñoLectivo
+        año_lectivo_actual = AñoLectivo.objects.filter(estado=True).first()
+        
+        if not año_lectivo_actual:
+            return JsonResponse({'error': 'No hay año lectivo activo'}, status=400)
+        
+        # 🔥 CORREGIDO: Filtrar POR AÑO LECTIVO ACTUAL
+        asignatura_grado = AsignaturaGradoAñoLectivo.objects.filter(
             docente=docente,
             grado_año_lectivo__grado_id=grado_id,
-            asignatura_id=asignatura_id
-        )
+            asignatura_id=asignatura_id,
+            grado_año_lectivo__año_lectivo=año_lectivo_actual  # ← CRUCIAL
+        ).first()
+        
+        # Si no encuentra con docente específico, buscar sin filtrar por docente
+        # pero SIEMPRE con el año lectivo actual
+        if not asignatura_grado:
+            asignatura_grado = AsignaturaGradoAñoLectivo.objects.filter(
+                grado_año_lectivo__grado_id=grado_id,
+                asignatura_id=asignatura_id,
+                grado_año_lectivo__año_lectivo=año_lectivo_actual  # ← CRUCIAL
+            ).first()
+            
+            if not asignatura_grado:
+                return JsonResponse({
+                    'error': f'No se encontró la asignatura para este grado en el año lectivo {año_lectivo_actual.anho}'
+                }, status=404)
         
         periodo = get_object_or_404(PeriodoAcademico, id=periodo_id)
+        
+        # Verificar que el periodo pertenezca al año lectivo actual
+        if periodo.año_lectivo != año_lectivo_actual:
+            return JsonResponse({
+                'error': f'El período seleccionado no corresponde al año lectivo actual ({año_lectivo_actual.anho})'
+            }, status=400)
         
         # Procesar cada estudiante
         estudiantes_actualizados = 0
@@ -196,8 +246,17 @@ def guardar_notas(request):
                 calificacion = value.strip()
                 
                 if calificacion:  # Solo procesar si hay calificación
+                    try:
+                        calificacion_decimal = float(calificacion)
+                        # Validar rango
+                        if calificacion_decimal < 0 or calificacion_decimal > 100:
+                            continue
+                    except ValueError:
+                        continue
+                    
                     estudiante = get_object_or_404(Estudiante, id=estudiante_id)
                     
+                    # 🔥 Usar update_or_create con todos los filtros correctos
                     nota, created = Nota.objects.update_or_create(
                         estudiante=estudiante,
                         asignatura_grado_año_lectivo=asignatura_grado,
@@ -215,14 +274,16 @@ def guardar_notas(request):
         
         return JsonResponse({
             'success': True,
-            'message': f'Calificaciones guardadas: {estudiantes_nuevos} nuevas, {estudiantes_actualizados} actualizadas',
+            'message': f'✅ Calificaciones guardadas: {estudiantes_nuevos} nuevas, {estudiantes_actualizados} actualizadas',
             'nuevas': estudiantes_nuevos,
-            'actualizadas': estudiantes_actualizados
+            'actualizadas': estudiantes_actualizados,
+            'año_lectivo': año_lectivo_actual.anho
         })
         
     except Docente.DoesNotExist:
         return JsonResponse({'error': 'No es docente'}, status=403)
     except Exception as e:
+        logger.error(f"Error en guardar_notas: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
 
 @require_GET

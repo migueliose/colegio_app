@@ -1,0 +1,515 @@
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .section-title {
+        color: #4e54c8;
+        border-bottom: 2px solid #4e54c8;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .nivel-label {
+        font-weight: 600;
+        padding: 0.5rem;
+        border-radius: 5px;
+        margin-bottom: 0.5rem;
+    }
+    .nivel-label.superior { background: #d4edda; color: #155724; }
+    .nivel-label.alto { background: #d1ecf1; color: #0c5460; }
+    .nivel-label.basico { background: #fff3cd; color: #856404; }
+    .nivel-label.bajo { background: #f8d7da; color: #721c24; }
+    .char-count {
+        font-size: 0.875rem;
+        color: #6c757d;
+        text-align: right;
+    }
+    .char-count.limit {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+    .select2-container {
+        width: 100% !important;
+    }
+    .info-alert {
+        padding: 0.75rem;
+        border-radius: 0.375rem;
+        margin-top: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow form-container">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-trophy me-2"></i>{{ titulo }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Información básica -->
+                        <div class="form-section">
+                            <h5 class="section-title">
+                                <i class="bi bi-info-circle me-2"></i>Información Básica
+                            </h5>
+                            
+                            <div class="row">
+                                <!-- Grado -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.grado.id_for_label }}" class="form-label">
+                                        <i class="bi bi-layers me-1"></i>Grado *
+                                    </label>
+                                    {% render_field form.grado class="form-select select2-grado" %}
+                                    {% if form.grado.errors %}
+                                    <div class="text-danger small">{{ form.grado.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Seleccione primero el grado para cargar las asignaturas disponibles
+                                    </div>
+                                </div>
+                                
+                                <!-- Asignatura -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.asignatura.id_for_label }}" class="form-label">
+                                        <i class="bi bi-book me-1"></i>Asignatura *
+                                    </label>
+                                    {% if accion == 'Crear' %}
+                                        {# En modo creación, el campo estará inicialmente deshabilitado #}
+                                        {% render_field form.asignatura class="form-select select2-asignatura" disabled="disabled" %}
+                                    {% else %}
+                                        {# En modo edición, el campo está habilitado #}
+                                        {% render_field form.asignatura class="form-select select2-asignatura" %}
+                                    {% endif %}
+                                    {% if form.asignatura.errors %}
+                                    <div class="text-danger small">{{ form.asignatura.errors }}</div>
+                                    {% endif %}
+                                    <div id="asignatura-info" class="info-alert alert-info mt-2">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        <span id="asignatura-message">Seleccione un grado primero</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Período Académico -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.periodo_academico.id_for_label }}" class="form-label">
+                                        <i class="bi bi-calendar-week me-1"></i>Período Académico *
+                                    </label>
+                                    {% render_field form.periodo_academico class="form-select select2-periodo" %}
+                                    {% if form.periodo_academico.errors %}
+                                    <div class="text-danger small">{{ form.periodo_academico.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        {% if año_lectivo_actual %}
+                                            Año lectivo: {{ año_lectivo_actual.anho }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Tema -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.tema.id_for_label }}" class="form-label">
+                                        <i class="bi bi-chat-text me-1"></i>Tema del Logro *
+                                    </label>
+                                    {% render_field form.tema class="form-control" placeholder="Ej: Resolución de ecuaciones de primer grado" %}
+                                    {% if form.tema.errors %}
+                                    <div class="text-danger small">{{ form.tema.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Describa el tema o competencia principal
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Información del grado seleccionado -->
+                            <div id="grado-info" class="alert alert-light border mt-3" style="display: none;">
+                                <h6 class="alert-heading">
+                                    <i class="bi bi-info-square me-1"></i>Información del Grado
+                                </h6>
+                                <div id="grado-details">
+                                    Cargando información del grado...
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Niveles de desempeño -->
+                        <div class="form-section">
+                            <h5 class="section-title">
+                                <i class="bi bi-bar-chart-steps me-2"></i>Niveles de Desempeño
+                            </h5>
+                            <p class="text-muted mb-4">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Define las descripciones para cada nivel de desempeño. Todos los campos son opcionales, pero se recomienda completar al menos uno.
+                            </p>
+                            
+                            <!-- Nivel Superior -->
+                            <div class="mb-4">
+                                <div class="nivel-label superior">
+                                    <i class="bi bi-star-fill me-1"></i>Nivel Superior
+                                </div>
+                                <label for="{{ form.descripcion_superior.id_for_label }}" class="form-label">
+                                    Descripción para desempeño superior:
+                                </label>
+                                {% render_field form.descripcion_superior class="form-control" rows="4" placeholder="Describe el nivel de desempeño superior..." %}
+                                <div class="char-count" id="count-superior">0/500 caracteres</div>
+                                {% if form.descripcion_superior.errors %}
+                                <div class="text-danger small">{{ form.descripcion_superior.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Nivel Alto -->
+                            <div class="mb-4">
+                                <div class="nivel-label alto">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Nivel Alto
+                                </div>
+                                <label for="{{ form.descripcion_alto.id_for_label }}" class="form-label">
+                                    Descripción para desempeño alto:
+                                </label>
+                                {% render_field form.descripcion_alto class="form-control" rows="4" placeholder="Describe el nivel de desempeño alto..." %}
+                                <div class="char-count" id="count-alto">0/500 caracteres</div>
+                                {% if form.descripcion_alto.errors %}
+                                <div class="text-danger small">{{ form.descripcion_alto.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Nivel Básico -->
+                            <div class="mb-4">
+                                <div class="nivel-label basico">
+                                    <i class="bi bi-exclamation-circle-fill me-1"></i>Nivel Básico
+                                </div>
+                                <label for="{{ form.descripcion_basico.id_for_label }}" class="form-label">
+                                    Descripción para desempeño básico:
+                                </label>
+                                {% render_field form.descripcion_basico class="form-control" rows="4" placeholder="Describe el nivel de desempeño básico..." %}
+                                <div class="char-count" id="count-basico">0/500 caracteres</div>
+                                {% if form.descripcion_basico.errors %}
+                                <div class="text-danger small">{{ form.descripcion_basico.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Nivel Bajo -->
+                            <div class="mb-4">
+                                <div class="nivel-label bajo">
+                                    <i class="bi bi-x-circle-fill me-1"></i>Nivel Bajo
+                                </div>
+                                <label for="{{ form.descripcion_bajo.id_for_label }}" class="form-label">
+                                    Descripción para desempeño bajo:
+                                </label>
+                                {% render_field form.descripcion_bajo class="form-control" rows="4" placeholder="Describe el nivel de desempeño bajo..." %}
+                                <div class="char-count" id="count-bajo">0/500 caracteres</div>
+                                {% if form.descripcion_bajo.errors %}
+                                <div class="text-danger small">{{ form.descripcion_bajo.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between border-top pt-4 mt-4">
+                            <div>
+                                <a href="{% url 'rector:logro_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                                </a>
+                            </div>
+                            <div class="d-flex gap-2">
+                                {% if accion == 'Editar' %}
+                                <a href="{% url 'rector:logro_delete' object.pk %}" class="btn btn-outline-danger">
+                                    <i class="bi bi-trash me-1"></i>Eliminar
+                                </a>
+                                {% endif %}
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {% if accion == 'Crear' %}Crear Logro{% else %}Guardar Cambios{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar Select2
+    $('.select2-grado').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Seleccione un grado',
+        allowClear: true
+    });
+
+    // Inicializar Select2 para asignatura
+    let asignaturaSelect = $('#id_asignatura'); // SOLO ESTA DECLARACIÓN
+    if (asignaturaSelect.length > 0) {
+        asignaturaSelect.select2({
+            theme: 'bootstrap-5',
+            placeholder: function() {
+                return {% if accion == 'Crear' %}'Primero seleccione un grado'{% else %}'Seleccione una asignatura'{% endif %};
+            },
+            allowClear: true
+        });
+        
+        // Si estamos en modo creación, deshabilitar inicialmente
+        {% if accion == 'Crear' %}
+        asignaturaSelect.prop('disabled', true).trigger('change');
+        {% endif %}
+    }
+    
+    $('.select2-periodo').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Seleccione un período académico',
+        allowClear: true
+    });
+    
+    // Variables globales - 
+    let asignaturaInfo = $('#asignatura-info');
+    let asignaturaMessage = $('#asignatura-message');
+    let gradoInfo = $('#grado-info');
+    let gradoDetails = $('#grado-details');
+    
+    // Mostrar el info alert inicialmente si estamos en modo creación
+    {% if accion == 'Crear' %}
+    asignaturaInfo.show();
+    {% endif %}
+    
+    // Función para cargar asignaturas del grado seleccionado
+    function cargarAsignaturas(gradoId) {
+        if (!gradoId) {
+            asignaturaSelect.val(null).trigger('change');
+
+            {% if accion == 'Crear' %}
+            asignaturaSelect.prop('disabled', true).trigger('change');
+            {% endif %}
+
+            asignaturaMessage.text('Seleccione un grado primero');
+            asignaturaInfo
+                .removeClass('alert-success alert-warning')
+                .addClass('alert-info')
+                .show();
+
+            gradoInfo.hide();
+            return;
+        }
+        
+        // Mostrar mensaje de carga
+        asignaturaMessage.html('<i class="bi bi-hourglass-split me-1"></i>Cargando asignaturas...');
+        asignaturaInfo.removeClass('alert-info alert-warning alert-success').addClass('alert-info').show();
+        
+        // Obtener información del grado
+        $.ajax({
+            url: '{% url "rector:ajax_get_grado_info" 999999 %}'.replace('999999', gradoId),
+            type: 'GET',
+            success: function(data) {
+                if (data.success) {
+                    // Mostrar información del grado
+                    gradoDetails.html(`
+                        <p class="mb-1"><strong>Grado:</strong> ${data.grado.nombre}</p>
+                        <p class="mb-1"><strong>Nivel:</strong> ${data.grado.nivel}</p>
+                        <p class="mb-1"><strong>Áreas del conocimiento:</strong> ${data.grado.total_areas}</p>
+                        <p class="mb-0"><strong>Asignaturas disponibles:</strong> ${data.grado.total_asignaturas}</p>
+                    `);
+                    gradoInfo.show();
+                    
+                    // Cargar asignaturas
+                    cargarAsignaturasLista(gradoId);
+                } else {
+                    asignaturaMessage.html('<i class="bi bi-exclamation-triangle me-1"></i>' + data.error);
+                    asignaturaInfo.removeClass('alert-info').addClass('alert-warning').show();
+                }
+            },
+            error: function() {
+                asignaturaMessage.html('<i class="bi bi-exclamation-triangle me-1"></i>Error al cargar información del grado');
+                asignaturaInfo.removeClass('alert-info').addClass('alert-warning').show();
+            }
+        });
+    }
+    
+    // Función para cargar la lista de asignaturas
+    function cargarAsignaturasLista(gradoId) {
+        $.ajax({
+            url: '{% url "rector:ajax_get_asignaturas_by_grado" %}',
+            data: {
+                'grado_id': gradoId,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            type: 'GET',
+            success: function(data) {
+                if (data.success && data.asignaturas.length > 0) {
+                    // Limpiar y llenar el select de asignaturas
+                    asignaturaSelect.empty();
+                    asignaturaSelect.append('<option value=""></option>');
+                    
+                    $.each(data.asignaturas, function(index, asignatura) {
+                        asignaturaSelect.append(
+                            $('<option></option>').val(asignatura.id).text(asignatura.nombre)
+                        );
+                    });
+                    
+                    // Habilitar el select solo si estamos en modo creación
+                    {% if accion == 'Crear' %}
+                    asignaturaSelect.prop('disabled', false).trigger('change');
+                    {% endif %}
+                    
+                    // Seleccionar la asignatura si estamos editando y ya hay una seleccionada
+                    {% if form.asignatura.value %}
+                        asignaturaSelect.val('{{ form.asignatura.value }}').trigger('change');
+                    {% endif %}
+                    
+                    // Mostrar mensaje de éxito
+                    asignaturaMessage.html(`<i class="bi bi-check-circle me-1"></i>Se cargaron ${data.asignaturas.length} asignaturas disponibles`);
+                    asignaturaInfo.removeClass('alert-warning alert-info').addClass('alert-success').show();
+                } else {
+                    asignaturaMessage.html(
+                        '<i class="bi bi-exclamation-triangle me-1"></i>No hay asignaturas disponibles para este grado'
+                        );
+
+                        asignaturaInfo
+                        .removeClass('alert-info alert-success')
+                        .addClass('alert-warning')
+                        .show();
+
+                        {% if accion == 'Crear' %}
+                        asignaturaSelect.prop('disabled', true).val(null).trigger('change');
+                        {% endif %}
+                }
+            },
+            error: function() {
+                asignaturaMessage.html('<i class="bi bi-exclamation-triangle me-1"></i>Error al cargar las asignaturas');
+                asignaturaInfo.removeClass('alert-info').addClass('alert-warning').show();
+            }
+        });
+    }
+    
+    // Evento cuando cambia el grado
+    $('#id_grado').change(function() {
+        const gradoId = $(this).val();
+        cargarAsignaturas(gradoId);
+    });
+    
+    // Si ya hay un grado seleccionado (en modo edición), cargar sus asignaturas
+    {% if form.grado.value %}
+        setTimeout(function() {
+            cargarAsignaturas('{{ form.grado.value }}');
+        }, 500);
+    {% endif %}
+    
+    // Contador de caracteres para cada textarea
+    const textareas = {
+        'descripcion_superior': 'count-superior',
+        'descripcion_alto': 'count-alto',
+        'descripcion_basico': 'count-basico',
+        'descripcion_bajo': 'count-bajo'
+    };
+    
+    const maxLength = 500;
+    
+    // Función para actualizar contador
+    function updateCharCount(textareaId, counterId) {
+        const textarea = document.getElementById(textareaId);
+        const counter = document.getElementById(counterId);
+        
+        if (textarea && counter) {
+            const length = textarea.value.length;
+            counter.textContent = `${length}/${maxLength} caracteres`;
+            
+            if (length > maxLength) {
+                counter.classList.add('limit');
+                textarea.classList.add('is-invalid');
+            } else {
+                counter.classList.remove('limit');
+                textarea.classList.remove('is-invalid');
+            }
+            
+            // Actualizar en tiempo real
+            textarea.addEventListener('input', function() {
+                const newLength = this.value.length;
+                counter.textContent = `${newLength}/${maxLength} caracteres`;
+                
+                if (newLength > maxLength) {
+                    counter.classList.add('limit');
+                    this.classList.add('is-invalid');
+                } else {
+                    counter.classList.remove('limit');
+                    this.classList.remove('is-invalid');
+                }
+            });
+        }
+    }
+    
+    // Inicializar contadores
+    for (const [textareaId, counterId] of Object.entries(textareas)) {
+        updateCharCount(`id_${textareaId}`, counterId);
+    }
+    
+    // Validación del formulario
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            let hasError = false;
+            const requiredFields = ['grado', 'asignatura', 'periodo_academico', 'tema'];
+            
+            // Validar campos requeridos
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(`id_${fieldId}`);
+                if (field && !field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    hasError = true;
+                } else if (field) {
+                    field.classList.remove('is-invalid');
+                }
+            });
+            
+            // Validar longitud de textareas
+            for (const textareaId of Object.keys(textareas)) {
+                const textarea = document.getElementById(`id_${textareaId}`);
+                if (textarea && textarea.value.length > maxLength) {
+                    textarea.classList.add('is-invalid');
+                    hasError = true;
+                }
+            }
+            
+            // Validar que al menos una descripción esté completa
+            const descripciones = ['superior', 'alto', 'basico', 'bajo'];
+            const hasAnyDescription = descripciones.some(level => {
+                const field = document.getElementById(`id_descripcion_${level}`);
+                return field && field.value.trim().length > 0;
+            });
+            
+            if (!hasAnyDescription) {
+                alert('Por favor, complete al menos un nivel de desempeño.');
+                hasError = true;
+            }
+            
+            if (hasError) {
+                event.preventDefault();
+                alert('Por favor, corrija los errores en el formulario.');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,539 @@
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Asistencia por Grado - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:seguimiento_dashboard' %}">Seguimiento</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:asistencia_list' %}">Asistencias</a></li>
+        <li class="breadcrumb-item active">{{ grado.grado.nombre }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Encabezado con filtros -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-0">
+                            <i class="bi bi-people me-2"></i>Asistencia: {{ grado.grado.nombre }}
+                        </h5>
+                        <small class="opacity-75">
+                            {{ grado.año_lectivo.anho }} | {{ estudiantes|length }} estudiantes
+                        </small>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div class="btn-group">
+                            <a href="{% url 'rector:asistencia_bulk' %}?grado={{ grado.id }}" 
+                               class="btn btn-success btn-sm">
+                                <i class="bi bi-calendar-plus me-1"></i>Registrar Hoy
+                            </a>
+                            <button type="button" class="btn btn-info btn-sm" onclick="exportarExcel()">
+                                <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()">
+                                <i class="bi bi-printer me-1"></i>Imprimir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="periodo" class="form-label">Periodo</label>
+                        <select name="periodo" id="periodo" class="form-control">
+                            <option value="">Todos los periodos</option>
+                            {% for periodo_obj in periodos_disponibles %}
+                            <option value="{{ periodo_obj.id }}" {% if periodo_obj.id == periodo.id %}selected{% endif %}>
+                                {{ periodo_obj.periodo.nombre }} - {{ periodo_obj.año_lectivo.anho }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                        <input type="date" name="fecha_inicio" id="fecha_inicio" 
+                               class="form-control" value="{{ fecha_inicio|date:'Y-m-d' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                        <input type="date" name="fecha_fin" id="fecha_fin" 
+                               class="form-control" value="{{ fecha_fin|date:'Y-m-d' }}">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-filter me-1"></i>Filtrar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla principal de asistencias -->
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h6 class="mb-0">
+                            <i class="bi bi-calendar-week me-2"></i>Control de Asistencia
+                            <span class="badge bg-primary ms-2">{{ dias_lectivos|length }} días</span>
+                        </h6>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="scrollLeft()">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="scrollRight()">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 600px; overflow-x: auto;">
+                    <table class="table table-bordered table-striped mb-0">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                <th width="200" class="sticky-column">Estudiante</th>
+                                {% for dia in dias_lectivos %}
+                                <th class="text-center" style="min-width: 60px;">
+                                    {{ dia|date:"d" }}<br>
+                                    <small class="text-muted">{{ dia|date:"D"|slice:":3" }}</small>
+                                </th>
+                                {% endfor %}
+                                <th class="text-center bg-info text-white" style="min-width: 80px;">
+                                    Asistencia<br>
+                                    <small>%</small>
+                                </th>
+                                <th class="text-center bg-danger text-white" style="min-width: 60px;">
+                                    Faltas<br>
+                                    <small>Total</small>
+                                </th>
+                                <th class="text-center bg-warning text-white" style="min-width: 80px;">
+                                    Justificadas<br>
+                                    <small>Total</small>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for estudiante in estudiantes %}
+                            <tr>
+                                <td class="sticky-column bg-light">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            <i class="bi bi-person"></i>
+                                        </div>
+                                        <div>
+                                            <strong>{{ estudiante.usuario.get_full_name|truncatechars:20 }}</strong><br>
+                                            <small class="text-muted">{{ estudiante.usuario.numero_documento }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                {% for dia in dias_lectivos %}
+                                <td class="text-center align-middle">
+                                    {% with asistencia=asistencias_data.estudiante.id.asistencias|get_item:dia.isoformat %}
+                                    {% if asistencia %}
+                                        {% if asistencia.estado == 'A' %}
+                                        <span class="badge bg-success" title="Asistió - {{ dia|date:'d/m/Y' }}">
+                                            <i class="bi bi-check"></i>
+                                        </span>
+                                        {% elif asistencia.estado == 'F' %}
+                                        <span class="badge bg-danger" title="Faltó - {{ dia|date:'d/m/Y' }}">
+                                            <i class="bi bi-x"></i>
+                                        </span>
+                                        {% elif asistencia.estado == 'J' %}
+                                        <span class="badge bg-warning" title="Justificado - {{ dia|date:'d/m/Y' }}">
+                                            <i class="bi bi-clock"></i>
+                                        </span>
+                                        {% endif %}
+                                    {% else %}
+                                    <span class="badge bg-secondary" title="Sin registro - {{ dia|date:'d/m/Y' }}">
+                                        <i class="bi bi-dash"></i>
+                                    </span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </td>
+                                {% endfor %}
+                                
+                                <!-- Estadísticas por estudiante -->
+                                <td class="text-center align-middle bg-info bg-opacity-10">
+                                    {% with stats=asistencias_data.estudiante.id.estadisticas %}
+                                    <strong class="{% if stats.porcentaje_asistencia >= 90 %}text-success{% elif stats.porcentaje_asistencia >= 80 %}text-warning{% else %}text-danger{% endif %}">
+                                        {{ stats.porcentaje_asistencia|floatformat:1 }}%
+                                    </strong><br>
+                                    <small class="text-muted">
+                                        {{ stats.asistencias }}/{{ stats.total_dias }}
+                                    </small>
+                                    {% endwith %}
+                                </td>
+                                
+                                <td class="text-center align-middle bg-danger bg-opacity-10">
+                                    {% with stats=asistencias_data.estudiante.id.estadisticas %}
+                                    <strong class="text-danger">{{ stats.faltas }}</strong>
+                                    {% endwith %}
+                                </td>
+                                
+                                <td class="text-center align-middle bg-warning bg-opacity-10">
+                                    {% with stats=asistencias_data.estudiante.id.estadisticas %}
+                                    <strong class="text-warning">{{ stats.justificadas }}</strong>
+                                    {% endwith %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-secondary">
+                            <tr>
+                                <td class="sticky-column"><strong>PROMEDIO DEL GRADO</strong></td>
+                                
+                                {% for dia in dias_lectivos %}
+                                <td class="text-center">
+                                    {% with promedio=calcular_promedio_dia dia %}
+                                    <small class="text-muted">{{ promedio|floatformat:0 }}%</small>
+                                    {% endwith %}
+                                </td>
+                                {% endfor %}
+                                
+                                <td class="text-center bg-info bg-opacity-25">
+                                    <strong>{{ promedio_general|floatformat:1 }}%</strong>
+                                </td>
+                                <td class="text-center bg-danger bg-opacity-25">
+                                    <strong>{{ total_faltas }}</strong>
+                                </td>
+                                <td class="text-center bg-warning bg-opacity-25">
+                                    <strong>{{ total_justificadas }}</strong>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen estadístico -->
+        <div class="row mt-4">
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-check-circle me-2"></i>Mejor Asistencia
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            {% for estudiante in mejores_asistencias|slice:":5" %}
+                            <div class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ estudiante.nombre|truncatechars:25 }}</h6>
+                                    <span class="badge bg-success">{{ estudiante.porcentaje }}%</span>
+                                </div>
+                                <small class="text-muted">
+                                    {{ estudiante.asistencias }}/{{ dias_lectivos|length }} días
+                                </small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Baja Asistencia
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            {% for estudiante in baja_asistencia|slice:":5" %}
+                            <div class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ estudiante.nombre|truncatechars:25 }}</h6>
+                                    <span class="badge bg-danger">{{ estudiante.porcentaje }}%</span>
+                                </div>
+                                <small class="text-muted">
+                                    {{ estudiante.faltas }} faltas
+                                </small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-graph-up me-2"></i>Estadísticas Generales
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 mb-3">
+                                <div class="border rounded p-2">
+                                    <h6 class="text-muted mb-1">Asistencia Prom.</h6>
+                                    <h4 class="mb-0 text-success">{{ promedio_general|floatformat:1 }}%</h4>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="border rounded p-2">
+                                    <h6 class="text-muted mb-1">Días Clase</h6>
+                                    <h4 class="mb-0 text-primary">{{ dias_lectivos|length }}</h4>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-2">
+                                    <h6 class="text-muted mb-1">Total Faltas</h6>
+                                    <h4 class="mb-0 text-danger">{{ total_faltas }}</h4>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-2">
+                                    <h6 class="text-muted mb-1">Total Justific.</h6>
+                                    <h4 class="mb-0 text-warning">{{ total_justificadas }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Leyenda -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Leyenda
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 col-6 mb-2">
+                        <span class="badge bg-success me-2"><i class="bi bi-check"></i></span>
+                        <small>Asistió</small>
+                    </div>
+                    <div class="col-md-3 col-6 mb-2">
+                        <span class="badge bg-danger me-2"><i class="bi bi-x"></i></span>
+                        <small>Faltó</small>
+                    </div>
+                    <div class="col-md-3 col-6 mb-2">
+                        <span class="badge bg-warning me-2"><i class="bi bi-clock"></i></span>
+                        <small>Justificado</small>
+                    </div>
+                    <div class="col-md-3 col-6 mb-2">
+                        <span class="badge bg-secondary me-2"><i class="bi bi-dash"></i></span>
+                        <small>Sin registro</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+}
+
+.table-responsive {
+    position: relative;
+}
+
+.sticky-column {
+    position: sticky;
+    left: 0;
+    background-color: #f8f9fa;
+    z-index: 1;
+    border-right: 2px solid #dee2e6;
+}
+
+.table-dark .sticky-column {
+    background-color: #343a40;
+    color: white;
+}
+
+.table thead th {
+    vertical-align: middle;
+    text-align: center;
+}
+
+.badge {
+    padding: 0.25em 0.4em;
+    font-size: 0.75em;
+    cursor: default;
+}
+
+.list-group-item {
+    padding: 0.75rem 1rem;
+}
+
+.table tbody tr:hover .sticky-column {
+    background-color: #e9ecef;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Función para exportar a Excel
+function exportarExcel() {
+    // Crear tabla HTML para exportar
+    let table = document.querySelector('.table');
+    let html = table.outerHTML;
+    
+    // Crear blob y descargar
+    let blob = new Blob([html], {type: 'application/vnd.ms-excel'});
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = `asistencia_${new Date().toISOString().slice(0,10)}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+// Funciones para desplazamiento horizontal
+function scrollLeft() {
+    const container = document.querySelector('.table-responsive');
+    container.scrollLeft -= 200;
+}
+
+function scrollRight() {
+    const container = document.querySelector('.table-responsive');
+    container.scrollLeft += 200;
+}
+
+// Hacer las celdas clicables para edición rápida
+document.addEventListener('DOMContentLoaded', function() {
+    // Agregar evento click a las celdas de asistencia
+    document.querySelectorAll('tbody td.text-center').forEach(cell => {
+        if (cell.querySelector('.badge')) {
+            cell.addEventListener('click', function(e) {
+                if (e.target.classList.contains('badge')) {
+                    cambiarEstadoAsistencia(this);
+                }
+            });
+        }
+    });
+    
+    // Formatear campos de fecha
+    const fechaInicio = document.getElementById('fecha_inicio');
+    const fechaFin = document.getElementById('fecha_fin');
+    
+    if (fechaInicio) fechaInicio.type = 'date';
+    if (fechaFin) fechaFin.type = 'date';
+});
+
+// Función para cambiar estado de asistencia (edición rápida)
+function cambiarEstadoAsistencia(cell) {
+    const badge = cell.querySelector('.badge');
+    const estudianteId = cell.closest('tr').querySelector('.avatar-sm').nextElementSibling.querySelector('small').textContent;
+    const fecha = cell.querySelector('.badge').title.split(' - ')[1];
+    
+    // Ciclar entre estados: Asistió → Faltó → Justificado → Asistió
+    let nuevoEstado;
+    let nuevoIcono;
+    let nuevoColor;
+    let nuevoTitle;
+    
+    if (badge.classList.contains('bg-success')) {
+        nuevoEstado = 'F';
+        nuevoIcono = 'bi-x';
+        nuevoColor = 'danger';
+        nuevoTitle = 'Faltó - ' + fecha;
+    } else if (badge.classList.contains('bg-danger')) {
+        nuevoEstado = 'J';
+        nuevoIcono = 'bi-clock';
+        nuevoColor = 'warning';
+        nuevoTitle = 'Justificado - ' + fecha;
+    } else if (badge.classList.contains('bg-warning')) {
+        nuevoEstado = 'A';
+        nuevoIcono = 'bi-check';
+        nuevoColor = 'success';
+        nuevoTitle = 'Asistió - ' + fecha;
+    } else {
+        nuevoEstado = 'A';
+        nuevoIcono = 'bi-check';
+        nuevoColor = 'success';
+        nuevoTitle = 'Asistió - ' + fecha;
+    }
+    
+    // Actualizar visualmente
+    badge.className = `badge bg-${nuevoColor}`;
+    badge.innerHTML = `<i class="bi ${nuevoIcono}"></i>`;
+    badge.title = nuevoTitle;
+    
+    // Aquí podrías enviar la actualización al servidor vía AJAX
+    console.log('Cambiando estado:', {
+        estudiante: estudianteId,
+        fecha: fecha,
+        nuevoEstado: nuevoEstado
+    });
+    
+    // Actualizar estadísticas
+    actualizarEstadisticasEstudiante(cell.closest('tr'));
+}
+
+// Actualizar estadísticas del estudiante después de cambiar estado
+function actualizarEstadisticasEstudiante(fila) {
+    const celdas = fila.querySelectorAll('td.text-center .badge');
+    let asistio = 0;
+    let faltas = 0;
+    let justificadas = 0;
+    let totalDias = celdas.length - 3; // Excluir columnas de estadísticas
+    
+    celdas.forEach((badge, index) => {
+        if (index < totalDias) {
+            if (badge.classList.contains('bg-success')) asistio++;
+            else if (badge.classList.contains('bg-danger')) faltas++;
+            else if (badge.classList.contains('bg-warning')) justificadas++;
+        }
+    });
+    
+    // Actualizar estadísticas en la fila
+    const total = asistio + faltas + justificadas;
+    const porcentaje = total > 0 ? (asistio / total) * 100 : 0;
+    
+    // Actualizar celdas de estadísticas
+    const statsCells = fila.querySelectorAll('td.text-center:not(:has(.badge))');
+    if (statsCells.length >= 3) {
+        statsCells[0].innerHTML = `<strong class="${porcentaje >= 90 ? 'text-success' : porcentaje >= 80 ? 'text-warning' : 'text-danger'}">${porcentaje.toFixed(1)}%</strong><br><small class="text-muted">${asistio}/${total}</small>`;
+        statsCells[1].innerHTML = `<strong class="text-danger">${faltas}</strong>`;
+        statsCells[2].innerHTML = `<strong class="text-warning">${justificadas}</strong>`;
+    }
+}
+
+// Función para calcular promedio del día (simulada)
+function calcularPromedioDia(dia) {
+    // Esta función debería implementarse en el backend
+    // Aquí es solo un ejemplo
+    const diaStr = dia.toISOString().split('T')[0];
+    const celdas = document.querySelectorAll(`td[title*="${diaStr}"] .badge`);
+    let asistio = 0;
+    
+    celdas.forEach(badge => {
+        if (badge.classList.contains('bg-success')) asistio++;
+    });
+    
+    return celdas.length > 0 ? (asistio / celdas.length) * 100 : 0;
+}
+</script>
+{% endblock %}

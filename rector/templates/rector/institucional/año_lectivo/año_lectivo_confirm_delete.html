@@ -1,0 +1,353 @@
+<!-- rector/institucional/año_lectivo/año_lectivo_confirm_delete.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Confirmar Eliminación de Año Lectivo{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:institucional_dashboard' %}">Institucional</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:año_lectivo_list' %}">Años Lectivos</a></li>
+        <li class="breadcrumb-item active">Eliminar Año</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-trash-alt me-2"></i>
+                            Confirmar Eliminación de Año Lectivo
+                        </h4>
+                        <span class="badge bg-light text-danger">
+                            <i class="fas fa-calendar-times me-1"></i>
+                            {{ año_info.nombre_completo }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Alerta principal -->
+                    <div class="alert alert-danger border-danger">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h5 class="alert-heading">¡Atención! Esta acción es irreversible</h5>
+                                <p class="mb-0">
+                                    El año lectivo <strong>"{{ año_info.nombre_completo }}"</strong> será 
+                                    <strong>ELIMINADO PERMANENTEMENTE</strong> del sistema.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información del año lectivo -->
+                    <div class="card border-info mb-4">
+                        <div class="card-header bg-info bg-opacity-10">
+                            <h6 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Información del Año Lectivo</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <th class="w-40">Año:</th>
+                                            <td><strong>{{ object.anho }}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Sede:</th>
+                                            <td>{{ año_info.sede }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Colegio:</th>
+                                            <td>{{ año_info.colegio }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <th class="w-40">Fecha Inicio:</th>
+                                            <td>{{ año_info.fecha_inicio }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Fecha Fin:</th>
+                                            <td>{{ año_info.fecha_fin }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Estado:</th>
+                                            <td>
+                                                {% if año_info.estado == 'Activo' %}
+                                                <span class="badge bg-success">{{ año_info.estado }}</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">{{ año_info.estado }}</span>
+                                                {% endif %}
+                                                {% if año_info.es_actual %}
+                                                <span class="badge bg-warning ms-1">Año Actual</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dependencias detectadas -->
+                    {% if dependencias_lista %}
+                    <div class="alert alert-danger">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-ban fa-2x text-danger"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h5 class="alert-heading mb-3">No se puede eliminar este año lectivo</h5>
+                                <p>El año lectivo tiene las siguientes dependencias que deben ser eliminadas primero:</p>
+                                
+                                <div class="mt-3">
+                                    <h6>Dependencias detectadas:</h6>
+                                    <ul class="mb-3">
+                                        {% for dependencia in dependencias_lista %}
+                                        <li>{{ dependencia }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                    
+                                    <!-- Información detallada -->
+                                    {% if tiene_matriculas %}
+                                    <div class="card border-danger mb-3">
+                                        <div class="card-header bg-danger bg-opacity-10">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-users me-2"></i>
+                                                Matrículas ({{ matriculas_count }})
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <p>El año lectivo tiene matrículas en los siguientes estados:</p>
+                                            <ul>
+                                                {% for info in matriculas_info %}
+                                                <li>{{ info }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                            <p class="mb-0 small text-muted">
+                                                Debe eliminar o cambiar el estado de todas las matrículas antes de eliminar el año lectivo.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if tiene_periodos %}
+                                    <div class="card border-warning mb-3">
+                                        <div class="card-header bg-warning bg-opacity-10">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-calendar me-2"></i>
+                                                Periodos Académicos ({{ periodos_count }})
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <p>Periodos configurados en este año:</p>
+                                            <ul>
+                                                {% for periodo in periodos_info %}
+                                                <li>{{ periodo }}</li>
+                                                {% endfor %}
+                                                {% if periodos_count > 5 %}
+                                                <li>... y {{ periodos_count|add:"-5" }} más</li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if tiene_grados %}
+                                    <div class="card border-info mb-3">
+                                        <div class="card-header bg-info bg-opacity-10">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-graduation-cap me-2"></i>
+                                                Grados ({{ grados_count }})
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <p>Grados asociados a este año:</p>
+                                            <ul>
+                                                {% for grado in grados_info %}
+                                                <li>{{ grado }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Otras dependencias -->
+                                    {% if tiene_notas %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-sticky-note me-2"></i>
+                                        <strong>Notas registradas:</strong> {{ notas_count }} calificaciones
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if tiene_logros %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-trophy me-2"></i>
+                                        <strong>Logros académicos:</strong> {{ logros_count }} logros definidos
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if tiene_docentes_asignados %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-chalkboard-teacher me-2"></i>
+                                        <strong>Docentes asignados:</strong> {{ docentes_count }} asignaciones
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Acciones recomendadas -->
+                                <div class="mt-4">
+                                    <h6 class="border-bottom pb-2">Acciones requeridas:</h6>
+                                    <ol>
+                                        {% if tiene_matriculas %}
+                                        <li class="mb-2">
+                                            <strong>Gestionar matrículas:</strong>
+                                            <div class="mt-1">
+                                                <a href="#" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-users me-1"></i>Ver Matrículas
+                                                </a>
+                                            </div>
+                                        </li>
+                                        {% endif %}
+                                        
+                                        {% if tiene_periodos %}
+                                        <li class="mb-2">
+                                            <strong>Eliminar periodos académicos:</strong>
+                                            <div class="mt-1">
+                                                <a href="{% url 'rector:periodo_list' %}?año_lectivo={{ object.id }}" 
+                                                   class="btn btn-sm btn-outline-warning">
+                                                    <i class="fas fa-calendar-alt me-1"></i>Gestionar Periodos
+                                                </a>
+                                            </div>
+                                        </li>
+                                        {% endif %}
+                                        
+                                        {% if tiene_grados %}
+                                        <li class="mb-2">
+                                            <strong>Eliminar grados asociados:</strong>
+                                            <div class="mt-1">
+                                                <a href="#" class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-graduation-cap me-1"></i>Ver Grados
+                                                </a>
+                                            </div>
+                                        </li>
+                                        {% endif %}
+                                        
+                                        {% if año_info.es_actual %}
+                                        <li class="mb-2">
+                                            <strong>Cambiar año lectivo actual:</strong>
+                                            <div class="mt-1">
+                                                <span class="badge bg-warning me-2">
+                                                    Este año está configurado como actual
+                                                </span>
+                                                <a href="{% url 'rector:año_lectivo_list' %}" 
+                                                   class="btn btn-sm btn-outline-warning">
+                                                    <i class="fas fa-exchange-alt me-1"></i>Configurar otro año como actual
+                                                </a>
+                                            </div>
+                                        </li>
+                                        {% endif %}
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Botones de acción -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <div>
+                            <a href="{% url 'rector:año_lectivo_list' %}" class="btn btn-outline-secondary ms-2">
+                                <i class="fas fa-list me-1"></i> Ver Todos los Años
+                            </a>
+                        </div>
+                        
+                        <!-- Solo mostrar botón de confirmación si se puede eliminar -->
+                        {% if puede_eliminar %}
+                        <div>
+                            <form method="post" id="eliminarForm">
+                                {% csrf_token %}
+                                <button type="button" class="btn btn-danger" 
+                                        data-bs-toggle="modal" data-bs-target="#confirmModal">
+                                    <i class="fas fa-trash-alt me-1"></i> Confirmar Eliminación
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación final (solo si se puede eliminar) -->
+{% if puede_eliminar %}
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirmación Final
+                </h5>
+                <button type="button" class="btn-close btn-close-white" 
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está completamente seguro de eliminar permanentemente el año lectivo <strong>"{{ año_info.nombre_completo }}"</strong>?</p>
+                
+                <div class="alert alert-danger mt-3">
+                    <i class="fas fa-radiation-alt me-2"></i>
+                    <strong>ADVERTENCIA: Esta acción es irreversible</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Toda la información será eliminada permanentemente</li>
+                        <li>No podrá recuperar los datos eliminados</li>
+                        <li>Esta acción afectará todos los registros asociados</li>
+                    </ul>
+                </div>
+                
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="confirmCheck">
+                    <label class="form-check-label" for="confirmCheck">
+                        Comprendo que esta acción es irreversible y deseo proceder
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" 
+                        data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" 
+                        id="finalConfirmBtn" disabled
+                        onclick="document.getElementById('eliminarForm').submit();">
+                    <i class="fas fa-check me-1"></i> Eliminar Permanentemente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para habilitar el botón de confirmación -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmCheck = document.getElementById('confirmCheck');
+        const finalConfirmBtn = document.getElementById('finalConfirmBtn');
+        
+        confirmCheck.addEventListener('change', function() {
+            finalConfirmBtn.disabled = !this.checked;
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

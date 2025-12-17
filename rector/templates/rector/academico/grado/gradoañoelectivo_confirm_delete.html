@@ -1,0 +1,97 @@
+<!-- rector/templates/rector/academico/grado/gradoañoelectivo_confirm_delete.html -->
+{% extends 'rector/academico/grado/base_grado.html' %}
+
+{% block title %}Eliminar Asignación - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:academico_dashboard' %}">Académico</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:grado_list' %}">Grados</a></li>
+        <li class="breadcrumb-item active">Eliminar Asignación</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Confirmar Eliminación
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="bi bi-trash text-danger display-1"></i>
+                </div>
+                
+                <h5 class="text-center mb-3">¿Está seguro de eliminar esta asignación?</h5>
+                
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-octagon me-2"></i>
+                    <strong>Advertencia:</strong> Esta acción no se puede deshacer.
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h6>Información de la Asignación</h6>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th>Grado:</th>
+                                    <td>{{ object.grado.nombre }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Año Lectivo:</th>
+                                    <td>{{ object.año_lectivo.anho }} - {{ object.año_lectivo.sede.nombre }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Estado:</th>
+                                    <td>
+                                        {% if object.estado %}
+                                        <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Creado:</th>
+                                    <td>{{ object.created_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Impacto de la eliminación -->
+                <div class="alert alert-danger">
+                    <h6><i class="bi bi-cone-striped me-2"></i>Impacto de esta acción:</h6>
+                    <ul class="mb-0">
+                        <li>Se eliminará la relación entre el grado y el año lectivo</li>
+                        <li>Los estudiantes matriculados en este grado para este año perderán su asignación</li>
+                        <li>Las asignaturas asignadas a este grado para este año se desvincularán</li>
+                        <li>Los horarios relacionados se eliminarán</li>
+                    </ul>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'rector:grado_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i>Eliminar Asignación
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

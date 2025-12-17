@@ -1,0 +1,266 @@
+<!-- rector/templates/rector/seguimiento/calificacion/calificacion_form.html -->
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}
+    {% if form.instance.pk %}Editar Calificación{% else %}Registrar Calificación{% endif %} - Rector
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:seguimiento_dashboard' %}">Seguimiento</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:calificacion_list' %}">Calificaciones</a></li>
+        <li class="breadcrumb-item active">{% if form.instance.pk %}Editar{% else %}Registrar{% endif %}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-journal-bookmark me-2"></i>
+                    {% if form.instance.pk %}Editar Calificación{% else %}Registrar Nueva Calificación{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.estudiante.id_for_label }}" class="form-label">
+                                <i class="bi bi-person me-1"></i>Estudiante *
+                            </label>
+                            {{ form.estudiante|add_class:"form-control" }}
+                            {% if form.estudiante.errors %}
+                            <div class="text-danger small">
+                                {{ form.estudiante.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.asignatura_grado_año_lectivo.id_for_label }}" class="form-label">
+                                <i class="bi bi-book me-1"></i>Asignatura *
+                            </label>
+                            {{ form.asignatura_grado_año_lectivo|add_class:"form-control" }}
+                            {% if form.asignatura_grado_año_lectivo.errors %}
+                            <div class="text-danger small">
+                                {{ form.asignatura_grado_año_lectivo.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.periodo_academico.id_for_label }}" class="form-label">
+                                <i class="bi bi-calendar-range me-1"></i>Periodo Académico *
+                            </label>
+                            {{ form.periodo_academico|add_class:"form-control" }}
+                            {% if form.periodo_academico.errors %}
+                            <div class="text-danger small">
+                                {{ form.periodo_academico.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.calificacion.id_for_label }}" class="form-label">
+                                <i class="bi bi-star me-1"></i>Calificación (0.0 - 5.0) *
+                            </label>
+                            <div class="input-group">
+                                {{ form.calificacion|add_class:"form-control" }}
+                                <span class="input-group-text">/ 5.0</span>
+                            </div>
+                            {% if form.calificacion.errors %}
+                            <div class="text-danger small">
+                                {{ form.calificacion.errors }}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <div id="calificacionInfo"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.observaciones.id_for_label }}" class="form-label">
+                            <i class="bi bi-chat-left-text me-1"></i>Observaciones
+                        </label>
+                        {{ form.observaciones|add_class:"form-control"|attr:"rows:3" }}
+                        {% if form.observaciones.errors %}
+                        <div class="text-danger small">
+                            {{ form.observaciones.errors }}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Describa aspectos relevantes sobre el desempeño del estudiante.
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'rector:calificacion_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-1"></i>
+                            {% if form.instance.pk %}Actualizar Calificación{% else %}Registrar Calificación{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        {% if form.instance.pk %}
+        <!-- Información del estudiante -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Información del Estudiante
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Nombre completo:</strong><br>
+                        {{ form.instance.estudiante.usuario.get_full_name }}</p>
+                        <p><strong>Documento:</strong><br>
+                        {{ form.instance.estudiante.usuario.numero_documento }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Grado actual:</strong><br>
+                        {{ form.instance.estudiante.matricula_actual.grado_año_lectivo.grado.nombre }}</p>
+                        <p><strong>Sede:</strong><br>
+                        {{ form.instance.estudiante.matricula_actual.sede.nombre }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Historial reciente del estudiante -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Historial Reciente
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Asignatura</th>
+                                <th>Periodo</th>
+                                <th>Calificación</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for nota in form.instance.estudiante.notas.all|slice:":5" %}
+                            {% if nota.id != form.instance.id %}
+                            <tr>
+                                <td>{{ nota.asignatura_grado_año_lectivo.asignatura.nombre|truncatechars:20 }}</td>
+                                <td>{{ nota.periodo_academico.periodo.nombre }}</td>
+                                <td>
+                                    <span class="badge {% if nota.calificacion >= 3.0 %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ nota.calificacion|floatformat:1 }}
+                                    </span>
+                                </td>
+                                <td>{{ nota.created_at|date:"d/m/Y" }}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación de calificación
+    const calificacionInput = document.getElementById('{{ form.calificacion.id_for_label }}');
+    const calificacionInfo = document.getElementById('calificacionInfo');
+    
+    function actualizarInfoCalificacion() {
+        const valor = parseFloat(calificacionInput.value) || 0;
+        
+        let nivel = '';
+        let color = 'text-muted';
+        
+        if (valor >= 4.6) {
+            nivel = 'Superior (4.6 - 5.0)';
+            color = 'text-success';
+        } else if (valor >= 4.0) {
+            nivel = 'Alto (4.0 - 4.5)';
+            color = 'text-info';
+        } else if (valor >= 3.0) {
+            nivel = 'Básico (3.0 - 3.9)';
+            color = 'text-warning';
+        } else if (valor > 0) {
+            nivel = 'Bajo (0.0 - 2.9)';
+            color = 'text-danger';
+        }
+        
+        calificacionInfo.innerHTML = `<span class="${color}">${nivel}</span>`;
+        
+        // Validar rango
+        if (valor < 0) {
+            calificacionInput.value = 0;
+        } else if (valor > 5) {
+            calificacionInput.value = 5;
+        }
+    }
+    
+    if (calificacionInput) {
+        calificacionInput.addEventListener('input', actualizarInfoCalificacion);
+        actualizarInfoCalificacion();
+    }
+    
+    // Cargar estudiantes por grado
+    const asignaturaSelect = document.getElementById('{{ form.asignatura_grado_año_lectivo.id_for_label }}');
+    const estudianteSelect = document.getElementById('{{ form.estudiante.id_for_label }}');
+    
+    if (asignaturaSelect && estudianteSelect) {
+        asignaturaSelect.addEventListener('change', function() {
+            const asignaturaId = this.value;
+            if (!asignaturaId) return;
+            
+            // Limpiar opciones actuales
+            while (estudianteSelect.options.length > 0) {
+                estudianteSelect.remove(0);
+            }
+            
+            // Agregar opción por defecto
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.text = 'Seleccione un estudiante';
+            estudianteSelect.add(defaultOption);
+            
+            // Aquí podrías hacer una llamada AJAX para cargar estudiantes
+            // según la asignatura seleccionada
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -26,20 +26,20 @@ urlpatterns = [
      path('gestion-academica/asignaturas/<int:pk>/eliminar/', views.AsignaturaDeleteView.as_view(), name='asignatura_delete'),
 
      # Años Lectivos
-     path('gestion-academica/años-lectivos/', views.AñoLectivoListView_Academica.as_view(), name='añolectivo_list'),
-     path('gestion-academica/años-lectivos/crear/', views.AñoLectivoCreateView_Academica.as_view(), name='añolectivo_create'),
-     path('gestion-academica/años-lectivos/<int:pk>/editar/', views.AñoLectivoUpdateView_Academica.as_view(), name='añolectivo_update'),
+     path('gestion-academica/anhoslectivos/', views.AñoLectivoListView_Academica.as_view(), name='añolectivo_list'),
+     path('gestion-academica/anhoslectivos/crear/', views.AñoLectivoCreateView_Academica.as_view(), name='añolectivo_create'),
+     path('gestion-academica/anhoslectivos/<int:pk>/editar/', views.AñoLectivoUpdateView_Academica.as_view(), name='añolectivo_update'),
 
-     path('gestion-academica/años-lectivos/<int:pk>/eliminar/', views.AñoLectivoDeleteView.as_view(), name='añolectivo_delete'),
-     path('gestion-academica/años-lectivos/<int:pk>/activar-desactivar/', views.AñoLectivoActivarDesactivarView.as_view(), name='añolectivo_activar_desactivar'),
-     path('gestion-academica/años-lectivos/<int:pk>/cambiar-estado/', views.AñoLectivoActivarDesactivarView.as_view(), name='añolectivo_cambiar_estado'),
-     path('gestion-academica/años-lectivos/<int:pk>/periodos/', views.AñoLectivoPeriodosView.as_view(), name='añolectivo_periodos'),
+     path('gestion-academica/anhoslectivos/<int:pk>/eliminar/', views.AñoLectivoDeleteView.as_view(), name='añolectivo_delete'),
+     path('gestion-academica/anhoslectivos/<int:pk>/activar-desactivar/', views.AñoLectivoActivarDesactivarView.as_view(), name='añolectivo_activar_desactivar'),
+     path('gestion-academica/anhoslectivos/<int:pk>/cambiar-estado/', views.AñoLectivoActivarDesactivarView.as_view(), name='añolectivo_cambiar_estado'),
+     path('gestion-academica/anhoslectivos/<int:pk>/periodos/', views.AñoLectivoPeriodosView.as_view(), name='añolectivo_periodos'),
 
      # Periodos Académicos
-     path('gestion-academica/años-lectivos/<int:año_pk>/periodos/crear/', views.PeriodoAcademicoCreateView.as_view(), name='periodo_create'),
+     path('gestion-academica/anhoslectivos/<int:año_pk>/periodos/crear/', views.PeriodoAcademicoCreateView.as_view(), name='periodo_create'),
      path('gestion-academica/periodos-academicos/<int:pk>/editar/', views.PeriodoAcademicoUpdateView.as_view(), name='periodo_update'),
      path('gestion-academica/periodos-academicos/<int:pk>/eliminar/', views.PeriodoAcademicoDeleteView.as_view(), name='periodo_delete'),
-     path('gestion-academica/años-lectivos/<int:pk>/periodos/agregar-multiples/', views.AgregarMultiplesPeriodosView.as_view(), name='periodo_agregar_multiples'),
+     path('gestion-academica/anhoslectivos/<int:pk>/periodos/agregar-multiples/', views.AgregarMultiplesPeriodosView.as_view(), name='periodo_agregar_multiples'),
 
      # ========================
      # GESTIÓN ACADÉMICA - Grados por Año
@@ -198,9 +198,9 @@ urlpatterns = [
     path('configuracion/colegios/<int:colegio_id>/recursos/', views.RecursosColegioUpdateView.as_view(), name='recursos_update'),
 
     # Años lectivos
-    path('configuracion/años-lectivos/', views.AñoLectivoListView.as_view(), name='año_lectivo_list'),
-    path('configuracion/años-lectivos/crear/', views.AñoLectivoCreateView.as_view(), name='año_lectivo_create'),
-    path('configuracion/años-lectivos/<int:pk>/editar/', views.AñoLectivoUpdateView.as_view(), name='año_lectivo_update'),
+    path('configuracion/anhoslectivos/', views.AñoLectivoListView.as_view(), name='año_lectivo_list'),
+    path('configuracion/anhoslectivos/crear/', views.AñoLectivoCreateView.as_view(), name='año_lectivo_create'),
+    path('configuracion/anhoslectivos/<int:pk>/editar/', views.AñoLectivoUpdateView.as_view(), name='año_lectivo_update'),
 
     # ===================== AJUSTES DEL SISTEMA =====================
     # Configuración general
@@ -259,5 +259,4 @@ urlpatterns = [
     # Exportación
     path('reportes/exportar/', views.ExportarReporteView.as_view(), name='exportar_reporte'),
 
-    
 ]

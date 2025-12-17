@@ -27,8 +27,12 @@
             <!-- Menús según rol -->
             {% if user.is_authenticated %}
                 <ul class="navbar-nav me-auto">
-                    <!-- ADMIN / RECTOR -->
-                    {% if user.tipo_usuario.nombre == "Administrador" or user.tipo_usuario.nombre == "Rector" or user.is_superuser %}
+                    <!-- RECTOR -->
+                    {% if user.tipo_usuario.nombre == "Rector" %}
+                        {% include 'gestioncolegio/components/rector_menu.html' %}
+
+                    <!-- ADMINISTRADOR -->
+                    {% elif user.tipo_usuario.nombre == "Administrador" or user.is_superuser %}
                         {% include 'gestioncolegio/components/admin_menu.html' %}
 
                     <!-- DOCENTE -->

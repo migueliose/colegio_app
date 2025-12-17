@@ -1,0 +1,293 @@
+{% extends 'rector/base_rector2.html' %}
+{% load static %}
+
+{% block title %}Crear Múltiples Asignaturas - Módulo Rector{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-layer-group me-2"></i>{{ titulo }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row g-3">
+                            <!-- Seleccionar Área -->
+                            <div class="col-md-12">
+                                <label for="{{ form.area.id_for_label }}" class="form-label">
+                                    {{ form.area.label }} *
+                                </label>
+                                {{ form.area }}
+                                {% if form.area.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.area.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Todas las asignaturas se crearán en esta área
+                                </div>
+                            </div>
+                            
+                            <!-- Intensidad Horaria -->
+                            <div class="col-md-12">
+                                <label for="{{ form.ih.id_for_label }}" class="form-label">
+                                    {{ form.ih.label }}
+                                </label>
+                                {{ form.ih }}
+                                {% if form.ih.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.ih.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Esta intensidad horaria se aplicará a todas las asignaturas creadas
+                                </div>
+                            </div>
+                            
+                            <!-- Lista de Nombres -->
+                            <div class="col-md-12">
+                                <label for="{{ form.nombres.id_for_label }}" class="form-label">
+                                    {{ form.nombres.label }} *
+                                </label>
+                                {{ form.nombres }}
+                                {% if form.nombres.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.nombres.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Ingrese un nombre por línea. Se crearán {{ asignaturas_count|default:0 }} asignaturas
+                                </div>
+                            </div>
+                            
+                            <!-- Vista previa -->
+                            <div class="col-12">
+                                <div class="card border-info">
+                                    <div class="card-header bg-info text-white py-2">
+                                        <h6 class="m-0">
+                                            <i class="fas fa-eye me-2"></i>Vista Previa
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="preview-container" class="mb-3">
+                                            <p class="text-muted mb-2">Las asignaturas se crearán con estos datos:</p>
+                                            <div id="preview-list" class="border rounded p-3 bg-light">
+                                                <p class="text-muted mb-0">Ingrese nombres para ver la vista previa...</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="alert alert-warning">
+                                            <h6 class="alert-heading">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>Importante
+                                            </h6>
+                                            <ul class="mb-0 small">
+                                                <li>Se omitirán las asignaturas que ya existan en el área seleccionada</li>
+                                                <li>Los nombres duplicados en la lista se procesarán como uno solo</li>
+                                                <li>Los espacios al inicio y final de cada línea se eliminarán</li>
+                                                <li>Las líneas vacías se ignorarán</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Ejemplos -->
+                            <div class="col-12">
+                                <div class="accordion" id="accordionExample">
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button collapsed" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                                <i class="fas fa-lightbulb me-2"></i>Ver ejemplos de formato
+                                            </button>
+                                        </h2>
+                                        <div id="collapseOne" class="accordion-collapse collapse" 
+                                             data-bs-parent="#accordionExample">
+                                            <div class="accordion-body">
+                                                <h6 class="mb-2">Ejemplo 1 - Asignaturas básicas:</h6>
+                                                <pre class="bg-dark text-light p-3 rounded mb-3">
+Matemáticas Básicas
+Ciencias Naturales
+Lengua Castellana
+Sociales
+Ética y Valores
+Inglés Básico</pre>
+                                                
+                                                <h6 class="mb-2">Ejemplo 2 - Especializadas:</h6>
+                                                <pre class="bg-dark text-light p-3 rounded">
+Álgebra
+Geometría
+Física
+Química
+Biología
+Historia de Colombia</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'rector:area_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-layer-group me-2"></i>Crear Asignaturas
+                                </button>
+                                <a href="{% url 'rector:asignatura_create' %}" class="btn btn-outline-primary ms-2">
+                                    <i class="fas fa-plus me-2"></i>Crear Una
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializar select2
+        $('#id_area').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Seleccione un área del conocimiento',
+            allowClear: false
+        });
+        
+        // Función para actualizar vista previa
+        function updatePreview() {
+            const nombresText = $('#id_nombres').val();
+            const areaSelect = $('#id_area');
+            const ihSelect = $('#id_ih');
+            
+            // Limpiar y separar líneas
+            const nombres = nombresText.split('\n')
+                .map(nombre => nombre.trim())
+                .filter(nombre => nombre.length > 0);
+            
+            const previewList = $('#preview-list');
+            
+            if (nombres.length === 0) {
+                previewList.html('<p class="text-muted mb-0">Ingrese nombres para ver la vista previa...</p>');
+                return;
+            }
+            
+            // Crear lista HTML
+            let html = `
+                <p class="mb-2"><strong>Total a crear:</strong> ${nombres.length} asignatura(s)</p>
+                <ul class="list-group list-group-flush">
+            `;
+            
+            nombres.forEach((nombre, index) => {
+                html += `
+                    <li class="list-group-item bg-transparent px-0 py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>
+                                <span class="badge bg-secondary me-2">${index + 1}</span>
+                                ${nombre}
+                            </span>
+                            <small class="text-muted">
+                                Área: ${areaSelect.find('option:selected').text() || 'No seleccionada'}
+                            </small>
+                        </div>
+                    </li>
+                `;
+            });
+            
+            html += '</ul>';
+            
+            if (ihSelect.val()) {
+                html += `
+                    <div class="mt-3 alert alert-info p-2 mb-0">
+                        <i class="fas fa-clock me-2"></i>
+                        <strong>Intensidad horaria:</strong> ${ihSelect.find('option:selected').text()}
+                    </div>
+                `;
+            }
+            
+            previewList.html(html);
+        }
+        
+        // Actualizar vista previa cuando cambian los campos
+        $('#id_nombres').on('input', updatePreview);
+        $('#id_area').change(updatePreview);
+        $('#id_ih').change(updatePreview);
+        
+        // Validación del formulario
+        $('form').submit(function(e) {
+            const nombresText = $('#id_nombres').val();
+            const areaId = $('#id_area').val();
+            
+            // Validar que haya nombres
+            if (!nombresText.trim()) {
+                e.preventDefault();
+                alert('Debe ingresar al menos un nombre de asignatura.');
+                $('#id_nombres').focus();
+                return false;
+            }
+            
+            // Validar que haya área seleccionada
+            if (!areaId) {
+                e.preventDefault();
+                alert('Debe seleccionar un área del conocimiento.');
+                $('#id_area').select2('open');
+                return false;
+            }
+            
+            // Contar líneas válidas
+            const nombres = nombresText.split('\n')
+                .map(nombre => nombre.trim())
+                .filter(nombre => nombre.length > 0);
+            
+            if (nombres.length === 0) {
+                e.preventDefault();
+                alert('No hay nombres válidos para crear asignaturas.');
+                $('#id_nombres').focus();
+                return false;
+            }
+            
+            // Confirmar creación masiva
+            if (nombres.length > 10) {
+                if (!confirm(`¿Está seguro de crear ${nombres.length} asignaturas?`)) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+        
+        // Ejemplo rápido
+        $('#btn-ejemplo').click(function() {
+            $('#id_nombres').val(`Matemáticas Básicas\nCiencias Naturales\nLengua Castellana\nSociales\nÉtica y Valores`);
+            updatePreview();
+        });
+    });
+</script>
+{% endblock %}

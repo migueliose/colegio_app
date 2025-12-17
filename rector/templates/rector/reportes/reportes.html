@@ -1,0 +1,563 @@
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+
+{% block title %}Generar Reportes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    .report-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .report-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    .filter-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+    }
+    .form-control, .form-select {
+        border-radius: 8px;
+    }
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="text-center bg-white p-4 rounded shadow">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <h5>Generando reporte...</h5>
+            <p class="text-muted">Por favor espere</p>
+        </div>
+    </div>
+
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">
+                                <i class="bi bi-file-earmark-spreadsheet me-2"></i>Generar Reportes en Excel
+                            </h4>
+                            <p class="mb-0 opacity-75">Genere reportes detallados en formato Excel para análisis y seguimiento</p>
+                        </div>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-light" onclick="mostrarFiltros()">
+                                <i class="bi bi-funnel me-1"></i>Mostrar Filtros
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="generarConsolidado()">
+                                <i class="bi bi-download me-1"></i>Reporte Consolidado
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4" id="filtrosSection" style="display: none;">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-body filter-section">
+                    <form id="filtrosForm" onsubmit="return false;">
+                        <div class="row g-3">
+                            <!-- Año Lectivo -->
+                            <div class="col-md-4">
+                                <label class="form-label">
+                                    <i class="bi bi-calendar me-1"></i>Año Lectivo
+                                </label>
+                                <select name="año_id" class="form-select" id="añoSelect">
+                                    <option value="todos">Todos los años</option>
+                                    {% for año in años_lectivos %}
+                                    <option value="{{ año.id }}">{{ año.anho }} - {{ año.sede.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Sede -->
+                            <div class="col-md-4">
+                                <label class="form-label">
+                                    <i class="bi bi-building me-1"></i>Sede
+                                </label>
+                                <select name="sede_id" class="form-select" id="sedeSelect">
+                                    <option value="todas">Todas las sedes</option>
+                                    {% for sede in sedes %}
+                                    <option value="{{ sede.id }}">{{ sede.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Grado -->
+                            <div class="col-md-4">
+                                <label class="form-label">
+                                    <i class="bi bi-mortarboard me-1"></i>Grado
+                                </label>
+                                <select name="grado_id" class="form-select" id="gradoSelect">
+                                    <option value="todos">Todos los grados</option>
+                                    {% for grado in grados %}
+                                    <option value="{{ grado.id }}">{{ grado.nombre }} - {{ grado.nivel_escolar.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Nivel -->
+                            <div class="col-md-4">
+                                <label class="form-label">
+                                    <i class="bi bi-layers me-1"></i>Nivel Escolar
+                                </label>
+                                <select name="nivel_id" class="form-select">
+                                    <option value="todos">Todos los niveles</option>
+                                    <option value="1">Preescolar</option>
+                                    <option value="2">Primaria</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Periodo Académico -->
+                            <div class="col-md-4">
+                                <label class="form-label">
+                                    <i class="bi bi-calendar-week me-1"></i>Periodo Académico
+                                </label>
+                                <select name="periodo_id" class="form-select" id="periodoSelect">
+                                    <option value="todos">Todos los periodos</option>
+                                    <!-- Se llenará con JavaScript -->
+                                </select>
+                            </div>
+                            
+                            <!-- Fechas -->
+                            <div class="col-md-4">
+                                <label class="form-label">
+                                    <i class="bi bi-calendar-range me-1"></i>Rango de Fechas
+                                </label>
+                                <div class="input-group">
+                                    <input type="date" name="fecha_inicio" class="form-control" placeholder="Desde">
+                                    <span class="input-group-text">a</span>
+                                    <input type="date" name="fecha_fin" class="form-control" placeholder="Hasta">
+                                </div>
+                            </div>
+                            
+                            <!-- Botones -->
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <button type="button" class="btn btn-primary" onclick="aplicarFiltros()">
+                                        <i class="bi bi-check-circle me-1"></i>Aplicar Filtros
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="limpiarFiltros()">
+                                        <i class="bi bi-x-circle me-1"></i>Limpiar Filtros
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reportes Disponibles -->
+    <div class="row g-4">
+        <!-- Reporte de Estudiantes -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card report-card border-primary">
+                <div class="card-body text-center">
+                    <div class="report-icon text-primary">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <h5 class="card-title">Reporte de Estudiantes</h5>
+                    <p class="card-text text-muted">
+                        Datos personales, grado, sede y año lectivo de todos los estudiantes.
+                    </p>
+                    <button class="btn btn-primary" onclick="generarReporte('estudiantes')">
+                        <i class="bi bi-download me-1"></i>Generar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reporte de Docentes -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card report-card border-success">
+                <div class="card-body text-center">
+                    <div class="report-icon text-success">
+                        <i class="bi bi-person-badge-fill"></i>
+                    </div>
+                    <h5 class="card-title">Reporte de Docentes</h5>
+                    <p class="card-text text-muted">
+                        Docentes con asignaturas y grados asignados por año lectivo.
+                    </p>
+                    <button class="btn btn-success" onclick="generarReporte('docentes')">
+                        <i class="bi bi-download me-1"></i>Generar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reporte de Promedios -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card report-card border-info">
+                <div class="card-body text-center">
+                    <div class="report-icon text-info">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <h5 class="card-title">Reporte de Promedios</h5>
+                    <p class="card-text text-muted">
+                        Promedios generales por periodo de cada estudiante (0 si no tiene nota).
+                    </p>
+                    <button class="btn btn-info" onclick="generarReporte('promedios')">
+                        <i class="bi bi-download me-1"></i>Generar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reporte de Puestos -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card report-card border-warning">
+                <div class="card-body text-center">
+                    <div class="report-icon text-warning">
+                        <i class="bi bi-trophy-fill"></i>
+                    </div>
+                    <h5 class="card-title">1°, 2° y 3° Puestos</h5>
+                    <p class="card-text text-muted">
+                        Primeros, segundos y terceros puestos por cada grado según periodo.
+                    </p>
+                    <button class="btn btn-warning" onclick="generarReporte('puestos')">
+                        <i class="bi bi-download me-1"></i>Generar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reporte Top 10 -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card report-card border-danger">
+                <div class="card-body text-center">
+                    <div class="report-icon text-danger">
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <h5 class="card-title">Top 10 del Colegio</h5>
+                    <p class="card-text text-muted">
+                        Los 10 mejores estudiantes de todo el colegio según periodo.
+                    </p>
+                    <button class="btn btn-danger" onclick="generarReporte('mejores10')">
+                        <i class="bi bi-download me-1"></i>Generar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reporte de Asistencias -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card report-card border-secondary">
+                <div class="card-body text-center">
+                    <div class="report-icon text-secondary">
+                        <i class="bi bi-calendar-check-fill"></i>
+                    </div>
+                    <h5 class="card-title">Reporte de Asistencias</h5>
+                    <p class="card-text text-muted">
+                        Inasistencias, asistencias y porcentajes por estudiante.
+                    </p>
+                    <button class="btn btn-secondary" onclick="generarReporte('asistencias')">
+                        <i class="bi bi-download me-1"></i>Generar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reporte de Comportamiento -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card report-card border-dark">
+                <div class="card-body text-center">
+                    <div class="report-icon text-dark">
+                        <i class="bi bi-emoji-smile-fill"></i>
+                    </div>
+                    <h5 class="card-title">Reporte de Comportamiento</h5>
+                    <p class="card-text text-muted">
+                        Comportamiento positivo y negativo por estudiante y categoría.
+                    </p>
+                    <button class="btn btn-dark" onclick="generarReporte('comportamiento')">
+                        <i class="bi bi-download me-1"></i>Generar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reporte Consolidado -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card report-card" style="border-color: #6f42c1;">
+                <div class="card-body text-center">
+                    <div class="report-icon" style="color: #6f42c1;">
+                        <i class="bi bi-collection-fill"></i>
+                    </div>
+                    <h5 class="card-title">Reporte Consolidado</h5>
+                    <p class="card-text text-muted">
+                        Todos los reportes en un solo archivo Excel con múltiples hojas.
+                    </p>
+                    <button class="btn" style="background-color: #6f42c1; color: white;" onclick="generarConsolidado()">
+                        <i class="bi bi-download me-1"></i>Generar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5><i class="bi bi-info-circle me-2"></i>Información sobre los reportes</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul>
+                                <li>Todos los reportes se generan en formato Excel (.xlsx)</li>
+                                <li>Puede aplicar filtros para personalizar los datos</li>
+                                <li>Los archivos incluyen formato automático para mejor lectura</li>
+                                <li>El reporte consolidado contiene todas las hojas en un solo archivo</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert alert-info">
+                                <h6><i class="bi bi-lightbulb me-2"></i>Consejos</h6>
+                                <ul class="mb-0">
+                                    <li>Use filtros para reducir el tamaño del archivo</li>
+                                    <li>El reporte consolidado es ideal para análisis completo</li>
+                                    <li>Puede programar la generación automática de reportes</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// URLs para los reportes
+const reportUrls = {
+    estudiantes: "{% url 'rector:reporte_estudiantes_excel' %}",
+    docentes: "{% url 'rector:reporte_docentes_excel' %}",
+    promedios: "{% url 'rector:reporte_promedios_excel' %}",
+    puestos: "{% url 'rector:reporte_puestos_excel' %}",
+    mejores10: "{% url 'rector:reporte_mejores10_excel' %}",
+    asistencias: "{% url 'rector:reporte_asistencias_excel' %}",
+    comportamiento: "{% url 'rector:reporte_comportamiento_excel' %}",
+    consolidado: "{% url 'rector:reporte_consolidado_excel' %}"
+};
+
+// Mostrar/ocultar filtros
+function mostrarFiltros() {
+    const section = document.getElementById('filtrosSection');
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+    } else {
+        section.style.display = 'none';
+    }
+}
+
+// Aplicar filtros (guardar en localStorage)
+function aplicarFiltros() {
+    const form = document.getElementById('filtrosForm');
+    const formData = new FormData(form);
+    const filtros = {};
+    
+    for (const [key, value] of formData.entries()) {
+        filtros[key] = value;
+    }
+    
+    localStorage.setItem('reporteFiltros', JSON.stringify(filtros));
+    
+    // Mostrar notificación
+    showToast('Filtros aplicados correctamente', 'success');
+}
+
+// Limpiar filtros
+function limpiarFiltros() {
+    document.getElementById('filtrosForm').reset();
+    localStorage.removeItem('reporteFiltros');
+    showToast('Filtros limpiados', 'info');
+}
+
+// Cargar filtros guardados
+function cargarFiltros() {
+    const filtrosGuardados = localStorage.getItem('reporteFiltros');
+    if (filtrosGuardados) {
+        const filtros = JSON.parse(filtrosGuardados);
+        const form = document.getElementById('filtrosForm');
+        
+        for (const key in filtros) {
+            const element = form.querySelector(`[name="${key}"]`);
+            if (element) {
+                element.value = filtros[key];
+            }
+        }
+    }
+}
+
+// Mostrar loading
+function mostrarLoading() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+}
+
+// Ocultar loading
+function ocultarLoading() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+// Generar reporte específico
+function generarReporte(tipo) {
+    mostrarLoading();
+    
+    // Obtener filtros
+    const filtrosGuardados = localStorage.getItem('reporteFiltros');
+    let url = reportUrls[tipo];
+    
+    if (filtrosGuardados) {
+        const filtros = JSON.parse(filtrosGuardados);
+        const params = new URLSearchParams(filtros);
+        url += '?' + params.toString();
+    }
+    
+    // Crear enlace para descarga
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `reporte_${tipo}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Ocultar loading después de un tiempo
+    setTimeout(ocultarLoading, 1000);
+    
+    showToast('Reporte generado correctamente', 'success');
+}
+
+// Generar reporte consolidado
+function generarConsolidado() {
+    mostrarLoading();
+    
+    const filtrosGuardados = localStorage.getItem('reporteFiltros');
+    let url = reportUrls.consolidado;
+    
+    if (filtrosGuardados) {
+        const filtros = JSON.parse(filtrosGuardados);
+        const params = new URLSearchParams(filtros);
+        url += '?' + params.toString();
+    }
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `reporte_consolidado_${new Date().toISOString().slice(0,10)}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setTimeout(ocultarLoading, 1500);
+    
+    showToast('Reporte consolidado generado correctamente', 'success');
+}
+
+// Función para mostrar notificaciones
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    const toastContainer = document.createElement('div');
+    toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+    toastContainer.appendChild(toast);
+    
+    document.body.appendChild(toastContainer);
+    
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', function () {
+        document.body.removeChild(toastContainer);
+    });
+}
+
+// Cargar periodos según año seleccionado
+function cargarPeriodos(añoId) {
+    if (añoId && añoId !== 'todos') {
+        fetch(`/rector/ajax/institucional/periodos-por-anho/?año_lectivo_id=${añoId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const select = document.getElementById('periodoSelect');
+                    select.innerHTML = '<option value="todos">Todos los periodos</option>';
+                    
+                    data.periodos.forEach(periodo => {
+                        const option = document.createElement('option');
+                        option.value = periodo.id;
+                        option.textContent = `${periodo.periodo_nombre} (${periodo.estado_actual})`;
+                        select.appendChild(option);
+                    });
+                }
+            });
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Cargar filtros guardados
+    cargarFiltros();
+    
+    // Cargar periodos del año seleccionado
+    const añoSelect = document.getElementById('añoSelect');
+    if (añoSelect.value !== 'todos') {
+        cargarPeriodos(añoSelect.value);
+    }
+    
+    // Cambiar año -> cargar periodos
+    añoSelect.addEventListener('change', function() {
+        cargarPeriodos(this.value);
+    });
+    
+    // Cambiar sede -> actualizar grados (opcional)
+    const sedeSelect = document.getElementById('sedeSelect');
+    sedeSelect.addEventListener('change', function() {
+        // Podrías implementar filtrado de grados por sede aquí
+    });
+});
+</script>
+{% endblock %}

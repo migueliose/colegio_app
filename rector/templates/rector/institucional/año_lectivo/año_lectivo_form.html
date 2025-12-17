@@ -1,0 +1,198 @@
+<!-- rector/templates/rector/institucional/año_lectivo_form.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}{{ titulo }} - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:institucional_dashboard' %}">Institucional</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:año_lectivo_list' %}">Años Lectivos</a></li>
+        <li class="breadcrumb-item active">{{ titulo }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{{ titulo }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row g-3">
+                        <!-- Colegio -->
+                        <div class="col-md-6">
+                            <label for="{{ form.colegio.id_for_label }}" class="form-label">
+                                <i class="bi bi-building me-1"></i>Colegio *
+                            </label>
+                            {{ form.colegio }}
+                            {% if form.colegio.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.colegio.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Sede -->
+                        <div class="col-md-6">
+                            <label for="{{ form.sede.id_for_label }}" class="form-label">
+                                <i class="bi bi-buildings me-1"></i>Sede *
+                            </label>
+                            {{ form.sede }}
+                            {% if form.sede.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.sede.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Año -->
+                        <div class="col-md-6">
+                            <label for="{{ form.anho.id_for_label }}" class="form-label">
+                                <i class="bi bi-calendar-range me-1"></i>Año Lectivo *
+                            </label>
+                            {{ form.anho }}
+                            <div class="form-text">Ej: 2024, 2024-2025</div>
+                            {% if form.anho.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.anho.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Estado -->
+                        <div class="col-md-6">
+                            <label for="{{ form.estado.id_for_label }}" class="form-label">
+                                <i class="bi bi-toggle-on me-1"></i>Estado
+                            </label>
+                            <div class="form-check form-switch">
+                                {{ form.estado }}
+                                <label class="form-check-label" for="{{ form.estado.id_for_label }}">
+                                    Activo
+                                </label>
+                            </div>
+                            {% if form.estado.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.estado.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Fecha Inicio -->
+                        <div class="col-md-6">
+                            <label for="{{ form.fecha_inicio.id_for_label }}" class="form-label">
+                                <i class="bi bi-calendar-plus me-1"></i>Fecha Inicio
+                            </label>
+                            {{ form.fecha_inicio }}
+                            {% if form.fecha_inicio.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.fecha_inicio.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Fecha Fin -->
+                        <div class="col-md-6">
+                            <label for="{{ form.fecha_fin.id_for_label }}" class="form-label">
+                                <i class="bi bi-calendar-check me-1"></i>Fecha Fin
+                            </label>
+                            {{ form.fecha_fin }}
+                            {% if form.fecha_fin.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.fecha_fin.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'rector:año_lectivo_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save me-1"></i>Guardar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Información importante -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-info-circle text-primary me-2"></i>Información Importante
+                </h6>
+                <ul class="mb-0">
+                    <li>El año lectivo debe ser único por sede.</li>
+                    <li>Al crear un año lectivo se recomienda configurar sus periodos académicos inmediatamente.</li>
+                    <li>Solo puede haber un año lectivo "actual" por colegio.</li>
+                    <li>Los años lectivos inactivos no estarán disponibles para nuevas matrículas.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar datepickers
+        const fechaInicio = document.getElementById('{{ form.fecha_inicio.id_for_label }}');
+        const fechaFin = document.getElementById('{{ form.fecha_fin.id_for_label }}');
+        
+        if (fechaInicio && fechaFin) {
+            fechaInicio.addEventListener('change', function() {
+                // Establecer fecha mínima para fecha fin
+                fechaFin.min = this.value;
+            });
+        }
+        
+        // Validación del formulario
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            const anhoInput = document.getElementById('{{ form.anho.id_for_label }}');
+            const anhoValue = anhoInput.value.trim();
+            
+            // Validar formato del año
+            const añoRegex = /^\d{4}(-\d{4})?$/;
+            if (anhoValue && !añoRegex.test(anhoValue)) {
+                event.preventDefault();
+                alert('Por favor ingrese un año válido (ej: 2024 o 2024-2025)');
+                anhoInput.focus();
+            }
+            
+            // Validar fechas
+            if (fechaInicio.value && fechaFin.value) {
+                const inicio = new Date(fechaInicio.value);
+                const fin = new Date(fechaFin.value);
+                
+                if (inicio >= fin) {
+                    event.preventDefault();
+                    alert('La fecha de inicio debe ser anterior a la fecha de fin');
+                    fechaInicio.focus();
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

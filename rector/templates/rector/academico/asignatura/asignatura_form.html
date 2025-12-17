@@ -1,0 +1,227 @@
+{% extends 'rector/base_rector2.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} - Módulo Rector{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-book me-2"></i>{{ titulo }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row g-3">
+                            <!-- Nombre de la Asignatura -->
+                            <div class="col-md-12">
+                                <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                    {{ form.nombre.label }} *
+                                </label>
+                                {{ form.nombre }}
+                                {% if form.nombre.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.nombre.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Ej: Matemáticas Básicas, Ciencias Naturales I, Lengua Castellana
+                                </div>
+                            </div>
+                            
+                            <!-- Área -->
+                            <div class="col-md-12">
+                                <label for="{{ form.area.id_for_label }}" class="form-label">
+                                    {{ form.area.label }} *
+                                </label>
+                                {{ form.area }}
+                                {% if form.area.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.area.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Seleccione el área del conocimiento a la que pertenece
+                                </div>
+                            </div>
+                            
+                            <!-- Intensidad Horaria -->
+                            <div class="col-md-12">
+                                <label for="{{ form.ih.id_for_label }}" class="form-label">
+                                    {{ form.ih.label }}
+                                </label>
+                                {{ form.ih }}
+                                {% if form.ih.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.ih.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Horas semanales dedicadas a esta asignatura
+                                </div>
+                            </div>
+                            
+                            <!-- Información del área seleccionada -->
+                            <div class="col-12" id="area-info" style="display: none;">
+                                <div class="alert alert-info">
+                                    <h6 class="alert-heading">
+                                        <i class="fas fa-info-circle me-2"></i>Información del Área
+                                    </h6>
+                                    <div id="area-details">
+                                        <p class="mb-1">Cargando información del área...</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Información adicional -->
+                            <div class="col-12">
+                                <div class="alert alert-light border">
+                                    <h6 class="alert-heading">
+                                        <i class="fas fa-lightbulb me-2"></i>Recomendaciones
+                                    </h6>
+                                    <ul class="mb-0 small">
+                                        <li>El nombre debe ser claro y descriptivo</li>
+                                        <li>Verifique que la asignatura no exista ya en el área seleccionada</li>
+                                        <li>La intensidad horaria ayuda a organizar los horarios</li>
+                                        <li>Una vez creada, podrá asignarla a grados específicos</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% if object %}{% url 'rector:area_detail' object.area.pk %}{% else %}{% url 'rector:area_list' %}{% endif %}" 
+                               class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>{{ accion }}
+                                </button>
+                                {% if accion == 'Editar' and año_lectivo_actual %}
+                                <a href="{% url 'rector:asignatura_grado_create' %}?asignatura={{ object.id }}&año={{ año_lectivo_actual.id }}" 
+                                   class="btn btn-success ms-2">
+                                    <i class="fas fa-link me-2"></i>Asignar a Grado
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializar select2
+        $('#id_area').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Seleccione un área del conocimiento',
+            allowClear: false
+        });
+        
+        // Mostrar información del área seleccionada
+        function updateAreaInfo() {
+            const areaId = $('#id_area').val();
+            const areaInfoDiv = $('#area-info');
+            const areaDetailsDiv = $('#area-details');
+            
+            if (areaId) {
+                // Construir la URL con el área_id
+                const url = "{% url 'rector:ajax_get_area_info' 0 %}".replace('0', areaId);
+                
+                // Obtener información del área via AJAX
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    success: function(data) {
+                        if (data.success) {
+                            areaDetailsDiv.html(`
+                                <p class="mb-1"><strong>Nombre:</strong> ${data.area.nombre}</p>
+                                <p class="mb-1"><strong>Nivel:</strong> ${data.area.nivel}</p>
+                                <p class="mb-1"><strong>Total Asignaturas:</strong> ${data.area.total_asignaturas}</p>
+                                <p class="mb-0"><strong>Grados del Nivel:</strong> ${data.area.total_grados}</p>
+                            `);
+                            areaInfoDiv.show();
+                        }
+                    },
+                    error: function() {
+                        areaDetailsDiv.html('<p class="mb-0 text-danger">Error al cargar información del área</p>');
+                        areaInfoDiv.show();
+                    }
+                });
+            } else {
+                areaInfoDiv.hide();
+            }
+        }
+        
+        // Evento cuando cambia el área
+        $('#id_area').change(updateAreaInfo);
+        
+        // Ejecutar al cargar si ya hay un área seleccionada
+        {% if form.area.value %}
+            updateAreaInfo();
+        {% endif %}
+        
+        // Validación en tiempo real
+        $('#id_nombre').on('input', function() {
+            if ($(this).val().length > 0) {
+                $(this).removeClass('is-invalid').addClass('is-valid');
+            } else {
+                $(this).removeClass('is-valid').addClass('is-invalid');
+            }
+        });
+        
+        // Verificar si asignatura ya existe
+        $('#id_nombre').blur(function() {
+            const nombre = $(this).val();
+            const areaId = $('#id_area').val();
+            
+            if (nombre && areaId) {
+                $.ajax({
+                    url: '{% url "rector:ajax_check_asignatura" %}',
+                    data: {
+                        'nombre': nombre,
+                        'area_id': areaId,
+                        'asignatura_id': '{{ object.id|default:"" }}',
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    type: 'GET',
+                    success: function(data) {
+                        if (data.exists) {
+                            $('#id_nombre').addClass('is-invalid');
+                            $('#id_nombre').after('<div class="invalid-feedback">' + data.message + '</div>');
+                        } else {
+                            $('#id_nombre').removeClass('is-invalid').addClass('is-valid');
+                        }
+                    }
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

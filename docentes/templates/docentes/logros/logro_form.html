@@ -126,78 +126,108 @@ document.addEventListener("DOMContentLoaded", function () {
     const periodoSelect = document.getElementById("id_periodo_academico");
     const temaInput = document.getElementById("id_tema");
     const submitBtn = document.getElementById("submit-btn");
+    const form = document.getElementById("logro-form");
 
     const asignaturasUrl = "{% url 'docentes:ajax_obtener_asignaturas_por_grado' %}";
 
-    // Deshabilitar asignatura si no hay grado
-    if (!gradoSelect.value) {
-        asignaturaSelect.disabled = true;
-    }
-
-    gradoSelect.addEventListener("change", async function () {
-        let gradoId = gradoSelect.value;
-
-        asignaturaSelect.innerHTML = `<option value="">Cargando...</option>`;
-        asignaturaSelect.disabled = true;
-
+    // Función para cargar asignaturas
+    async function cargarAsignaturas() {
+        const gradoId = gradoSelect.value;
+        
         if (!gradoId) {
-            asignaturaSelect.innerHTML = `<option value="">---------</option>`;
+            asignaturaSelect.innerHTML = '<option value="">---------</option>';
+            asignaturaSelect.disabled = true;
             return;
         }
-
+        
+        // Mostrar loading
+        asignaturaSelect.innerHTML = '<option value="">Cargando asignaturas...</option>';
+        asignaturaSelect.disabled = true;
+        
         try {
             const response = await fetch(`${asignaturasUrl}?grado_id=${gradoId}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
-
-            asignaturaSelect.innerHTML = `<option value="">---------</option>`;
-
-            data.asignaturas?.forEach(asig => {
-                asignaturaSelect.innerHTML += `<option value="${asig.id}">${asig.nombre}</option>`;
-            });
-
-            asignaturaSelect.disabled = false;
-
-            {% if object %}
+            
+            // Limpiar y llenar select
+            asignaturaSelect.innerHTML = '<option value="">---------</option>';
+            
+            if (data.asignaturas && data.asignaturas.length > 0) {
+                data.asignaturas.forEach(asignatura => {
+                    const option = document.createElement('option');
+                    option.value = asignatura.id;
+                    option.textContent = asignatura.nombre;
+                    asignaturaSelect.appendChild(option);
+                });
+                asignaturaSelect.disabled = false;
+            } else {
+                asignaturaSelect.innerHTML = '<option value="">No hay asignaturas disponibles</option>';
+                asignaturaSelect.disabled = true;
+            }
+            
+            // Si estamos editando, seleccionar la asignatura actual
+            {% if object and object.asignatura %}
                 asignaturaSelect.value = "{{ object.asignatura.id }}";
             {% endif %}
-
+            
         } catch (error) {
-            asignaturaSelect.innerHTML = `<option value="">Error al cargar</option>`;
+            console.error('Error cargando asignaturas:', error);
+            asignaturaSelect.innerHTML = '<option value="">Error al cargar</option>';
+            asignaturaSelect.disabled = true;
         }
-    });
+    }
+
+    // Evento cuando cambia el grado
+    if (gradoSelect) {
+        gradoSelect.addEventListener("change", function() {
+            // Limpiar asignatura seleccionada
+            asignaturaSelect.value = "";
+            // Cargar nuevas asignaturas
+            cargarAsignaturas();
+        });
+    }
 
     // Validación del formulario
-    document.getElementById("logro-form").addEventListener("submit", function (e) {
+    if (form) {
+        form.addEventListener("submit", function (e) {
+            let errores = [];
 
-        if (!gradoSelect.value) {
-            alert("Seleccione un grado.");
-            e.preventDefault();
-            return;
-        }
+            if (!gradoSelect.value) {
+                errores.push("Seleccione un grado.");
+            }
 
-        if (!asignaturaSelect.value) {
-            alert("Seleccione una asignatura.");
-            e.preventDefault();
-            return;
-        }
+            if (!asignaturaSelect.value) {
+                errores.push("Seleccione una asignatura.");
+            }
 
-        if (!periodoSelect.value) {
-            alert("Seleccione un periodo académico.");
-            e.preventDefault();
-            return;
-        }
+            if (!periodoSelect.value) {
+                errores.push("Seleccione un período académico.");
+            }
 
-        if (!temaInput.value.trim()) {
-            alert("Ingrese un tema.");
-            e.preventDefault();
-            return;
-        }
+            if (!temaInput.value.trim()) {
+                errores.push("Ingrese un tema.");
+            }
 
-        // Evitar doble envío
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>Guardando...`;
+            if (errores.length > 0) {
+                e.preventDefault();
+                alert(errores.join("\n"));
+                return;
+            }
 
-    });
+            // Evitar doble envío
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>Guardando...`;
+        });
+    }
+
+    // Cargar asignaturas inicialmente si hay un grado seleccionado
+    if (gradoSelect && gradoSelect.value) {
+        cargarAsignaturas();
+    }
 
 });
 </script>

@@ -1,0 +1,327 @@
+<!-- rector/templates/rector/institucional/asignacion_por_sede.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Asignación por Sede - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:institucional_dashboard' %}">Institucional</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:asignacion_docente_dashboard' %}">Asignación Docente</a></li>
+        <li class="breadcrumb-item active">Por Sede</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-buildings text-primary me-2"></i>
+                Asignación por Sede
+            </h1>
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown">
+                    <i class="bi bi-filter me-1"></i>Filtrar
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <form method="get" class="px-3 py-2">
+                            <label class="form-label small mb-1">Año Lectivo</label>
+                            <select name="año_lectivo" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">Todos</option>
+                                {% for año in años_lectivos %}
+                                <option value="{{ año.id }}" {% if request.GET.año_lectivo == año.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ año.anho }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <p class="text-muted mb-0">
+            Distribución de docentes y asignaturas por sede
+            {% if año_lectivo_seleccionado %}
+            <span class="badge bg-primary ms-2">
+                Año: {{ año_lectivo_seleccionado.anho }}
+            </span>
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<!-- Filtro principal -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label">Seleccionar Año Lectivo</label>
+                <select name="año_lectivo" class="form-select" onchange="this.form.submit()">
+                    <option value="">Seleccione un año lectivo...</option>
+                    {% for año in años_lectivos %}
+                    <option value="{{ año.id }}" {% if request.GET.año_lectivo == año.id|stringformat:"s" %}selected{% endif %}>
+                        {{ año.anho }} - {{ año.sede.nombre }} - {{ año.colegio.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-search me-1"></i>Buscar
+                    </button>
+                    <a href="{% url 'rector:asignacion_por_sede' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if año_lectivo_seleccionado %}
+<!-- Información del año seleccionado -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-1">{{ año_lectivo_seleccionado.anho }}</h4>
+                        <p class="mb-0">
+                            {{ año_lectivo_seleccionado.sede.nombre }} - {{ año_lectivo_seleccionado.colegio.nombre }}
+                        </p>
+                        <small>
+                            {% if año_lectivo_seleccionado.fecha_inicio %}
+                                Del {{ año_lectivo_seleccionado.fecha_inicio|date:"d/m/Y" }} al {{ año_lectivo_seleccionado.fecha_fin|date:"d/m/Y" }}
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <span class="badge bg-light text-primary fs-6">
+                            <i class="bi bi-calendar-check me-1"></i>
+                            Año Lectivo Seleccionado
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Sedes -->
+{% for sede in sedes %}
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-building me-2"></i>
+                {{ sede.nombre }}
+            </h5>
+            <div>
+                <span class="badge bg-primary me-2">
+                    <i class="bi bi-people me-1"></i>
+                    {{ sede.total_docentes }} docentes
+                </span>
+                <span class="badge bg-success">
+                    <i class="bi bi-book me-1"></i>
+                    {{ sede.total_asignaturas }} asignaturas
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Docentes asignados a esta sede -->
+        <div class="mb-4">
+            <h6 class="border-bottom pb-2 mb-3">
+                <i class="bi bi-person-badge me-2"></i>
+                Docentes Asignados
+            </h6>
+            {% if sede.docentes_asignados_qs %}
+            <div class="row">
+                {% for docente_sede in sede.docentes_asignados_qs %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-person-circle text-primary fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">{{ docente_sede.docente.usuario.get_full_name }}</h6>
+                                    <p class="text-muted small mb-1">
+                                        {{ docente_sede.docente.usuario.numero_documento }}
+                                    </p>
+                                    <p class="text-muted small mb-0">
+                                        <i class="bi bi-envelope me-1"></i>
+                                        {{ docente_sede.docente.usuario.email|default:"Sin email" }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent py-2">
+                            <small class="text-muted">
+                                Asignado desde: {{ docente_sede.fecha_asignacion|date:"d/m/Y" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-person-x text-muted display-5"></i>
+                <p class="text-muted mt-2">No hay docentes asignados a esta sede</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Asignaturas de esta sede -->
+        <div>
+            <h6 class="border-bottom pb-2 mb-3">
+                <i class="bi bi-book me-2"></i>
+                Asignaturas por Grado
+            </h6>
+            
+            {% regroup sede.asignaturas by grado_año_lectivo.grado as asignaturas_por_grado %}
+            
+            {% for grado in asignaturas_por_grado %}
+            <div class="card mb-3">
+                <div class="card-header py-2">
+                    <h6 class="mb-0">
+                        <i class="bi bi-mortarboard me-2"></i>
+                        {{ grado.grouper.nombre }}
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="40%">Asignatura</th>
+                                    <th width="30%">Docente Asignado</th>
+                                    <th width="20%">Estado</th>
+                                    <th width="10%">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asignatura in grado.list %}
+                                <tr {% if not asignatura.docente %}class="table-warning"{% endif %}>
+                                    <td>
+                                        <strong>{{ asignatura.asignatura.nombre }}</strong>
+                                        {% if asignatura.asignatura.ih %}
+                                        <small class="text-muted">({{ asignatura.asignatura.ih }}h)</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if asignatura.docente %}
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-person-circle text-primary me-2"></i>
+                                            <span>{{ asignatura.docente.usuario.get_full_name }}</span>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-danger">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>
+                                            Sin docente
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if asignatura.docente %}
+                                        <span class="badge bg-success">Asignada</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if asignatura.docente %}
+                                        <button type="button" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </button>
+                                        {% else %}
+                                        <button type="button" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-person-plus"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-3">
+                                        <span class="text-muted">No hay asignaturas para este grado</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <small class="text-muted">
+                        Total: {{ grado.list|length }} asignaturas
+                        {% with grado.list|length as total %}
+                        {% with grado.list|dictsort:"docente"|length as asignadas %}
+                        {% if total > 0 %}
+                        - {{ asignadas }} asignadas ({{ asignadas|floatformat:2 }}%)
+                        {% endif %}
+                        {% endwith %}
+                        {% endwith %}
+                    </small>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-4">
+                <i class="bi bi-book text-muted display-5"></i>
+                <p class="text-muted mt-2">No hay asignaturas configuradas para esta sede</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="card-footer">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                {% with sede.asignaturas|dictsort:"docente"|length as asignadas %}
+                {% with sede.total_asignaturas as total %}
+                <div class="progress" style="height: 10px; width: 200px;">
+                    <div class="progress-bar bg-success" 
+                         role="progressbar" 
+                         style="width: {% if total > 0 %}{{ asignadas|floatformat:2 }}{% else %}0{% endif %}%">
+                    </div>
+                </div>
+                <small class="text-muted">
+                    {{ asignadas }}/{{ total }} asignaturas con docente ({{ asignadas|floatformat:2 }}%)
+                </small>
+                {% endwith %}
+                {% endwith %}
+            </div>
+            <a href="#" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-printer me-1"></i>Imprimir Reporte
+            </a>
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-buildings text-muted display-1"></i>
+        <h4 class="text-muted mt-3">No hay sedes para mostrar</h4>
+        <p class="text-muted">
+            {% if not año_lectivo_seleccionado %}
+            Seleccione un año lectivo para ver las asignaciones por sede
+            {% else %}
+            No hay sedes configuradas para el año lectivo seleccionado
+            {% endif %}
+        </p>
+        <a href="{% url 'rector:sedes' %}" class="btn btn-primary mt-2">
+            <i class="bi bi-plus-circle me-1"></i>Gestionar Sedes
+        </a>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

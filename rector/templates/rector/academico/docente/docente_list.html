@@ -1,0 +1,314 @@
+<!-- rector/templates/rector/academico/docente_list.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Docentes - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:academico_dashboard' %}">Académico</a></li>
+        <li class="breadcrumb-item active"><i class="bi bi-person-badge text-primary me-2"></i>Gestión de Docentes</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                               
+            </h1>
+            <div>
+                <a href="#" class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#modalReporteDocentes">
+                    <i class="bi bi-file-earmark-text me-1"></i>Reporte
+                </a>
+                <a href="{% url 'rector:docente_create' %}" class="btn btn-primary">
+                    <i class="bi bi-person-plus me-1"></i>Nuevo Docente
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros y búsqueda -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Sede</label>
+                <select name="sede" class="form-select select2" onchange="this.form.submit()">
+                    <option value="todos">Todas las sedes</option>
+                    {% for sede in sedes %}
+                    <option value="{{ sede.id }}" {% if filter_sede == sede.id|stringformat:"s" %}selected{% endif %}>
+                        {{ sede.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Año Lectivo</label>
+                <select name="año" class="form-select select2" onchange="this.form.submit()">
+                    <option value="todos">Todos los años</option>
+                    {% for año in años_lectivos %}
+                    <option value="{{ año.id }}" {% if filter_año == año.id|stringformat:"s" %}selected{% endif %}>
+                        {{ año.anho }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Estado</label>
+                <select name="estado" class="form-select" onchange="this.form.submit()">
+                    <option value="todos" {% if filter_estado == 'todos' %}selected{% endif %}>Todos</option>
+                    <option value="activo" {% if filter_estado == 'activo' %}selected{% endif %}>Activo</option>
+                    <option value="inactivo" {% if filter_estado == 'inactivo' %}selected{% endif %}>Inactivo</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Búsqueda</label>
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Nombre, documento, email..." 
+                           value="{{ filter_search|default:'' }}">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    {% if filter_search %}
+                    <a href="?" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Total Docentes</h6>
+                        <h3 class="mb-0 text-white">{{ total_docentes }}</h3>
+                    </div>
+                    <i class="bi bi-person-badge stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Activos</h6>
+                        <h3 class="mb-0 text-white">{{ docentes_activos }}</h3>
+                        <small class="text-white-75">{{ docentes_activos|floatformat:0 }}% del total</small>
+                    </div>
+                    <i class="bi bi-person-check stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Inactivos</h6>
+                        <h3 class="mb-0 text-white">{{ docentes_inactivos }}</h3>
+                        <small class="text-white-75">{{ docentes_inactivos|floatformat:0 }}% del total</small>
+                    </div>
+                    <i class="bi bi-person-x stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Sin Asignaturas</h6>
+                        <h3 class="mb-0 text-white">{{ docentes_sin_asignaturas }}</h3>
+                        <small class="text-white-75">En año actual</small>
+                    </div>
+                    <i class="bi bi-journal-x stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de docentes -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Docente</th>
+                        <th>Documento</th>
+                        <th>Contacto</th>
+                        <th>Asignaturas</th>
+                        <th>Sedes</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for docente in docentes %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if docente.foto %}
+                                <img src="{{ docente.foto.url }}" alt="Foto" 
+                                     class="rounded-circle me-3" width="40" height="40">
+                                {% else %}
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3" 
+                                     style="width: 40px; height: 40px;">
+                                    <i class="bi bi-person text-secondary"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ docente.usuario.get_full_name }}</strong>
+                                    <div class="small text-muted">
+                                        {{ docente.usuario.email|default:"Sin email" }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ docente.usuario.tipo_documento.nombre }}</small>
+                            <div>{{ docente.usuario.numero_documento }}</div>
+                        </td>
+                        <td>
+                            <div>{{ docente.usuario.telefono|default:"Sin teléfono" }}</div>
+                            <small class="text-muted">{{ docente.usuario.direccion|truncatechars:30|default:"Sin dirección" }}</small>
+                        </td>
+                        <td>
+                            {% with asignaturas_count=docente.asignaturas_dictadas.count %}
+                            <span class="badge {% if asignaturas_count > 0 %}bg-primary{% else %}bg-warning{% endif %}">
+                                {{ asignaturas_count }}
+                            </span>
+                            {% endwith %}
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ docente.sedes_asignadas.count }}</span>
+                        </td>
+                        <td>
+                            {% if docente.estado %}
+                            <span class="badge bg-success">Activo</span>
+                            {% else %}
+                            <span class="badge bg-danger">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'rector:docente_detail' docente.pk %}" 
+                                   class="btn btn-outline-primary" title="Ver detalle">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'rector:docente_edit' docente.pk %}" 
+                                   class="btn btn-outline-warning" title="Editar perfil">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-{% if docente.estado %}danger{% else %}success{% endif %}"
+                                        onclick="toggleEstadoDocente({{ docente.pk }}, {{ docente.estado|yesno:'true,false' }})"
+                                        title="{% if docente.estado %}Desactivar{% else %}Activar{% endif %}">
+                                    <i class="bi bi-power"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <i class="bi bi-person-x display-4 text-muted"></i>
+                            <p class="text-muted mt-3">No se encontraron docentes</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        {% if is_paginated %}
+        <nav aria-label="Paginación" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">
+                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleEstadoDocente(docenteId, estadoActual) {
+    const accion = estadoActual ? 'desactivar' : 'activar';
+    if (confirm(`¿Está seguro de ${accion} este docente?`)) {
+        $.ajax({
+            url: `{% url 'rector:ajax_docente_toggle_estado' 0 %}`.replace('0', docenteId),
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.error);
+                }
+            },
+            error: function() {
+                alert('Error al cambiar el estado');
+            }
+        });
+    }
+}
+
+$(document).ready(function() {
+    $('.select2').select2({
+        theme: 'bootstrap-5'
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,172 @@
+<!-- rector/templates/rector/institucional/sede_form.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}{{ titulo }} - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:institucional_dashboard' %}">Institucional</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:sedes' %}">Sedes</a></li>
+        <li class="breadcrumb-item active">{{ titulo }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{{ titulo }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row g-3">
+                        <!-- Colegio -->
+                        <div class="col-md-6">
+                            <label for="{{ form.colegio.id_for_label }}" class="form-label">
+                                <i class="bi bi-building me-1"></i>Colegio *
+                            </label>
+                            {{ form.colegio }}
+                            {% if form.colegio.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.colegio.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Nombre -->
+                        <div class="col-md-6">
+                            <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                <i class="bi bi-building me-1"></i>Nombre de la Sede *
+                            </label>
+                            {{ form.nombre }}
+                            <div class="form-text">Nombre único para esta sede</div>
+                            {% if form.nombre.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.nombre.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Dirección -->
+                        <div class="col-md-12">
+                            <label for="{{ form.direccion.id_for_label }}" class="form-label">
+                                <i class="bi bi-geo-alt me-1"></i>Dirección *
+                            </label>
+                            {{ form.direccion }}
+                            {% if form.direccion.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.direccion.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Teléfono -->
+                        <div class="col-md-6">
+                            <label for="{{ form.telefono.id_for_label }}" class="form-label">
+                                <i class="bi bi-telephone me-1"></i>Teléfono
+                            </label>
+                            {{ form.telefono }}
+                            {% if form.telefono.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.telefono.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                <i class="bi bi-envelope me-1"></i>Email
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.email.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Director -->
+                        <div class="col-md-6">
+                            <label for="{{ form.director.id_for_label }}" class="form-label">
+                                <i class="bi bi-person-badge me-1"></i>Director
+                            </label>
+                            {{ form.director }}
+                            <div class="form-text">Usuario responsable de la sede</div>
+                            {% if form.director.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.director.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Estado -->
+                        <div class="col-md-6">
+                            <label for="{{ form.estado.id_for_label }}" class="form-label">
+                                <i class="bi bi-toggle-on me-1"></i>Estado
+                            </label>
+                            <div class="form-check form-switch">
+                                {{ form.estado }}
+                                <label class="form-check-label" for="{{ form.estado.id_for_label }}">
+                                    Activa (la sede estará disponible en el sistema)
+                                </label>
+                            </div>
+                            {% if form.estado.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.estado.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'rector:sedes' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if form.instance.pk %}
+                                    <i class="bi bi-save me-1"></i>Actualizar Sede
+                                    {% else %}
+                                    <i class="bi bi-plus-circle me-1"></i>Crear Sede
+                                    {% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Información importante -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-info-circle text-primary me-2"></i>Información Importante
+                </h6>
+                <ul class="mb-0">
+                    <li>El nombre de la sede debe ser único dentro del mismo colegio.</li>
+                    <li>Una sede inactiva no aparecerá en las opciones de matrícula.</li>
+                    <li>El director debe ser un usuario con rol de "Rector" o "Administrador".</li>
+                    <li>Al crear una sede, se recomienda configurar inmediatamente su año lectivo actual.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

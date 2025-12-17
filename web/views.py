@@ -18,6 +18,15 @@ class PerfilView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         
+        # AÑADIR PROGRMAS AL CONTEXTO PARA EL NAVBAR
+        try:
+            context['programas'] = ProgramaAcademico.objects.filter(
+                is_active=True
+            ).order_by('orden')[:10]
+        except Exception as e:
+            print(f"Error cargando programas para navbar: {e}")
+            context['programas'] = []
+        
         # Para superusuarios
         if user.is_superuser:
             context['es_superusuario'] = True

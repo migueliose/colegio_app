@@ -1,0 +1,508 @@
+{% extends 'rector/base_rector2.html' %}
+{% load static %}
+
+{% block title %}{{ asignatura.nombre }} - Detalle - Módulo Rector{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-book me-2"></i>{{ asignatura.nombre }}
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'rector:asignatura_list' %}">Asignaturas</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'rector:area_detail' asignatura.area.pk %}">{{ asignatura.area.nombre }}</a></li>
+                    <li class="breadcrumb-item active">Detalle</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'rector:asignatura_edit' asignatura.pk %}" class="btn btn-warning">
+                <i class="fas fa-edit me-2"></i>Editar
+            </a>
+            {% if año_lectivo_actual %}
+            <a href="{% url 'rector:asignatura_grado_create' %}?asignatura={{ asignatura.id }}&año={{ año_lectivo_actual.id }}" 
+               class="btn btn-success ms-2">
+                <i class="fas fa-link me-2"></i>Asignar a Grado
+            </a>
+            {% endif %}
+            <a href="{% url 'rector:asignatura_list' %}" class="btn btn-secondary ms-2">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Columna principal -->
+        <div class="col-lg-8">
+            <!-- Tarjetas de información -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Área del Conocimiento
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ asignatura.area.nombre }}
+                                    </div>
+                                    <div class="mt-2">
+                                        <span class="badge bg-info">{{ asignatura.area.nivel_escolar.nombre }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Intensidad Horaria
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {% if asignatura.ih %}
+                                            {{ asignatura.ih }} hora(s) semanal(es)
+                                        {% else %}
+                                            No especificada
+                                        {% endif %}
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">Horas de clase por semana</small>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-clock fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información general -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle me-2"></i>Información General
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <th class="text-muted" width="40%">Fecha de creación:</th>
+                                        <td>{{ asignatura.created_at|date:"d/m/Y H:i" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Última actualización:</th>
+                                        <td>{{ asignatura.updated_at|date:"d/m/Y H:i" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Estado:</th>
+                                        <td>
+                                            {% if asignatura.is_deleted %}
+                                                <span class="badge bg-danger">Eliminado</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Activo</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <th class="text-muted" width="40%">Total veces dictada:</th>
+                                        <td>
+                                            <span class="badge bg-warning text-dark">{{ total_dictados }}</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Dictada actualmente:</th>
+                                        <td>
+                                            {% if asignaturas_dictadas %}
+                                                <span class="badge bg-success">Sí ({{ asignaturas_dictadas|length }} grados)</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">No</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Logros académicos:</th>
+                                        <td>
+                                            <span class="badge bg-info">{{ asignatura.logros.count }}</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Información del área -->
+                    <div class="alert alert-info mt-3">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-chalkboard-teacher me-2"></i>Información del Área
+                        </h6>
+                        <p class="mb-2">
+                            Esta asignatura pertenece al área <strong>{{ asignatura.area.nombre }}</strong> 
+                            del nivel <strong>{{ asignatura.area.nivel_escolar.nombre }}</strong>.
+                        </p>
+                        <p class="mb-0">
+                            <a href="{% url 'rector:area_detail' asignatura.area.pk %}" class="alert-link">
+                                Ver todas las asignaturas de esta área
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historial de dictado -->
+            <div class="card shadow mb-4" id="historial">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-history me-2"></i>Historial de Dictado
+                    </h6>
+                    <span class="badge bg-primary">{{ historial_dictado.count }} registros</span>
+                </div>
+                <div class="card-body">
+                    {% if historial_dictado %}
+                        <!-- Agrupado por año -->
+                        {% for año, dictados in historial_por_año.items %}
+                        <div class="mb-4">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-calendar-alt me-2"></i>Año Lectivo: {{ año }}
+                                <span class="badge bg-secondary ms-2">{{ dictados|length }}</span>
+                            </h6>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Grado</th>
+                                            <th>Sede</th>
+                                            <th class="text-center">Docente</th>
+                                            <th class="text-center">Estado</th>
+                                            <th class="text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for dictado in dictados %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ dictado.grado_año_lectivo.grado.nombre }}</strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">{{ dictado.sede.nombre }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                {% if dictado.docente %}
+                                                    <span class="badge bg-success">
+                                                        {{ dictado.docente.usuario.get_full_name|truncatechars:20 }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-warning text-dark">Sin asignar</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                {% if dictado.is_deleted %}
+                                                    <span class="badge bg-danger">Inactivo</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Activo</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm">
+                                                    {% if dictado.docente %}
+                                                    <a href="{% url 'rector:docente_detail' dictado.docente.pk %}" 
+                                                       class="btn btn-info" title="Ver docente">
+                                                        <i class="fas fa-user-tie"></i>
+                                                    </a>
+                                                    {% endif %}
+                                                    <a href="{% url 'rector:grado_list' %}?grado={{ dictado.grado_año_lectivo.grado.id }}" 
+                                                        class="btn btn-secondary" title="Ver grado">
+                                                        <i class="fas fa-graduation-cap"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% if not forloop.last %}<hr>{% endif %}
+                        {% endfor %}
+                    {% else %}
+                    <div class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="fas fa-history fa-3x mb-3"></i>
+                            <h5>No hay historial de dictado</h5>
+                            <p>Esta asignatura no ha sido asignada a ningún grado todavía.</p>
+                            {% if año_lectivo_actual %}
+                            <a href="{% url 'rector:asignatura_grado_create' %}?asignatura={{ asignatura.id }}&año={{ año_lectivo_actual.id }}" 
+                               class="btn btn-primary">
+                                <i class="fas fa-link me-2"></i>Asignar a un Grado
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Asignaturas relacionadas -->
+            {% if asignaturas_relacionadas %}
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-project-diagram me-2"></i>Otras Asignaturas de esta Área
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for relacionada in asignaturas_relacionadas %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ relacionada.nombre }}</h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            {% if relacionada.ih %}
+                                                <span class="badge bg-primary">{{ relacionada.ih }}h</span>
+                                            {% endif %}
+                                            <small class="text-muted">
+                                                {{ relacionada.created_at|date:"d/m/Y" }}
+                                            </small>
+                                        </div>
+                                        <div>
+                                            <a href="{% url 'rector:asignatura_detail' relacionada.pk %}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'rector:area_detail' asignatura.area.pk %}" class="btn btn-outline-primary">
+                            <i class="fas fa-chalkboard-teacher me-2"></i>Ver todas las asignaturas del área
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna lateral -->
+        <div class="col-lg-4">
+            <!-- Estadísticas -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-pie me-2"></i>Estadísticas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Total años dictada:</span>
+                            <strong class="text-primary">{{ total_años_dictada }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Grados diferentes:</span>
+                            <strong class="text-success">{{ total_grados_atendidos }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Docentes diferentes:</span>
+                            <strong class="text-info">{{ total_docentes_diferentes }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Sedes diferentes:</span>
+                            <strong class="text-warning">{{ total_sedes_diferentes }}</strong>
+                        </li>
+                    </ul>
+                    
+                    {% if estadisticas_notas %}
+                    <hr>
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-chart-line me-2"></i>Estadísticas de Notas
+                    </h6>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Total calificaciones:</span>
+                            <strong>{{ estadisticas_notas.total|default:"0" }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Promedio general:</span>
+                            <strong class="text-primary">{{ estadisticas_notas.promedio|default:"0"|floatformat:2 }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Nota máxima:</span>
+                            <strong class="text-success">{{ estadisticas_notas.maximo|default:"0"|floatformat:2 }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Nota mínima:</span>
+                            <strong class="text-danger">{{ estadisticas_notas.minimo|default:"0"|floatformat:2 }}</strong>
+                        </li>
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Asignación actual (si hay año actual) -->
+            {% if año_lectivo_actual and grados_dictados %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-success text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-calendar-check me-2"></i>Dictada Actualmente
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3">
+                        Año lectivo: <strong>{{ año_lectivo_actual.anho }}</strong>
+                    </p>
+                    
+                    <div class="list-group">
+                        {% for dictado in grados_dictados %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <h6 class="mb-1">{{ dictado.grado_año_lectivo.grado.nombre }}</h6>
+                                <small class="text-muted">{{ dictado.sede.nombre }}</small>
+                            </div>
+                            <p class="mb-1 small">
+                                {% if dictado.docente %}
+                                    <i class="fas fa-user-tie me-1 text-success"></i>
+                                    {{ dictado.docente.usuario.get_full_name }}
+                                {% else %}
+                                    <span class="text-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        Sin docente asignado
+                                    </span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mt-3 text-center">
+                        <a href="{% url 'rector:asignatura_grado_create' %}?asignatura={{ asignatura.id }}&año={{ año_lectivo_actual.id }}" 
+                           class="btn btn-sm btn-success">
+                            <i class="fas fa-plus me-1"></i>Asignar a otro grado
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Acciones rápidas -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'rector:asignatura_edit' asignatura.pk %}" class="btn btn-warning">
+                            <i class="fas fa-edit me-2"></i>Editar Asignatura
+                        </a>
+                        
+                        {% if año_lectivo_actual %}
+                        <a href="{% url 'rector:asignatura_grado_create' %}?asignatura={{ asignatura.id }}&año={{ año_lectivo_actual.id }}" 
+                           class="btn btn-success">
+                            <i class="fas fa-link me-2"></i>Asignar a Grado
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'rector:logro_create' %}?asignatura={{ asignatura.id }}" 
+                           class="btn btn-info">
+                            <i class="fas fa-trophy me-2"></i>Crear Logro
+                        </a>
+                        
+                        <a href="{% url 'rector:area_detail' asignatura.area.pk %}" class="btn btn-outline-primary">
+                            <i class="fas fa-chalkboard-teacher me-2"></i>Ver Área
+                        </a>
+                        
+                        {% if total_dictados == 0 and not asignatura.logros.exists %}
+                        <a href="{% url 'rector:asignatura_delete' asignatura.pk %}" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Eliminar Asignatura
+                        </a>
+                        {% else %}
+                        <button class="btn btn-danger" disabled 
+                                title="No se puede eliminar (está en uso)">
+                            <i class="fas fa-trash me-2"></i>Eliminar Asignatura
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información técnica -->
+            <div class="card shadow mt-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-code me-2"></i>Información Técnica
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="small text-muted">
+                        <p><strong>ID:</strong> {{ asignatura.id }}</p>
+                        <p><strong>Área ID:</strong> {{ asignatura.area.id }}</p>
+                        <p><strong>Nivel ID:</strong> {{ asignatura.area.nivel_escolar.id }}</p>
+                        <p><strong>Código interno:</strong> ASG-{{ asignatura.id|stringformat:"04d" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializar tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Confirmación para eliminar
+        $('.btn-danger[href*="delete"]').click(function(e) {
+            if (!confirm('¿Está seguro de eliminar esta asignatura? Esta acción no se puede deshacer.')) {
+                e.preventDefault();
+            }
+        });
+        
+        // Scroll suave a secciones
+        $('a[href^="#"]').click(function(e) {
+            e.preventDefault();
+            var target = $(this).attr('href');
+            if (target !== '#') {
+                $('html, body').animate({
+                    scrollTop: $(target).offset().top - 100
+                }, 500);
+            }
+        });
+    });
+</script>
+{% endblock %}

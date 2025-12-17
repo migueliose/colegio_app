@@ -1,0 +1,480 @@
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+
+{% block title %}Asignaturas Académicas - Módulo Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:academico_dashboard' %}">Académico</a></li>
+        <li class="breadcrumb-item active"><i class="fas fa-book me-2"></i>Asignaturas Académicas</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">            
+        </h1>
+        <div>
+            <a href="{% url 'rector:asignatura_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Nueva Asignatura
+            </a>
+            <a href="{% url 'rector:asignatura_bulk_create' %}" class="btn btn-outline-primary ms-2">
+                <i class="fas fa-layer-group me-2"></i>Múltiples
+            </a>
+            <a href="{% url 'rector:area_list' %}" class="btn btn-info ms-2">
+                <i class="fas fa-chalkboard-teacher me-2"></i>Ver Áreas
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas de estadísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Asignaturas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_asignaturas }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-book fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Áreas del Conocimiento
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ areas.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Niveles Escolares
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ niveles.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-graduation-cap fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Dictadas Actualmente
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% if año_lectivo_actual %}
+                                    {{ asignaturas_dictadas_actual|default:0 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chalkboard fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas por nivel -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-bar me-2"></i>Estadísticas por Nivel Escolar
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nivel Escolar</th>
+                                    <th class="text-center">Áreas</th>
+                                    <th class="text-center">Asignaturas</th>
+                                    <th class="text-center">Promedio por Área</th>
+                                    <th class="text-center">Grados</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in niveles_stats %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ stat.nivel.nombre }}</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">{{ stat.areas }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">{{ stat.asignaturas }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">{{ stat.promedio }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-dark">{{ stat.nivel.grados.count }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'rector:asignatura_list' %}?nivel={{ stat.nivel.id }}" 
+                                               class="btn btn-outline-primary">
+                                                <i class="fas fa-filter"></i>
+                                            </a>
+                                            <a href="{% url 'rector:area_list' %}?nivel={{ stat.nivel.id }}" 
+                                               class="btn btn-outline-info">
+                                                <i class="fas fa-chalkboard-teacher"></i>
+                                            </a>
+                                            <a href="{% url 'rector:asignatura_create' %}" 
+                                               class="btn btn-outline-success">
+                                                <i class="fas fa-plus"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-3">
+                                        No hay datos disponibles
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter me-2"></i>Filtros Avanzados
+            </h6>
+            <div>
+                {% if filter_nivel or filter_area or filter_search %}
+                    <a href="{% url 'rector:asignatura_list' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Limpiar filtros
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Nivel Escolar</label>
+                    <select name="nivel" class="form-control select2">
+                        <option value="todos">Todos los niveles</option>
+                        {% for nivel in niveles %}
+                            <option value="{{ nivel.id }}" {% if filter_nivel == nivel.id|stringformat:"i" %}selected{% endif %}>
+                                {{ nivel.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Área del Conocimiento</label>
+                    <select name="area" class="form-control select2">
+                        <option value="todos">Todas las áreas</option>
+                        {% for area in areas %}
+                            <option value="{{ area.id }}" {% if filter_area == area.id|stringformat:"i" %}selected{% endif %}>
+                                {{ area.nombre }} ({{ area.nivel_escolar.nombre }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Buscar por nombre de asignatura o área..."
+                           value="{{ filter_search|default:'' }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-2"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Asignaturas -->
+    <div class="card shadow">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list me-2"></i>Lista de Asignaturas
+                <span class="badge bg-primary ms-2">{{ asignaturas.paginator.count }}</span>
+            </h6>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-cog me-1"></i>Opciones
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'rector:asignatura_bulk_create' %}">
+                        <i class="fas fa-layer-group me-2"></i>Crear múltiples
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#">
+                        <i class="fas fa-file-pdf me-2"></i>Exportar PDF
+                    </a></li>
+                    <li><a class="dropdown-item" href="#">
+                        <i class="fas fa-file-excel me-2"></i>Exportar Excel
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if asignaturas %}
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="5%">#</th>
+                            <th>Nombre de la Asignatura</th>
+                            <th>Área / Nivel</th>
+                            <th class="text-center">Intensidad Horaria</th>
+                            <th class="text-center">Dictada</th>
+                            <th class="text-center">Uso</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asignatura in asignaturas %}
+                        <tr>
+                            <td class="text-muted">
+                                {{ forloop.counter0|add:page_obj.start_index }}
+                            </td>
+                            <td>
+                                <strong class="d-block">{{ asignatura.nombre }}</strong>
+                                <div class="small text-muted">
+                                    Creado: {{ asignatura.created_at|date:"d/m/Y" }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span class="fw-semibold">{{ asignatura.area.nombre }}</span>
+                                    <span class="badge bg-info mt-1" style="width: fit-content;">
+                                        {{ asignatura.area.nivel_escolar.nombre }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                {% if asignatura.ih %}
+                                    <span class="badge bg-primary">{{ asignatura.ih }} hora(s)</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No especificada</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if asignatura.dictada_actual %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>Sí
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-times me-1"></i>No
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if asignatura.total_dictada > 0 %}
+                                    <span class="badge bg-warning text-dark">{{ asignatura.total_dictada }} veces</span>
+                                    <div class="small text-muted mt-1">
+                                        <a href="{% url 'rector:asignatura_detail' asignatura.pk %}#historial" 
+                                           class="text-decoration-none">
+                                            Ver historial
+                                        </a>
+                                    </div>
+                                {% else %}
+                                    <span class="badge bg-light text-muted">Nunca dictada</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'rector:asignatura_detail' asignatura.pk %}" 
+                                       class="btn btn-sm btn-info" title="Ver detalle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'rector:asignatura_edit' asignatura.pk %}" 
+                                       class="btn btn-sm btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if año_lectivo_actual %}
+                                    <a href="{% url 'rector:asignatura_grado_create' %}?asignatura={{ asignatura.id }}&año={{ año_lectivo_actual.id }}" 
+                                       class="btn btn-sm btn-success" title="Asignar a grado">
+                                        <i class="fas fa-link"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if asignatura.total_dictada == 0 and not asignatura.logros.exists %}
+                                    <a href="{% url 'rector:asignatura_delete' asignatura.pk %}" 
+                                       class="btn btn-sm btn-danger" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% else %}
+                                    <button class="btn btn-sm btn-danger" disabled 
+                                            title="No se puede eliminar (está en uso)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <div class="text-muted">
+                    <i class="fas fa-book fa-4x mb-4"></i>
+                    <h4>No hay asignaturas registradas</h4>
+                    <p class="mb-4">
+                        {% if filter_nivel or filter_area or filter_search %}
+                            No se encontraron resultados con los filtros aplicados.
+                        {% else %}
+                            Crea tu primera asignatura académica.
+                        {% endif %}
+                    </p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{% url 'rector:asignatura_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Crear Asignatura
+                        </a>
+                        <a href="{% url 'rector:asignatura_bulk_create' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-layer-group me-2"></i>Crear Múltiples
+                        </a>
+                        {% if filter_nivel or filter_area or filter_search %}
+                        <a href="{% url 'rector:asignatura_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Limpiar Filtros
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Paginación -->
+            {% if asignaturas.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if asignaturas.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if filter_nivel %}&nivel={{ filter_nivel }}{% endif %}{% if filter_area %}&area={{ filter_area }}{% endif %}{% if filter_search %}&search={{ filter_search }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ asignaturas.previous_page_number }}{% if filter_nivel %}&nivel={{ filter_nivel }}{% endif %}{% if filter_area %}&area={{ filter_area }}{% endif %}{% if filter_search %}&search={{ filter_search }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in asignaturas.paginator.page_range %}
+                        {% if asignaturas.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > asignaturas.number|add:'-3' and num < asignaturas.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if filter_nivel %}&nivel={{ filter_nivel }}{% endif %}{% if filter_area %}&area={{ filter_area }}{% endif %}{% if filter_search %}&search={{ filter_search }}{% endif %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if asignaturas.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ asignaturas.next_page_number }}{% if filter_nivel %}&nivel={{ filter_nivel }}{% endif %}{% if filter_area %}&area={{ filter_area }}{% endif %}{% if filter_search %}&search={{ filter_search }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ asignaturas.paginator.num_pages }}{% if filter_nivel %}&nivel={{ filter_nivel }}{% endif %}{% if filter_area %}&area={{ filter_area }}{% endif %}{% if filter_search %}&search={{ filter_search }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+                <p class="text-center text-muted small mt-2">
+                    Página {{ asignaturas.number }} de {{ asignaturas.paginator.num_pages }}
+                </p>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializar select2
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            width: '100%'
+        });
+        
+        // Confirmación para eliminar
+        $('.btn-danger[href*="delete"]').click(function(e) {
+            if (!confirm('¿Está seguro de eliminar esta asignatura? Esta acción no se puede deshacer.')) {
+                e.preventDefault();
+            }
+        });
+        
+        // Filtro en tiempo real (opcional)
+        $('#filter-search').on('input', function() {
+            const searchTerm = $(this).val().toLowerCase();
+            $('table tbody tr').each(function() {
+                const rowText = $(this).text().toLowerCase();
+                if (rowText.indexOf(searchTerm) === -1) {
+                    $(this).hide();
+                } else {
+                    $(this).show();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

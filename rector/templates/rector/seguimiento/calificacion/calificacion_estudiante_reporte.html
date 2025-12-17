@@ -1,0 +1,412 @@
+<!-- rector/templates/rector/seguimiento/calificacion/calificacion_estudiante_reporte.html -->
+{% extends 'rector/base_rector.html' %}
+{% load static seguimiento_filters %}
+
+{% block title %}Reporte de Calificaciones - {{ object.usuario.get_full_name }} - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:seguimiento_dashboard' %}">Seguimiento</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:calificacion_list' %}">Calificaciones</a></li>
+        <li class="breadcrumb-item active">Reporte de {{ object.usuario.get_full_name|truncatechars:20 }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Información del estudiante -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-0">
+                            <i class="bi bi-person-badge me-2"></i>Reporte de Calificaciones
+                        </h5>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button onclick="window.print()" class="btn btn-light btn-sm">
+                            <i class="bi bi-printer me-1"></i>Imprimir Reporte
+                        </button>
+                        <a href="{% url 'rector:calificacion_list' %}" class="btn btn-outline-light btn-sm ms-2">
+                            <i class="bi bi-arrow-left me-1"></i>Volver a Calificaciones
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <div class="avatar-xl bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3">
+                            <i class="bi bi-person display-6"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Nombre completo:</strong><br>
+                                {{ object.usuario.get_full_name }}</p>
+                                <p><strong>Documento:</strong><br>
+                                {{ object.usuario.numero_documento }}</p>
+                                <p><strong>Fecha de nacimiento:</strong><br>
+                                {{ object.usuario.fecha_nacimiento|date:"d/m/Y"|default:"No registrada" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Grado actual:</strong><br>
+                                {{ grado_actual.nombre|default:"No matriculado" }}</p>
+                                <p><strong>Sede actual:</strong><br>
+                                {{ matricula_actual.sede.nombre|default:"No asignada" }}</p>
+                                <p><strong>Estado:</strong><br>
+                                {% if object.estado %}
+                                <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen estadístico -->
+        <div class="row mb-4">
+            <div class="col-md-3 col-6">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-2">Promedio General</h6>
+                        <h2 class="mb-0 {% if promedio_general >= 3.0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ promedio_general|default:"0.0"|floatformat:1 }}
+                        </h2>
+                        <small class="text-muted">/ 5.0</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 col-6">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-2">Total Calificaciones</h6>
+                        <h2 class="mb-0">
+                            {% with total=0 %}
+                            {% for año, periodos in calificaciones_organizadas.items %}
+                                {% for periodo, datos in periodos.items %}
+                                    {{ datos.total }}
+                                {% endfor %}
+                            {% endfor %}
+                            {% endwith %}
+                        </h2>
+                        <small class="text-muted">{{ total_años }} año(s)</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 col-6">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-2">Nivel Superior</h6>
+                        <h2 class="mb-0 text-success">
+                            {{ niveles_desempeno.superior|default:0 }}
+                        </h2>
+                        <small class="text-muted">(≥ 4.6)</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 col-6">
+                <div class="card border-warning">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-2">Nivel Básico/Bajo</h6>
+                        <h2 class="mb-0 text-warning">
+                            {{ niveles_desempeno.basico|add:niveles_desempeno.bajo|default:0 }}
+                        </h2>
+                        <small class="text-muted">(< 4.0)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calificaciones por año y periodo -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-journal-bookmark me-2"></i>Historial de Calificaciones
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if calificaciones_organizadas %}
+                    {% for año, periodos in calificaciones_organizadas.items %}
+                    <div class="mb-5">
+                        <h5 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-calendar me-2"></i>Año {{ año }}
+                            {% with datos_año=promedios_año.año %}
+                            <span class="badge bg-primary ms-2">
+                                Promedio: {{ datos_año.promedio|default:0|floatformat:1 }}
+                            </span>
+                            <span class="badge bg-secondary ms-2">
+                                {{ datos_año.periodos|default:0 }} periodo(s)
+                            </span>
+                            {% endwith %}
+                        </h5>
+                        
+                        {% for periodo_nombre, datos_periodo in periodos.items %}
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-calendar-range me-2"></i>{{ periodo_nombre }}
+                                    <span class="badge bg-secondary ms-2">
+                                        {{ datos_periodo.total }} asignatura(s)
+                                    </span>
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th width="40%">Asignatura</th>
+                                                <th width="15%">Calificación</th>
+                                                <th width="15%">Nivel</th>
+                                                <th width="30%">Observaciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for calif in datos_periodo.items %}
+                                            <tr>
+                                                <td>
+                                                    {{ calif.asignatura }}
+                                                </td>
+                                                <td>
+                                                    <span class="badge 
+                                                        {% if calif.calificacion >= 4.6 %}bg-success
+                                                        {% elif calif.calificacion >= 4.0 %}bg-info
+                                                        {% elif calif.calificacion >= 3.0 %}bg-warning
+                                                        {% else %}bg-danger{% endif %} fs-6">
+                                                        {{ calif.calificacion|floatformat:1 }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {% if calif.calificacion >= 4.6 %}
+                                                    <span class="badge bg-success">Superior</span>
+                                                    {% elif calif.calificacion >= 4.0 %}
+                                                    <span class="badge bg-info">Alto</span>
+                                                    {% elif calif.calificacion >= 3.0 %}
+                                                    <span class="badge bg-warning">Básico</span>
+                                                    {% else %}
+                                                    <span class="badge bg-danger">Bajo</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if calif.observaciones %}
+                                                    <small>{{ calif.observaciones|truncatechars:50 }}</small>
+                                                    {% else %}
+                                                    <small class="text-muted">Sin observaciones</small>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-light">
+                                                <td colspan="2" class="text-end">
+                                                    <strong>Promedio del periodo:</strong>
+                                                </td>
+                                                <td colspan="2">
+                                                    {% if datos_periodo.total > 0 %}
+                                                    <strong>{{ datos_periodo.suma }}</strong> / {{ datos_periodo.total }}
+                                                    <span class="badge bg-primary ms-2">
+                                                        {{ datos_periodo.promedio|floatformat:1 }}
+                                                    </span>
+                                                    {% else %}
+                                                    <span class="text-muted">Sin datos</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="text-center py-4">
+                    <div class="text-muted">
+                        <i class="bi bi-journal-x display-6 d-block mb-2"></i>
+                        No se encontraron registros de calificaciones para este estudiante
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Promedios por asignatura -->
+        {% if promedios_asignatura %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Promedios por Asignatura
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for asignatura, datos in promedios_asignatura.items %}
+                    <div class="col-md-4 mb-3">
+                        <div class="border rounded p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">{{ asignatura|truncatechars:30 }}</h6>
+                                <div>
+                                    <span class="badge 
+                                        {% if datos.promedio >= 4.6 %}bg-success
+                                        {% elif datos.promedio >= 4.0 %}bg-info
+                                        {% elif datos.promedio >= 3.0 %}bg-warning
+                                        {% else %}bg-danger{% endif %}">
+                                        {{ datos.promedio|floatformat:1 }}
+                                    </span>
+                                    <small class="text-muted ms-1">({{ datos.total }})</small>
+                                </div>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar 
+                                    {% if datos.promedio >= 4.6 %}bg-success
+                                    {% elif datos.promedio >= 4.0 %}bg-info
+                                    {% elif datos.promedio >= 3.0 %}bg-warning
+                                    {% else %}bg-danger{% endif %}" 
+                                    style="width: {{ datos.promedio|mul:20 }}%"
+                                    title="{{ datos.promedio|floatformat:1 }}/5.0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Historial de matrículas -->
+        {% if matriculas_anteriores %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Historial Académico
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Año</th>
+                                <th>Grado</th>
+                                <th>Sede</th>
+                                <th>Estado</th>
+                                <th>Fecha de Matrícula</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for matricula in matriculas_anteriores %}
+                            <tr>
+                                <td>{{ matricula.año_lectivo.anho }}</td>
+                                <td>{{ matricula.grado_año_lectivo.grado.nombre }}</td>
+                                <td>{{ matricula.sede.nombre }}</td>
+                                <td>
+                                    {% if matricula.estado == 'ACT' %}
+                                    <span class="badge bg-success">Activa</span>
+                                    {% elif matricula.estado == 'PEN' %}
+                                    <span class="badge bg-warning">Pendiente</span>
+                                    {% elif matricula.estado == 'INA' %}
+                                    <span class="badge bg-danger">Inactiva</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ matricula.get_estado_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ matricula.fecha_matricula|date:"d/m/Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                            
+                            {% if matricula_actual %}
+                            <tr class="table-primary">
+                                <td><strong>{{ matricula_actual.año_lectivo.anho }}</strong></td>
+                                <td><strong>{{ matricula_actual.grado_año_lectivo.grado.nombre }}</strong></td>
+                                <td><strong>{{ matricula_actual.sede.nombre }}</strong></td>
+                                <td>
+                                    <span class="badge bg-primary">Actual</span>
+                                </td>
+                                <td><strong>{{ matricula_actual.fecha_matricula|date:"d/m/Y" }}</strong></td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-xl {
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+}
+
+@media print {
+    .btn, .breadcrumb, .text-end {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #dee2e6 !important;
+    }
+    
+    .card-header {
+        background-color: #f8f9fa !important;
+        color: #000 !important;
+        border-bottom: 1px solid #dee2e6 !important;
+    }
+}
+
+.badge.fs-6 {
+    font-size: 1em !important;
+    padding: 0.5em 1em;
+}
+
+.progress {
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    transition: width 0.6s ease;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Función para calcular porcentaje (20% por cada punto de 5)
+function calcularPorcentaje(promedio) {
+    return Math.min(promedio * 20, 100);
+}
+
+// Aplicar porcentajes a las barras de progreso
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.progress-bar').forEach(function(bar) {
+        const promedio = parseFloat(bar.getAttribute('title').split('/')[0]);
+        const porcentaje = calcularPorcentaje(promedio);
+        bar.style.width = porcentaje + '%';
+    });
+});
+</script>
+{% endblock %}

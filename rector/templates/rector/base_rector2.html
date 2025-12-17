@@ -1,0 +1,172 @@
+<!-- rector/templates/rector/base_rector2.html -->
+{% extends 'gestioncolegio/base2.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    /* Estilos específicos para el módulo de rector */
+    .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.8;
+    }
+    .badge-lg {
+        font-size: 0.9em;
+        padding: 0.5em 0.8em;
+    }
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: -2.1rem;
+        top: 0.25rem;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        background: #6c757d;
+    }
+    
+    /* Estilos para el rector dashboard */
+    .rector-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 2rem;
+    }
+    .action-card {
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        height: 100%;
+    }
+    .action-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    .action-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Contenido específico del módulo de rector -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Scripts específicos para el módulo de rector
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-refresh cada 5 minutos para datos en tiempo real
+        setTimeout(() => {
+            window.location.reload();
+        }, 300000);
+        
+        // Inicializar tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Inicializar popovers
+        var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+        var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl);
+        });
+    });
+    
+    // Función para confirmar acciones importantes
+    function confirmAction(message, url) {
+        if (confirm(message)) {
+            window.location.href = url;
+        }
+    }
+    
+    // Función para cambiar estado via AJAX
+    function toggleEstado(url, elementId) {
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Actualizar el elemento visualmente
+                const element = document.getElementById(elementId);
+                if (element) {
+                    const isActive = data.nuevo_estado;
+                    element.textContent = isActive ? 'Activo' : 'Inactivo';
+                    element.className = isActive ? 'badge bg-success' : 'badge bg-danger';
+                    
+                    // Mostrar mensaje de éxito
+                    showToast(data.mensaje, 'success');
+                }
+            } else {
+                showToast('Error: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showToast('Error en la solicitud', 'danger');
+        });
+    }
+    
+    // Función para mostrar toast messages
+    function showToast(message, type) {
+        const toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            // Crear contenedor de toasts si no existe
+            const container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(container);
+        }
+        
+        const toastId = 'toast-' + Date.now();
+        const toast = document.createElement('div');
+        toast.id = toastId;
+        toast.className = `toast align-items-center text-bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        document.getElementById('toast-container').appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Eliminar el toast después de que se oculte
+        toast.addEventListener('hidden.bs.toast', function () {
+            toast.remove();
+        });
+    }
+</script>
+{% endblock %}

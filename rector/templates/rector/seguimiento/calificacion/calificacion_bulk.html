@@ -1,0 +1,314 @@
+<!-- rector/templates/rector/seguimiento/calificacion/calificacion_bulk.html -->
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Registro Masivo de Calificaciones - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:seguimiento_dashboard' %}">Seguimiento</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:calificacion_list' %}">Calificaciones</a></li>
+        <li class="breadcrumb-item active">Registro Masivo</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-collection me-2"></i>Registro Masivo de Calificaciones
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Paso 1: Seleccionar asignatura y periodo -->
+                <div id="paso1">
+                    <form method="get" class="row g-3" id="formSeleccion">
+                        <div class="col-md-4">
+                            <label for="periodo" class="form-label">Periodo Académico *</label>
+                            <select name="periodo" id="periodo" class="form-control" required>
+                                <option value="">Seleccionar periodo...</option>
+                                {% for periodo in periodos_disponibles %}
+                                <option value="{{ periodo.id }}" 
+                                    {% if request.GET.periodo == periodo.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ periodo.periodo.nombre }} - {{ periodo.año_lectivo.anho }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="grado" class="form-label">Grado *</label>
+                            <select name="grado" id="grado" class="form-control" required>
+                                <option value="">Seleccionar grado...</option>
+                                {% for grado in grados_disponibles %}
+                                <option value="{{ grado.id }}"
+                                    {% if request.GET.grado == grado.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ grado.grado.nombre }} - {{ grado.grado.nivel_escolar.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="asignatura" class="form-label">Asignatura *</label>
+                            <select name="asignatura" id="asignatura" class="form-control" required>
+                                <option value="">Seleccionar asignatura...</option>
+                                {% for asignatura in asignaturas_disponibles %}
+                                <option value="{{ asignatura.id }}"
+                                    {% if request.GET.asignatura == asignatura.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ asignatura.asignatura.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search me-1"></i>Cargar Estudiantes
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Paso 2: Formulario masivo -->
+                {% if estudiantes %}
+                <hr class="my-4">
+                <div id="paso2">
+                    <form method="post" id="formMasivo">
+                        {% csrf_token %}
+                        <input type="hidden" name="periodo_id" value="{{ periodo.id }}">
+                        <input type="hidden" name="asignatura_id" value="{{ asignatura.id }}">
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="mb-0">
+                                <i class="bi bi-people me-2"></i>
+                                Registro para: {{ asignatura.asignatura.nombre }}
+                            </h5>
+                            <div>
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="cargarCalificacionesPrevias()">
+                                    <i class="bi bi-download me-1"></i>Cargar calificaciones anteriores
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="5%">#</th>
+                                        <th width="25%">Estudiante</th>
+                                        <th width="15%">Documento</th>
+                                        <th width="20%">Calificación (0.0 - 5.0)</th>
+                                        <th width="35%">Observaciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for estudiante in estudiantes %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                    <i class="bi bi-person"></i>
+                                                </div>
+                                                <div>
+                                                    {{ estudiante.nombre }}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ estudiante.documento }}</td>
+                                        <td>
+                                            <input type="number" 
+                                                   name="calificacion_{{ estudiante.id }}" 
+                                                   class="form-control form-control-sm calificacion-input" 
+                                                   min="0" 
+                                                   max="5" 
+                                                   step="0.1"
+                                                   value="{{ estudiante.calificacion_actual|default:'' }}"
+                                                   placeholder="0.0 - 5.0">
+                                        </td>
+                                        <td>
+                                            <input type="text" 
+                                                   name="observacion_{{ estudiante.id }}" 
+                                                   class="form-control form-control-sm" 
+                                                   value="{{ estudiante.observaciones_actual|default:'' }}"
+                                                   placeholder="Observaciones (opcional)"
+                                                   maxlength="200">
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Acciones masivas -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-gear me-2"></i>Acciones Masivas
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Aplicar a todos:</label>
+                                        <div class="input-group">
+                                            <input type="number" 
+                                                   id="calificacionGlobal" 
+                                                   class="form-control" 
+                                                   min="0" 
+                                                   max="5" 
+                                                   step="0.1"
+                                                   placeholder="Calificación">
+                                            <button type="button" 
+                                                    class="btn btn-outline-primary" 
+                                                    onclick="aplicarATodos()">
+                                                Aplicar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="form-label">Observación global:</label>
+                                        <div class="input-group">
+                                            <input type="text" 
+                                                   id="observacionGlobal" 
+                                                   class="form-control" 
+                                                   placeholder="Observación para todos">
+                                            <button type="button" 
+                                                    class="btn btn-outline-secondary" 
+                                                    onclick="aplicarObservacionATodos()">
+                                                Aplicar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'rector:calificacion_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>Guardar Todas las Calificaciones
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+}
+
+.calificacion-input {
+    max-width: 120px;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+#paso2 {
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validar calificaciones en tiempo real
+    const inputsCalificacion = document.querySelectorAll('.calificacion-input');
+    inputsCalificacion.forEach(input => {
+        input.addEventListener('blur', function() {
+            let valor = parseFloat(this.value);
+            if (isNaN(valor)) {
+                this.value = '';
+                return;
+            }
+            
+            if (valor < 0) this.value = 0;
+            if (valor > 5) this.value = 5;
+            
+            // Formatear a un decimal
+            this.value = parseFloat(valor).toFixed(1);
+        });
+    });
+});
+
+function aplicarATodos() {
+    const calificacion = document.getElementById('calificacionGlobal').value;
+    if (!calificacion) {
+        alert('Ingrese una calificación primero');
+        return;
+    }
+    
+    const inputs = document.querySelectorAll('.calificacion-input');
+    inputs.forEach(input => {
+        input.value = calificacion;
+    });
+}
+
+function aplicarObservacionATodos() {
+    const observacion = document.getElementById('observacionGlobal').value;
+    const inputs = document.querySelectorAll('input[name^="observacion_"]');
+    inputs.forEach(input => {
+        input.value = observacion;
+    });
+}
+
+function cargarCalificacionesPrevias() {
+    if (confirm('¿Cargar calificaciones del periodo anterior?')) {
+        // Aquí implementarías AJAX para cargar calificaciones previas
+        alert('Funcionalidad en desarrollo');
+    }
+}
+
+// Validación antes de enviar
+document.getElementById('formMasivo')?.addEventListener('submit', function(e) {
+    let tieneCalificaciones = false;
+    const inputs = document.querySelectorAll('.calificacion-input');
+    
+    for (let input of inputs) {
+        if (input.value.trim() !== '') {
+            tieneCalificaciones = true;
+            break;
+        }
+    }
+    
+    if (!tieneCalificaciones) {
+        e.preventDefault();
+        alert('Debe ingresar al menos una calificación');
+        return false;
+    }
+    
+    return true;
+});
+</script>
+{% endblock %}

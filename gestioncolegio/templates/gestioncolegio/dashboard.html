@@ -22,8 +22,8 @@
         </div>
     </div>
 
-    <!-- Tarjetas de estadísticas para Administradores/Rectores -->
-    {% if user.tipo_usuario.nombre in 'Administrador,Rector' or user.is_superuser %}
+    <!-- Tarjetas de estadísticas para Administradores -->
+    {% if user.tipo_usuario.nombre in 'Administrador' or user.is_superuser %}
     <div class="row mb-4">
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-start-primary shadow h-100 py-2">

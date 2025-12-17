@@ -1,0 +1,64 @@
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+
+{% block title %}Eliminar Logro - Rector{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar Eliminación
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-trash-fill text-danger" style="font-size: 4rem;"></i>
+                    </div>
+                    
+                    <h5 class="text-center mb-4">¿Está seguro que desea eliminar este logro?</h5>
+                    
+                    <div class="alert alert-warning">
+                        <div class="d-flex">
+                            <i class="bi bi-info-circle-fill me-2 flex-shrink-0"></i>
+                            <div>
+                                <strong>Información del logro a eliminar:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li><strong>Asignatura:</strong> {{ object.asignatura.nombre }}</li>
+                                    <li><strong>Grado:</strong> {{ object.grado.nombre }}</li>
+                                    <li><strong>Tema:</strong> {{ object.tema|truncatechars:100 }}</li>
+                                    <li><strong>Período:</strong> {{ object.periodo_academico.periodo.nombre }} - {{ object.periodo_academico.año_lectivo.anho }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-danger">
+                        <div class="d-flex">
+                            <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0"></i>
+                            <div>
+                                <strong>Advertencia:</strong> Esta acción no se puede deshacer. 
+                                El logro será eliminado permanentemente del sistema.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'rector:logro_detail' object.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-1"></i>Eliminar Permanentemente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

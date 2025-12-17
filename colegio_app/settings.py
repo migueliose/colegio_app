@@ -22,30 +22,30 @@ DEBUG = config('DEBUG', cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 
 # Configuración SSL solo en producción
-if not DEBUG:
-    # ======================
+#if not DEBUG:
+#    # ======================
     # SEGURIDAD PRODUCCIÓN
     # ======================
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'DENY'
+#    SECURE_BROWSER_XSS_FILTER = True
+#    SECURE_CONTENT_TYPE_NOSNIFF = True
+#    X_FRAME_OPTIONS = 'DENY'
     
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = True
+#    CSRF_COOKIE_SECURE = True
+#    SESSION_COOKIE_SECURE = True
+#    SECURE_SSL_REDIRECT = True
     
-    CSRF_TRUSTED_ORIGINS = [
-        'https://colegiocrishadai.edu.co',
-        'https://www.colegiocrishadai.edu.co',
-    ]
+#    CSRF_TRUSTED_ORIGINS = [
+#        'https://colegiocrishadai.edu.co',
+#        'https://www.colegiocrishadai.edu.co',
+#    ]
     
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-else:
+#    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+#else:
     # Configuración para desarrollo
-    SECURE_SSL_REDIRECT = False
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
-    SECURE_PROXY_SSL_HEADER = None
+#    SECURE_SSL_REDIRECT = False
+#    SESSION_COOKIE_SECURE = False
+#    CSRF_COOKIE_SECURE = False
+#    SECURE_PROXY_SSL_HEADER = None
     
 # ===============================
 # APPLICATIONS
@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     'acudiente',
     'docentes',
     'administrador',
+    'rector'
 ]
 
 AUTH_USER_MODEL = 'usuarios.Usuario'

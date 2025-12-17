@@ -1,0 +1,465 @@
+<!-- rector/templates/rector/institucional/sedes.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Gestión de Sedes - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:institucional_dashboard' %}">Institucional</a></li>
+        <li class="breadcrumb-item active">Sedes</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-buildings text-primary me-2"></i>
+                Gestión de Sedes
+            </h1>
+            <a href="{% url 'rector:sede_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Nueva Sede
+            </a>
+        </div>
+        <p class="text-muted mb-0">Administración completa de las sedes del colegio</p>
+    </div>
+</div>
+
+<!-- Estadísticas generales -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Sedes Activas</h6>
+                        <h3 class="mb-0">{{ total_sedes }}</h3>
+                    </div>
+                    <i class="bi bi-building display-6 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Estudiantes</h6>
+                        <h3 class="mb-0">{{ total_estudiantes_sistema }}</h3>
+                    </div>
+                    <i class="bi bi-people display-6 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Docentes</h6>
+                        <h3 class="mb-0">{{ total_docentes_sistema }}</h3>
+                    </div>
+                    <i class="bi bi-person-badge display-6 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-dark-50 mb-1">Sedes Inactivas</h6>
+                        <h3 class="mb-0">{{ sedes_inactivas }}</h3>
+                    </div>
+                    <i class="bi bi-building-slash display-6 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros y búsqueda - CORREGIDO -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" 
+                           name="search" 
+                           class="form-control" 
+                           placeholder="Buscar sede por nombre, dirección o colegio..."
+                           value="{{ search_query }}">
+                    <button class="btn btn-primary" type="submit">
+                        Buscar
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="estado" class="form-select" onchange="this.form.submit()">
+                    <option value="activas" {% if estado_filter == 'activas' %}selected{% endif %}>
+                        Sedes Activas
+                    </option>
+                    <option value="inactivas" {% if estado_filter == 'inactivas' %}selected{% endif %}>
+                        Sedes Inactivas
+                    </option>
+                    <option value="todas" {% if estado_filter == 'todas' or not estado_filter %}selected{% endif %}>
+                        Todas las Sedes
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="sort_by" class="form-select" onchange="this.form.submit()">
+                    <option value="nombre" {% if sort_by == 'nombre' %}selected{% endif %}>
+                        Ordenar por nombre
+                    </option>
+                    <option value="colegio__nombre" {% if sort_by == 'colegio__nombre' %}selected{% endif %}>
+                        Ordenar por colegio
+                    </option>
+                    <option value="estado" {% if sort_by == 'estado' %}selected{% endif %}>
+                        Ordenar por estado
+                    </option>
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de sedes -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Lista de Sedes</h5>
+            <div class="btn-group" role="group">
+                <a href="?estado=activas" 
+                   class="btn btn-sm {% if estado_filter == 'activas' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    Activas ({{ total_sedes }})
+                </a>
+                <a href="?estado=inactivas" 
+                   class="btn btn-sm {% if estado_filter == 'inactivas' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                    Inactivas ({{ sedes_inactivas }})
+                </a>
+                <a href="?estado=todas" 
+                   class="btn btn-sm {% if estado_filter == 'todas' or not estado_filter %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+                    Todas
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th width="25%">Sede</th>
+                        <th width="15%">Colegio</th>
+                        <th width="15%">Director</th>
+                        <th width="15%">Estadísticas</th>
+                        <th width="15%">Años Lectivos</th>
+                        <th width="15%">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sede in sedes %}
+                    <tr class="{% if not sede.estado %}table-danger{% endif %}">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-building fs-4 {% if sede.estado %}text-primary{% else %}text-danger{% endif %}"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">
+                                        {{ sede.nombre }}
+                                        {% if not sede.estado %}
+                                        <span class="badge bg-danger ms-1">Inactiva</span>
+                                        {% endif %}
+                                    </h6>
+                                    <small class="text-muted">
+                                        <i class="bi bi-geo-alt me-1"></i>{{ sede.direccion|truncatechars:30 }}
+                                    </small>
+                                    {% if sede.telefono %}
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="bi bi-telephone me-1"></i>{{ sede.telefono }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">{{ sede.colegio.nombre }}</span>
+                        </td>
+                        <td>
+                            {% if sede.director %}
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-circle text-success me-2"></i>
+                                <div>
+                                    <small>{{ sede.director.get_full_name }}</small>
+                                    {% if sede.director.email %}
+                                    <br>
+                                    <small class="text-muted">{{ sede.director.email }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <span class="text-danger">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                Sin director
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if sede.estado %}
+                            <div class="d-flex flex-column small">
+                                <span class="mb-1">
+                                    <i class="bi bi-people text-primary me-1"></i>
+                                    {{ sede.total_estudiantes }} estudiantes
+                                </span>
+                                <span class="mb-1">
+                                    <i class="bi bi-person-badge text-success me-1"></i>
+                                    {{ sede.total_docentes }} docentes
+                                </span>
+                                <span>
+                                    <i class="bi bi-mortarboard text-warning me-1"></i>
+                                    {{ sede.total_grados }} grados
+                                </span>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">
+                                <i class="bi bi-slash-circle me-1"></i>
+                                Sede inactiva
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if sede.años_lectivos %}
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-info dropdown-toggle" 
+                                        type="button" data-bs-toggle="dropdown">
+                                    {{ sede.años_lectivos|length }} años
+                                </button>
+                                <ul class="dropdown-menu">
+                                    {% for año in sede.años_lectivos_historial %}
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="bi bi-calendar me-2"></i>{{ año.anho }}
+                                            {% if año.estado %}
+                                            <span class="badge bg-success float-end">Activo</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary float-end">Inactivo</span>
+                                            {% endif %}
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                    {% if sede.estado %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'rector:año_lectivo_create' %}?sede={{ sede.id }}">
+                                            <i class="bi bi-plus-circle me-2"></i>Crear nuevo año
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                            {% else %}
+                            <span class="badge bg-secondary">Sin años</span>
+                            {% if sede.estado %}
+                            <div class="mt-1">
+                                <a href="{% url 'rector:año_lectivo_create' %}?sede={{ sede.id }}" 
+                                   class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-plus-circle me-1"></i>Crear
+                                </a>
+                            </div>
+                            {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                        type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-gear"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'rector:sede_detail' sede.id %}">
+                                            <i class="bi bi-eye me-2"></i>Ver Detalles
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'rector:sede_edit' sede.id %}">
+                                            <i class="bi bi-pencil me-2"></i>Editar
+                                        </a>
+                                    </li>
+                                    {% if sede.estado %}
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'rector:año_lectivo_create' %}?sede={{ sede.id }}">
+                                            <i class="bi bi-calendar-plus me-2"></i>Crear Año Lectivo
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li>
+                                        <form method="post" action="{% url 'rector:sede_reactivate' sede.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item text-success">
+                                                <i class="bi bi-toggle-on me-2"></i>Reactivar
+                                            </button>
+                                        </form>
+                                    </li>
+                                    {% endif %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    {% if sede.estado %}
+                                    <li>
+                                        <a class="dropdown-item text-danger" 
+                                           href="{% url 'rector:sede_delete' sede.id %}">
+                                            <i class="bi bi-toggle-off me-2"></i>Desactivar
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li>
+                                        <form method="post" action="{% url 'rector:sede_delete' sede.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="bi bi-trash me-2"></i>Eliminar Permanentemente
+                                            </button>
+                                        </form>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <i class="bi bi-buildings text-muted display-6"></i>
+                            <p class="text-muted mt-2">
+                                {% if estado_filter == 'activas' %}
+                                No hay sedes activas registradas
+                                {% elif estado_filter == 'inactivas' %}
+                                No hay sedes inactivas
+                                {% else %}
+                                No hay sedes registradas
+                                {% endif %}
+                            </p>
+                            <a href="{% url 'rector:sede_create' %}" class="btn btn-primary mt-2">
+                                <i class="bi bi-plus-circle me-1"></i>Crear primera sede
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if is_paginated %}
+    <div class="card-footer">
+        <nav aria-label="Pagination">
+            <ul class="pagination justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}&sort_by={{ sort_by }}&estado={{ estado_filter }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}&search={{ search_query }}&sort_by={{ sort_by }}&estado={{ estado_filter }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&search={{ search_query }}&sort_by={{ sort_by }}&estado={{ estado_filter }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Acciones rápidas -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Acciones Rápidas</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'rector:sede_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Crear Nueva Sede
+                    </a>
+                    <a href="{% url 'rector:institucional_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Volver al Dashboard Institucional
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Exportar Información</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-success">
+                        <i class="bi bi-file-earmark-excel me-2"></i>Exportar a Excel
+                    </button>
+                    <button class="btn btn-outline-danger">
+                        <i class="bi bi-file-earmark-pdf me-2"></i>Exportar a PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Buscar sede por nombre en tiempo real
+        const searchInput = document.querySelector('input[name="search"]');
+        if (searchInput) {
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    this.form.submit();
+                }, 500);
+            });
+        }
+        
+        // Confirmación para desactivar sede
+        const deleteForms = document.querySelectorAll('form[action*="delete"]');
+        deleteForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (!confirm('¿Está seguro de desactivar esta sede? Esta acción marcará la sede como inactiva.')) {
+                    e.preventDefault();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,197 @@
+<!-- rector/templates/rector/institucional/periodo_confirm_delete.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Eliminar Periodo Académico - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:institucional_dashboard' %}">Institucional</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:periodo_list' %}">Periodos</a></li>
+        <li class="breadcrumb-item active">Eliminar</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Confirmar Eliminación de Periodo
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="bi bi-calendar-x text-danger display-1"></i>
+                    <h4 class="mt-3">¿Eliminar Periodo Académico?</h4>
+                    <p class="text-muted">
+                        Está a punto de eliminar el periodo académico:
+                    </p>
+                    <div class="alert alert-info">
+                        <h4 class="mb-1">{{ object.periodo.nombre }}</h4>
+                        <p class="mb-1">
+                            <strong>Año Lectivo:</strong> {{ object.año_lectivo.anho }}
+                        </p>
+                        <p class="mb-1">
+                            <strong>Sede:</strong> {{ object.año_lectivo.sede.nombre }}
+                        </p>
+                        <p class="mb-0">
+                            <strong>Fechas:</strong> {{ object.fecha_inicio|date:"d/m/Y" }} al {{ object.fecha_fin|date:"d/m/Y" }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Verificación de dependencias -->
+                {% if puede_eliminar %}
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    Este periodo académico puede ser eliminado sin problemas.
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>¡Atención!</strong> Este periodo tiene dependencias:
+                    <ul class="mb-0 mt-2">
+                        {% if tiene_logros %}
+                        <li>Tiene <strong>logros académicos</strong> asociados</li>
+                        {% endif %}
+                        {% if tiene_notas %}
+                        <li>Tiene <strong>notas</strong> registradas</li>
+                        {% endif %}
+                        {% if tiene_comportamientos %}
+                        <li>Tiene <strong>registros de comportamiento</strong></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="bi bi-info-circle me-2"></i>Consideraciones importantes:
+                        </h6>
+                        <ul class="mb-0">
+                            <li>Esta acción eliminará el periodo permanentemente</li>
+                            {% if not puede_eliminar %}
+                            <li class="text-danger">No podrá eliminar hasta remover las dependencias</li>
+                            {% endif %}
+                            <li>Si hay registros asociados, se perderá información histórica</li>
+                            <li>Esta acción no se puede deshacer</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Alternativas -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-lightbulb me-2"></i>
+                            Alternativas sugeridas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-2">
+                            En lugar de eliminar, podría:
+                        </p>
+                        <ul class="mb-0">
+                            <li>Marcar el periodo como <strong>inactivo</strong> (ocultarlo sin perder datos)</li>
+                            <li>Actualizar las fechas si necesita cambios</li>
+                            <li>Duplicar el periodo para otro año lectivo</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'rector:periodo_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Cancelar
+                        </a>
+                        {% if puede_eliminar %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i>Confirmar Eliminación
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-danger" disabled>
+                            <i class="bi bi-slash-circle me-1"></i>No se puede eliminar
+                        </button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Detalles de las dependencias -->
+        {% if not puede_eliminar %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-link-45deg me-2"></i>
+                    Dependencias encontradas
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    Para eliminar este periodo académico, primero debe:
+                </p>
+                
+                {% if tiene_logros %}
+                <div class="alert alert-light border mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">Logros académicos</h6>
+                            <p class="text-muted small mb-0">
+                                Existen logros asociados a este periodo. Debe reasignarlos o eliminarlos primero.
+                            </p>
+                        </div>
+                        <span class="badge bg-warning">Reasignar</span>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if tiene_notas %}
+                <div class="alert alert-light border mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">Calificaciones registradas</h6>
+                            <p class="text-muted small mb-0">
+                                Hay notas asociadas a este periodo. Considere marcar como inactivo en lugar de eliminar.
+                            </p>
+                        </div>
+                        <span class="badge bg-danger">Crítico</span>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if tiene_comportamientos %}
+                <div class="alert alert-light border mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">Registros de comportamiento</h6>
+                            <p class="text-muted small mb-0">
+                                Existen registros de comportamiento en este periodo.
+                            </p>
+                        </div>
+                        <span class="badge bg-warning">Revisar</span>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="text-center">
+                    <a href="{% url 'rector:periodo_edit' object.id %}" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-pencil me-1"></i>Editar en lugar de eliminar
+                    </a>
+                    <a href="{% url 'rector:periodo_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-list me-1"></i>Volver a la lista
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

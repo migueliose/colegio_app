@@ -1,0 +1,369 @@
+<!-- rector/templates/rector/institucional/asignacion_docente_dashboard.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Asignación Docente - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:institucional_dashboard' %}">Institucional</a></li>
+        <li class="breadcrumb-item active">Asignación Docente</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-person-badge text-primary me-2"></i>
+                Dashboard de Asignación Docente
+            </h1>
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown">
+                    <i class="bi bi-gear me-1"></i>Acciones
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'rector:asignacion_por_sede' %}">
+                            <i class="bi bi-buildings me-2"></i>Ver por Sede
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="bi bi-file-earmark-spreadsheet me-2"></i>Exportar Reporte
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="bi bi-arrow-repeat me-2"></i>Revisar Asignaciones
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <p class="text-muted mb-0">Gestión y monitoreo de asignaciones docentes</p>
+    </div>
+</div>
+
+<!-- Información del año actual -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-calendar-check text-primary display-6"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-1">Año Lectivo Actual</h4>
+                        <p class="mb-0">
+                            {% if año_lectivo_actual %}
+                            <strong>{{ año_lectivo_actual.anho }}</strong> - {{ año_lectivo_actual.sede.nombre }}
+                            {% else %}
+                            <span class="text-danger">No hay año lectivo configurado como actual</span>
+                            {% endif %}
+                        </p>
+                        <small class="text-muted">
+                            Todas las estadísticas mostradas corresponden al año lectivo actual
+                        </small>
+                    </div>
+                    {% if año_lectivo_actual %}
+                    <div class="flex-shrink-0">
+                        <span class="badge bg-success fs-6">
+                            <i class="bi bi-check-circle me-1"></i>Activo
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas de asignación -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Docentes Totales</h6>
+                        <h3 class="mb-0 text-white">{{ total_docentes }}</h3>
+                        <small class="text-white-75">Registrados en el sistema</small>
+                    </div>
+                    <i class="bi bi-people stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Con Asignaturas</h6>
+                        <h3 class="mb-0 text-white">{{ docentes_con_asignaturas }}</h3>
+                        <small class="text-white-75">{{ porcentaje_asignaturas|floatformat:1 }}% del total</small>
+                    </div>
+                    <i class="bi bi-book stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Con Sede</h6>
+                        <h3 class="mb-0 text-white">{{ docentes_con_sede }}</h3>
+                        <small class="text-white-75">{{ porcentaje_sede|floatformat:1 }}% asignados</small>
+                    </div>
+                    <i class="bi bi-buildings stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Asignaciones Pendientes</h6>
+                        <h3 class="mb-0 text-white">{{ asignaturas_sin_docente.count }}</h3>
+                        <small class="text-white-75">Requieren atención</small>
+                    </div>
+                    <i class="bi bi-exclamation-triangle stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alertas y pendientes -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Docentes sin Asignaturas
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if docentes_sin_asignaturas %}
+                <div class="list-group list-group-flush">
+                    {% for docente in docentes_sin_asignaturas|slice:":5" %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ docente.usuario.get_full_name }}</h6>
+                                <small class="text-muted">{{ docente.usuario.numero_documento }}</small>
+                            </div>
+                            <a href="{% url 'rector:docente_asignar_asignatura' docente.id %}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-plus-circle me-1"></i>Asignar
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if docentes_sin_asignaturas.count > 5 %}
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        Y {{ docentes_sin_asignaturas.count|add:"-5" }} docentes más...
+                    </small>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-check-circle text-success display-5"></i>
+                    <p class="text-muted mt-2">¡Todos los docentes tienen asignaturas asignadas!</p>
+                </div>
+                {% endif %}
+                <div class="d-grid mt-3">
+                    <a href="#" class="btn btn-outline-warning">
+                        <i class="bi bi-list me-1"></i>Ver todos los docentes sin asignaturas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-book me-2"></i>
+                    Asignaturas sin Docente
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if asignaturas_sin_docente %}
+                <div class="list-group list-group-flush">
+                    {% for asignatura in asignaturas_sin_docente|slice:":5" %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ asignatura.asignatura.nombre }}</h6>
+                                <small class="text-muted">
+                                    {{ asignatura.grado_año_lectivo.grado.nombre }} - {{ asignatura.sede.nombre }}
+                                </small>
+                            </div>
+                            <a href="#" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-person-plus me-1"></i>Asignar
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if asignaturas_sin_docente.count > 5 %}
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        Y {{ asignaturas_sin_docente.count|add:"-5" }} asignaturas más...
+                    </small>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-check-circle text-success display-5"></i>
+                    <p class="text-muted mt-2">¡Todas las asignaturas tienen docente asignado!</p>
+                </div>
+                {% endif %}
+                <div class="d-grid mt-3">
+                    <a href="#" class="btn btn-outline-danger">
+                        <i class="bi bi-list me-1"></i>Ver todas las asignaturas sin docente
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Visión general por sede -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-buildings me-2"></i>
+            Resumen por Sede
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for sede in sedes %}
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title">{{ sede.nombre }}</h6>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h4 class="text-primary">{{ sede.total_docentes|default:0 }}</h4>
+                                <small class="text-muted">Docentes</small>
+                            </div>
+                            <div class="col-6">
+                                <h4 class="text-success">{{ sede.total_asignaturas|default:0 }}</h4>
+                                <small class="text-muted">Asignaturas</small>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            {% if sede.asignaturas_sin_docente > 0 %}
+                            <span class="badge bg-warning">
+                                {{ sede.asignaturas_sin_docente }} sin docente
+                            </span>
+                            {% else %}
+                            <span class="badge bg-success">Completo</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="#" class="btn btn-sm btn-outline-primary w-100">
+                            <i class="bi bi-eye me-1"></i>Ver Detalles
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="text-center py-4">
+                    <i class="bi bi-buildings text-muted display-6"></i>
+                    <p class="text-muted mt-2">No hay sedes configuradas</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="card-footer">
+        <a href="{% url 'rector:asignacion_por_sede' %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-right me-1"></i>Ver asignación completa por sede
+        </a>
+    </div>
+</div>
+
+<!-- Accesos rápidos -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Acciones Rápidas</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <a href="{% url 'rector:docente_list' %}" class="card action-card h-100 text-decoration-none">
+                    <div class="card-body text-center">
+                        <div class="action-icon text-primary">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <h6 class="card-title">Lista de Docentes</h6>
+                        <p class="card-text text-muted small">
+                            Ver y gestionar todos los docentes
+                        </p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3 mb-3">
+                <a href="{% url 'rector:asignacion_por_sede' %}" class="card action-card h-100 text-decoration-none">
+                    <div class="card-body text-center">
+                        <div class="action-icon text-success">
+                            <i class="bi bi-buildings"></i>
+                        </div>
+                        <h6 class="card-title">Por Sede</h6>
+                        <p class="card-text text-muted small">
+                            Ver asignaciones por sede
+                        </p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3 mb-3">
+                <a href="#" class="card action-card h-100 text-decoration-none">
+                    <div class="card-body text-center">
+                        <div class="action-icon text-warning">
+                            <i class="bi bi-file-earmark-spreadsheet"></i>
+                        </div>
+                        <h6 class="card-title">Reportes</h6>
+                        <p class="card-text text-muted small">
+                            Generar reportes de asignación
+                        </p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3 mb-3">
+                <a href="#" class="card action-card h-100 text-decoration-none">
+                    <div class="card-body text-center">
+                        <div class="action-icon text-info">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                        <h6 class="card-title">Estadísticas</h6>
+                        <p class="card-text text-muted small">
+                            Ver estadísticas detalladas
+                        </p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

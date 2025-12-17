@@ -1,0 +1,470 @@
+<!-- rector/templates/rector/institucional/año_lectivo/año_lectivo_list.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Años Lectivos - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:institucional_dashboard' %}">Institucional</a></li>
+        <li class="breadcrumb-item active">Años Lectivos</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-calendar-range text-primary me-2"></i>
+                    Años Lectivos
+                </h1>
+                <p class="text-muted mb-0">Gestión de años académicos por sede</p>
+            </div>
+            <a href="{% url 'rector:año_lectivo_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Nuevo Año Lectivo
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas rápidas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Total Años</h6>
+                        <h3 class="mb-0">{{ total_años }}</h3>
+                    </div>
+                    <i class="bi bi-calendar-check display-6 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Años Activos</h6>
+                        <h3 class="mb-0">{{ años_activos }}</h3>
+                    </div>
+                    <i class="bi bi-toggle-on display-6 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Total Estudiantes</h6>
+                        <h3 class="mb-0">{{ total_estudiantes_general }}</h3>
+                    </div>
+                    <i class="bi bi-people display-6 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-dark-50 mb-1">Sedes Activas</h6>
+                        <h3 class="mb-0">{{ sedes|length }}</h3>
+                    </div>
+                    <i class="bi bi-building display-6 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Buscar por año</label>
+                <input type="text" 
+                       name="search" 
+                       class="form-control" 
+                       placeholder="Ej: 2024, 2025..."
+                       value="{{ filtro_search }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Sede</label>
+                <select name="sede" class="form-select">
+                    <option value="">Todas las sedes</option>
+                    {% for sede in sedes %}
+                    <option value="{{ sede.id }}" {% if filtro_sede == sede.id|stringformat:"s" %}selected{% endif %}>
+                        {{ sede.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Estado</label>
+                <select name="estado" class="form-select">
+                    <option value="">Todos los estados</option>
+                    <option value="1" {% if filtro_estado == "1" %}selected{% endif %}>Activos</option>
+                    <option value="0" {% if filtro_estado == "0" %}selected{% endif %}>Inactivos</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel me-1"></i>Filtrar
+                    </button>
+                    <a href="{% url 'rector:año_lectivo_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Limpiar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de años lectivos -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Lista de Años Lectivos</h5>
+            <span class="badge bg-primary">{{ page_obj.paginator.count }} registros</span>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th width="10%">Año</th>
+                        <th width="15%">Sede</th>
+                        <th width="10%">Fechas</th>
+                        <th width="20%">Estadísticas</th>
+                        <th width="10%">Configuración</th>
+                        <th width="10%">Estado</th>
+                        <th width="10%">Completitud</th>
+                        <th width="15%">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for año in años_lectivos %}
+                    <tr class="{% if año_lectivo_actual and año_lectivo_actual.id == año.id %}table-success{% elif not año.estado %}table-danger{% endif %}">
+                        <td>
+                            <strong>{{ año.anho }}</strong>
+                            {% if año_lectivo_actual and año_lectivo_actual.id == año.id %}
+                            <div class="small">
+                                <span class="badge bg-success">Actual</span>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div>
+                                <strong>{{ año.sede.nombre }}</strong>
+                                <div class="small text-muted">
+                                    {{ año.colegio.nombre }}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="small">
+                                {% if año.fecha_inicio %}
+                                <div>Inicio: {{ año.fecha_inicio|date:"d/m/Y" }}</div>
+                                {% endif %}
+                                {% if año.fecha_fin %}
+                                <div>Fin: {{ año.fecha_fin|date:"d/m/Y" }}</div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge bg-primary" title="Estudiantes activos">
+                                    <i class="bi bi-people me-1"></i>{{ año.total_estudiantes }}
+                                </span>
+                                <span class="badge bg-info" title="Docentes asignados">
+                                    <i class="bi bi-person-badge me-1"></i>{{ año.total_docentes }}
+                                </span>
+                                <span class="badge bg-secondary" title="Grados activos">
+                                    <i class="bi bi-mortarboard me-1"></i>{{ año.total_grados }}
+                                </span>
+                                <span class="badge bg-success" title="Periodos configurados">
+                                    <i class="bi bi-calendar-week me-1"></i>{{ año.periodos_configurados }}
+                                </span>
+                                <span class="badge bg-warning" title="Asignación docente">
+                                    <i class="bi bi-person-check me-1"></i>{{ año.porcentaje_asignacion|floatformat:0 }}%
+                                </span>
+                            </div>
+                            {% if año.total_estudiantes > 0 %}
+                            <div class="mt-1">
+                                <small class="text-muted">
+                                    Matrículas: 
+                                    <span class="badge bg-primary">{{ año.estudiantes_act }} Act</span>
+                                    <span class="badge bg-warning">{{ año.estudiantes_pen }} Pen</span>
+                                    <span class="badge bg-secondary">{{ año.estudiantes_pre }} Pre</span>
+                                </small>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="small">
+                                <div>Grados: {{ año.total_grados }}</div>
+                                <div>Periodos: {{ año.periodos_configurados }}</div>
+                                <div>Asignaturas: {{ año.asignaturas_configuradas }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if año.estado %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle me-1"></i>Activo
+                            </span>
+                            {% else %}
+                            <span class="badge bg-danger">
+                                <i class="bi bi-x-circle me-1"></i>Inactivo
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar 
+                                    {% if año.completitud >= 75 %}bg-success
+                                    {% elif año.completitud >= 50 %}bg-warning
+                                    {% else %}bg-danger{% endif %}" 
+                                    role="progressbar" 
+                                    style="width: {{ año.completitud }}%">
+                                    {{ año.completitud|floatformat:0 }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                        type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-gear"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'rector:año_lectivo_edit' año.id %}">
+                                            <i class="bi bi-pencil me-2"></i>Editar
+                                        </a>
+                                    </li>
+                                    {% if año.estado %}
+                                    <li>
+                                        {% if año_lectivo_actual and año_lectivo_actual.id == año.id %}
+                                        <span class="dropdown-item text-success">
+                                            <i class="bi bi-check-circle me-2"></i>Ya es actual
+                                        </span>
+                                        {% else %}
+                                        <form method="post" action="{% url 'rector:año_lectivo_set_current' año.id %}" 
+                                              onsubmit="return confirm('¿Establecer {{ año.anho }} como año lectivo actual?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="bi bi-check-circle me-2"></i>Establecer como actual
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'rector:periodo_create' %}?año={{ año.id }}">
+                                            <i class="bi bi-calendar-plus me-2"></i>Agregar Periodo
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" 
+                                           href="{% url 'rector:año_lectivo_delete' año.id %}">
+                                            <i class="bi bi-trash me-2"></i>Eliminar
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <i class="bi bi-calendar-x text-muted display-6"></i>
+                            <p class="text-muted mt-2">No hay años lectivos registrados</p>
+                            <a href="{% url 'rector:año_lectivo_create' %}" class="btn btn-primary mt-2">
+                                <i class="bi bi-plus-circle me-1"></i>Crear primer año lectivo
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if is_paginated %}
+    <div class="card-footer">
+        <nav aria-label="Pagination">
+            <ul class="pagination justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&search={{ filtro_search }}&sede={{ filtro_sede }}&estado={{ filtro_estado }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}&search={{ filtro_search }}&sede={{ filtro_sede }}&estado={{ filtro_estado }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&search={{ filtro_search }}&sede={{ filtro_sede }}&estado={{ filtro_estado }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Año lectivo actual -->
+{% if año_lectivo_actual %}
+<div class="card mt-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-calendar-check me-2"></i>
+            Año Lectivo Actual Configurado
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-calendar-check text-success display-4"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-0">{{ año_lectivo_actual.anho }}</h4>
+                        <p class="text-muted mb-0">{{ año_lectivo_actual.sede.nombre }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="small">
+                    <p class="mb-1">
+                        <i class="bi bi-building me-2"></i>
+                        <strong>Colegio:</strong> {{ año_lectivo_actual.colegio.nombre }}
+                    </p>
+                    {% if año_lectivo_actual.fecha_inicio %}
+                    <p class="mb-1">
+                        <i class="bi bi-calendar me-2"></i>
+                        <strong>Período:</strong> 
+                        {{ año_lectivo_actual.fecha_inicio|date:"d/m/Y" }} - 
+                        {{ año_lectivo_actual.fecha_fin|date:"d/m/Y" }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge bg-primary">
+                        <i class="bi bi-people me-1"></i>
+                        {{ año_lectivo_actual.total_estudiantes }} estudiantes
+                    </span>
+                    <span class="badge bg-info">
+                        <i class="bi bi-person-badge me-1"></i>
+                        {{ año_lectivo_actual.total_docentes }} docentes
+                    </span>
+                    <span class="badge bg-secondary">
+                        <i class="bi bi-calendar-week me-1"></i>
+                        {{ año_lectivo_actual.periodos_configurados }} periodos
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning mt-4">
+    <div class="d-flex">
+        <div class="flex-shrink-0">
+            <i class="bi bi-exclamation-triangle text-warning display-6"></i>
+        </div>
+        <div class="flex-grow-1 ms-3">
+            <h5 class="alert-heading">Año lectivo no configurado</h5>
+            <p class="mb-0">No hay un año lectivo configurado como actual. Esto puede afectar algunas funcionalidades del sistema.</p>
+            <div class="mt-2">
+                <a href="{% url 'rector:año_lectivo_create' %}" class="btn btn-warning">
+                    <i class="bi bi-plus-circle me-1"></i>Crear nuevo año lectivo
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Años recientes por sede -->
+{% if años_recientes %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-clock-history me-2"></i>
+            Años Más Recientes por Sede
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for item in años_recientes %}
+            <div class="col-md-3 mb-3">
+                <div class="card h-100 border-{% if item.estado %}success{% else %}danger{% endif %}">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">{{ item.año }}</h5>
+                        <p class="card-text small text-muted">{{ item.sede }}</p>
+                        <span class="badge bg-{% if item.estado %}success{% else %}danger{% endif %}">
+                            {% if item.estado %}Activo{% else %}Inactivo{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-submit al cambiar filtros
+        document.querySelectorAll('select[name="sede"], select[name="estado"]').forEach(select => {
+            select.addEventListener('change', function() {
+                this.form.submit();
+            });
+        });
+        
+        // Confirmación para establecer como actual
+        document.querySelectorAll('form[action*="set_current"]').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (!confirm('¿Establecer este año como año lectivo actual? Esta acción afectará todas las funcionalidades del sistema.')) {
+                    e.preventDefault();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

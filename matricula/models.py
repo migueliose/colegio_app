@@ -12,6 +12,8 @@ class GradoAñoLectivo(BaseModel):
 
     class Meta:
         unique_together = ('grado', 'año_lectivo')
+        verbose_name = "Grado Anio Lectivo"  # ← Cambiado
+        verbose_name_plural = "Grados Anio Lectivo"  # ← Cambiado (ñ → n)
 
     def __str__(self):
         return f"{self.grado.nombre} - {self.año_lectivo.anho}"
@@ -25,6 +27,8 @@ class AsignaturaGradoAñoLectivo(BaseModel):
 
     class Meta:
         unique_together = ('asignatura', 'grado_año_lectivo', 'sede')
+        verbose_name = "Asignatura Grado Anio Lectivo"  # ← Cambiado
+        verbose_name_plural = "Asignaturas Grado Anio Lectivo"  # ← Cambiado
 
     def __str__(self):
         return f"{self.asignatura.nombre} - {self.grado_año_lectivo.grado} ({self.sede.nombre})"

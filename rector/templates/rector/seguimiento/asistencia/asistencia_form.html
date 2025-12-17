@@ -1,0 +1,462 @@
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}{{ titulo }} - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:seguimiento_dashboard' %}">Seguimiento</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:asistencia_list' %}">Asistencias</a></li>
+        <li class="breadcrumb-item active">{{ titulo }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header {% if object %}bg-warning text-dark{% else %}bg-success text-white{% endif %}">
+                <h5 class="mb-0">
+                    <i class="bi {% if object %}bi-pencil-square{% else %}bi-plus-circle{% endif %} me-2"></i>
+                    {{ titulo }}
+                </h5>
+            </div>
+            
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                <div class="card-body">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                        <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row g-3">
+                        <!-- Estudiante -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.estudiante.id_for_label }}" class="form-label">
+                                    <i class="bi bi-person me-1"></i>Estudiante *
+                                </label>
+                                {{ form.estudiante }}
+                                {% if form.estudiante.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.estudiante.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <small class="text-muted">Seleccione el estudiante</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Periodo Académico -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.periodo_academico.id_for_label }}" class="form-label">
+                                    <i class="bi bi-calendar-range me-1"></i>Periodo Académico *
+                                </label>
+                                {{ form.periodo_academico }}
+                                {% if form.periodo_academico.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.periodo_academico.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Fecha -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.fecha.id_for_label }}" class="form-label">
+                                    <i class="bi bi-calendar-date me-1"></i>Fecha *
+                                </label>
+                                {{ form.fecha }}
+                                {% if form.fecha.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.fecha.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Estado -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.estado.id_for_label }}" class="form-label">
+                                    <i class="bi bi-check-circle me-1"></i>Estado *
+                                </label>
+                                {{ form.estado }}
+                                {% if form.estado.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.estado.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Justificación (solo si falta o es justificada) -->
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="{{ form.justificacion.id_for_label }}" class="form-label">
+                                    <i class="bi bi-card-text me-1"></i>Justificación
+                                </label>
+                                {{ form.justificacion }}
+                                {% if form.justificacion.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.justificacion.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <small class="text-muted">Opcional. Use solo para faltas justificadas</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'rector:asistencia_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn {% if object %}btn-warning{% else %}btn-success{% endif %}">
+                            <i class="bi {% if object %}bi-check-circle{% else %}bi-plus-circle{% endif %} me-1"></i>
+                            {% if object %}Actualizar{% else %}Registrar{% endif %} Asistencia
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Información del estudiante seleccionado -->
+        {% if form.estudiante.value %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-person-badge me-2"></i>Información del Estudiante
+                </h6>
+            </div>
+            <div class="card-body" id="estudiante-info">
+                <!-- Se carga dinámicamente -->
+                <div class="text-center text-muted">
+                    <i class="bi bi-hourglass-split display-6 d-block mb-2"></i>
+                    Seleccione un estudiante para ver su información
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Historial de asistencias del estudiante -->
+        {% if form.estudiante.value %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Historial de Asistencias (Últimos 15 días)
+                </h6>
+            </div>
+            <div class="card-body" id="historial-asistencias">
+                <!-- Se carga dinámicamente -->
+                <div class="text-center text-muted">
+                    <i class="bi bi-hourglass-split display-6 d-block mb-2"></i>
+                    Seleccione un estudiante para ver su historial
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-label {
+    font-weight: 500;
+}
+
+textarea {
+    min-height: 100px;
+}
+
+.invalid-feedback {
+    display: block !important;
+}
+
+select.form-control:invalid,
+input.form-control:invalid,
+textarea.form-control:invalid {
+    border-color: #dc3545;
+}
+
+select.form-control:valid,
+input.form-control:valid,
+textarea.form-control:valid {
+    border-color: #198754;
+}
+
+#historial-asistencias .table td, 
+#historial-asistencias .table th {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Formatear campo de fecha
+    const fechaInput = document.getElementById('id_fecha');
+    if (fechaInput) {
+        fechaInput.type = 'date';
+        if (!fechaInput.value) {
+            const today = new Date().toISOString().split('T')[0];
+            fechaInput.value = today;
+        }
+    }
+    
+    // Cargar información del estudiante
+    const estudianteSelect = document.getElementById('id_estudiante');
+    const estudianteInfoDiv = document.getElementById('estudiante-info');
+    const historialDiv = document.getElementById('historial-asistencias');
+    
+    function cargarInfoEstudiante(estudianteId) {
+        if (!estudianteId || !estudianteInfoDiv) return;
+        
+        fetch(`{% url "rector:ajax_informacion_estudiante" %}?estudiante_id=${estudianteId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.estudiante) {
+                    const estudiante = data.estudiante;
+                    
+                    let html = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Nombre:</strong><br>
+                                ${estudiante.nombre_completo}</p>
+                                
+                                <p><strong>Documento:</strong><br>
+                                ${estudiante.documento}</p>
+                                
+                                <p><strong>Edad:</strong><br>
+                                ${estudiante.edad || 'N/A'} años</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Grado Actual:</strong><br>
+                                ${estudiante.grado_actual ? `<span class="badge bg-primary">${estudiante.grado_actual}</span>` : 'Sin grado'}</p>
+                                
+                                <p><strong>Sede:</strong><br>
+                                ${estudiante.sede || 'Sin sede'}</p>
+                                
+                                <p><strong>Estado:</strong><br>
+                                <span class="badge ${estudiante.estado ? 'bg-success' : 'bg-danger'}">
+                                    ${estudiante.estado ? 'Activo' : 'Inactivo'}
+                                </span></p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    estudianteInfoDiv.innerHTML = html;
+                    
+                    // Cargar historial de asistencias
+                    if (historialDiv) {
+                        cargarHistorialAsistencias(estudianteId);
+                    }
+                } else {
+                    estudianteInfoDiv.innerHTML = `
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            No se pudo cargar la información del estudiante
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                estudianteInfoDiv.innerHTML = `
+                    <div class="alert alert-danger mb-0">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Error al cargar información: ${error}
+                    </div>
+                `;
+            });
+    }
+    
+    function cargarHistorialAsistencias(estudianteId) {
+        if (!estudianteId || !historialDiv) return;
+        
+        // Calcular fecha de inicio (hace 15 días)
+        const fechaFin = new Date().toISOString().split('T')[0];
+        const fechaInicio = new Date();
+        fechaInicio.setDate(fechaInicio.getDate() - 15);
+        const fechaInicioStr = fechaInicio.toISOString().split('T')[0];
+        
+        fetch(`{% url "rector:ajax_asistencias_estudiante" %}?estudiante_id=${estudianteId}&fecha_inicio=${fechaInicioStr}&fecha_fin=${fechaFin}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let html = '';
+                    
+                    if (data.asistencias.length > 0) {
+                        html = `
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Estado</th>
+                                            <th>Justificación</th>
+                                            <th>Periodo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+                        
+                        data.asistencias.forEach(asistencia => {
+                            let estadoBadge = '';
+                            if (asistencia.estado === 'Asistió') {
+                                estadoBadge = '<span class="badge bg-success">Asistió</span>';
+                            } else if (asistencia.estado === 'Faltó') {
+                                estadoBadge = '<span class="badge bg-danger">Faltó</span>';
+                            } else {
+                                estadoBadge = '<span class="badge bg-warning">Justificada</span>';
+                            }
+                            
+                            html += `
+                                <tr>
+                                    <td>${asistencia.fecha}</td>
+                                    <td>${estadoBadge}</td>
+                                    <td>${asistencia.justificacion || '-'}</td>
+                                    <td>${asistencia.periodo}</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3">
+                                <div class="alert alert-info mb-0">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <strong>Estadísticas:</strong> 
+                                    Total: ${data.estadisticas.total} | 
+                                    Asistió: ${data.estadisticas.asistio} | 
+                                    Faltó: ${data.estadisticas.falto} | 
+                                    Justificada: ${data.estadisticas.justificada} |
+                                    Asistencia: ${data.estadisticas.porcentaje_asistencia.toFixed(1)}%
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        html = `
+                            <div class="alert alert-warning mb-0">
+                                <i class="bi bi-calendar-x me-2"></i>
+                                No hay registros de asistencia en los últimos 15 días
+                            </div>
+                        `;
+                    }
+                    
+                    historialDiv.innerHTML = html;
+                }
+            })
+            .catch(error => {
+                historialDiv.innerHTML = `
+                    <div class="alert alert-danger mb-0">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Error al cargar historial: ${error}
+                    </div>
+                `;
+            });
+    }
+    
+    if (estudianteSelect && estudianteInfoDiv) {
+        // Cargar info inicial si hay un estudiante seleccionado
+        if (estudianteSelect.value) {
+            cargarInfoEstudiante(estudianteSelect.value);
+        }
+        
+        // Cargar info cuando cambia la selección
+        estudianteSelect.addEventListener('change', function() {
+            cargarInfoEstudiante(this.value);
+        });
+    }
+    
+    // Validación del formulario
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            let valid = true;
+            const requiredFields = form.querySelectorAll('[required]');
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    valid = false;
+                    field.classList.add('is-invalid');
+                    
+                    let errorDiv = field.nextElementSibling;
+                    if (!errorDiv || !errorDiv.classList.contains('invalid-feedback')) {
+                        errorDiv = document.createElement('div');
+                        errorDiv.className = 'invalid-feedback d-block';
+                        errorDiv.textContent = 'Este campo es requerido';
+                        field.parentNode.insertBefore(errorDiv, field.nextSibling);
+                    }
+                } else {
+                    field.classList.remove('is-invalid');
+                    const errorDiv = field.nextElementSibling;
+                    if (errorDiv && errorDiv.classList.contains('invalid-feedback')) {
+                        errorDiv.remove();
+                    }
+                }
+            });
+            
+            if (!valid) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                // Mostrar mensaje de error
+                let alertDiv = form.querySelector('.alert-danger');
+                if (!alertDiv) {
+                    alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger';
+                    alertDiv.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Por favor, complete todos los campos requeridos';
+                    form.querySelector('.card-body').insertBefore(alertDiv, form.querySelector('.card-body').firstChild);
+                }
+            }
+        });
+    }
+    
+    // Mostrar/ocultar campo de justificación según el estado
+    const estadoSelect = document.getElementById('id_estado');
+    const justificacionTextarea = document.getElementById('id_justificacion');
+    
+    function toggleJustificacion() {
+        if (estadoSelect && justificacionTextarea) {
+            const parentDiv = justificacionTextarea.closest('.mb-3');
+            if (estadoSelect.value === 'J' || estadoSelect.value === 'F') {
+                parentDiv.style.display = 'block';
+                justificacionTextarea.required = estadoSelect.value === 'J';
+            } else {
+                parentDiv.style.display = 'block'; // Siempre visible pero no requerido
+                justificacionTextarea.required = false;
+            }
+        }
+    }
+    
+    if (estadoSelect) {
+        estadoSelect.addEventListener('change', toggleJustificacion);
+        toggleJustificacion(); // Ejecutar al cargar
+    }
+});
+</script>
+{% endblock %}

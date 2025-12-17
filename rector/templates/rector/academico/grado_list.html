@@ -1,0 +1,286 @@
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+
+{% block title %}Grados Académicos - Rector{% endblock %}
+
+{% block extra_css %}
+<style>
+    .grado-card {
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .grado-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    .grado-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin: 0 auto;
+    }
+    .nivel-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+    }
+    .stats-badge {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+    }
+    .stat-item {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eee;
+    }
+    .stat-item:last-child {
+        border-bottom: none;
+    }
+    .empty-state {
+        padding: 4rem 2rem;
+        text-align: center;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+    .filter-tabs .nav-link {
+        color: #6c757d;
+        border: none;
+        padding: 0.75rem 1.25rem;
+        font-weight: 500;
+    }
+    .filter-tabs .nav-link.active {
+        color: #4e54c8;
+        border-bottom: 3px solid #4e54c8;
+        background: transparent;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-layers me-2"></i>Grados Académicos
+                </h1>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'gestioncolegio:dashboard_rector' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Dashboard
+                    </a>
+                </div>
+            </div>
+            <p class="text-muted">Visualiza y gestiona todos los grados académicos del colegio.</p>
+        </div>
+    </div>
+
+    <!-- Filtros por nivel -->
+    {% if niveles %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <h6 class="mb-3">Filtrar por Nivel Escolar:</h6>
+            <ul class="nav nav-pills filter-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" href="{% url 'rector:grado_list' %}">Todos</a>
+                </li>
+                {% for nivel in niveles %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'rector:grado_list' %}?nivel={{ nivel.id }}">
+                        {{ nivel.nombre }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Información del año lectivo -->
+    {% if año_lectivo_actual %}
+    <div class="alert alert-info mb-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem;"></i>
+            <div>
+                <h6 class="alert-heading mb-1">Mostrando estadísticas para el año lectivo: {{ año_lectivo_actual.anho }}</h6>
+                <p class="mb-0">Sede: {{ año_lectivo_actual.sede.nombre }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Grid de grados -->
+    <div class="row">
+        {% for grado in grados %}
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="card grado-card h-100">
+                <div class="card-header" style="background: {% if forloop.counter|divisibleby:2 %}#4e54c8{% else %}#667eea{% endif %}; color: white;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ grado.nombre }}</h5>
+                        <span class="badge bg-light text-dark nivel-badge">
+                            {{ grado.nivel_escolar.nombre }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Icono representativo -->
+                    <div class="text-center mb-4">
+                        <div class="grado-icon" style="background: {% if forloop.counter|divisibleby:2 %}#e9ecef{% else %}#f8f9fa{% endif %}; color: {% if forloop.counter|divisibleby:2 %}#4e54c8{% else %}#667eea{% endif %};">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                    </div>
+
+                    <!-- Estadísticas -->
+                    <div class="mb-4">
+                        <h6 class="text-center mb-3">
+                            <i class="bi bi-bar-chart me-1"></i>Estadísticas del Año
+                        </h6>
+                        <div class="stat-item d-flex justify-content-between">
+                            <span>Estudiantes:</span>
+                            <span class="badge bg-primary stats-badge">{{ grado.total_estudiantes|default:0 }}</span>
+                        </div>
+                        <div class="stat-item d-flex justify-content-between">
+                            <span>Docentes Asignados:</span>
+                            <span class="badge bg-success stats-badge">{{ grado.total_docentes|default:0 }}</span>
+                        </div>
+                        <div class="stat-item d-flex justify-content-between">
+                            <span>Promedio Académico:</span>
+                            <span class="badge bg-{% if grado.promedio >= 3.5 %}success{% elif grado.promedio >= 3.0 %}warning{% else %}danger{% endif %} stats-badge">
+                                {{ grado.promedio|default:"0.0" }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Acciones rápidas -->
+                    <div class="mt-4">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <a href="{% url 'rector:estudiante_list' %}?grado={{ grado.id }}" 
+                                   class="btn btn-outline-primary w-100 btn-sm">
+                                    <i class="bi bi-people me-1"></i>Estudiantes
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="{% url 'rector:asignatura_list' %}" 
+                                   class="btn btn-outline-success w-100 btn-sm">
+                                    <i class="bi bi-book me-1"></i>Asignaturas
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-top">
+                    <small class="text-muted">
+                        <i class="bi bi-calendar-week me-1"></i>
+                        {% if año_lectivo_actual %}
+                            Datos del {{ año_lectivo_actual.anho }}
+                        {% else %}
+                            No hay año activo
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="empty-state">
+                <i class="bi bi-layers text-muted mb-3" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mb-3">No hay grados registrados</h4>
+                <p class="text-muted mb-0">Comuníquese con el administrador del sistema.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Resumen estadístico -->
+    {% if grados %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up me-2"></i>Resumen Estadístico por Nivel
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nivel Escolar</th>
+                                    <th class="text-center">Grados</th>
+                                    <th class="text-center">Total Estudiantes</th>
+                                    <th class="text-center">Promedio General</th>
+                                    <th class="text-center">% Asistencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% regroup grados by nivel_escolar as niveles_list %}
+                                {% for nivel in niveles_list %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ nivel.grouper.nombre }}</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">{{ nivel.list|length }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% with total=0 %}
+                                            {% for grado in nivel.list %}
+                                                {% widthratio grado.total_estudiantes 1 1 as estudiante_num %}
+                                                {% with total=total|add:estudiante_num %}
+                                                {% endwith %}
+                                            {% endfor %}
+                                            <span class="badge bg-success">{{ total|default:0 }}</span>
+                                        {% endwith %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% with promedio_total=0 count=0 %}
+                                            {% for grado in nivel.list %}
+                                                {% if grado.promedio %}
+                                                    {% widthratio grado.promedio 1 1 as prom %}
+                                                    {% with promedio_total=promedio_total|add:prom count=count|add:1 %}
+                                                    {% endwith %}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% if count > 0 %}
+                                                <span class="badge bg-{% with avg=promedio_total|divisibleby:count %}{% if avg >= 3.5 %}success{% elif avg >= 3.0 %}warning{% else %}danger{% endif %}{% endwith %}">
+                                                    {{ promedio_total|divisibleby:count|floatformat:1|default:"0.0" }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">0.0</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">85%</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Activar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

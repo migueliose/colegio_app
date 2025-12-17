@@ -1,0 +1,390 @@
+{% extends 'rector/base_rector.html' %}
+{% load static seguimiento_filters %}
+
+{% block title %}Gestión de Comportamientos - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:seguimiento_dashboard' %}">Seguimiento</a></li>
+        <li class="breadcrumb-item active">Comportamientos</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Encabezado con estadísticas -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clipboard-data me-2"></i>Gestión de Comportamientos
+                        </h5>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <a href="{% url 'rector:comportamiento_create' %}" class="btn btn-light btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i>Nuevo Registro
+                        </a>
+                        <a href="#filtros" data-bs-toggle="collapse" class="btn btn-outline-light btn-sm ms-2">
+                            <i class="bi bi-funnel me-1"></i>Filtros
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 col-6">
+                        <div class="border rounded p-3 text-center">
+                            <h6 class="text-muted mb-1">Total Registros</h6>
+                            <h3 class="mb-0">{{ total_registros }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="border rounded p-3 text-center">
+                            <h6 class="text-muted mb-1">Positivos</h6>
+                            <h3 class="mb-0 text-success">{{ total_positivos }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="border rounded p-3 text-center">
+                            <h6 class="text-muted mb-1">Negativos</h6>
+                            <h3 class="mb-0 text-danger">{{ total_negativos }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="border rounded p-3 text-center">
+                            <h6 class="text-muted mb-1">Balance</h6>
+                            <h3 class="mb-0 {% if total_positivos >= total_negativos %}text-success{% else %}text-danger{% endif %}">
+                                {{ total_positivos|add:total_negativos|abs }}
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros (colapsable) -->
+        <div class="card mb-4 collapse" id="filtros">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtros de Búsqueda</h6>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="id_estudiante" class="form-label">Estudiante</label>
+                        {{ filtro_form.estudiante }}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="id_periodo_academico" class="form-label">Periodo</label>
+                        {{ filtro_form.periodo_academico }}
+                    </div>
+                    <div class="col-md-2">
+                        <label for="id_tipo" class="form-label">Tipo</label>
+                        {{ filtro_form.tipo }}
+                    </div>
+                    <div class="col-md-2">
+                        <label for="id_categoria" class="form-label">Categoría</label>
+                        {{ filtro_form.categoria }}
+                    </div>
+                    <div class="col-md-2">
+                        <label for="id_fecha_inicio" class="form-label">Fecha Inicio</label>
+                        {{ filtro_form.fecha_inicio }}
+                    </div>
+                    <div class="col-md-2">
+                        <label for="id_fecha_fin" class="form-label">Fecha Fin</label>
+                        {{ filtro_form.fecha_fin }}
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search me-1"></i>Buscar
+                            </button>
+                            <a href="{% url 'rector:comportamiento_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de comportamientos -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-list-check me-2"></i>Registros de Comportamiento
+                    <span class="badge bg-secondary ms-2">{{ page_obj.paginator.count }}</span>
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="5%">ID</th>
+                                <th width="20%">Estudiante</th>
+                                <th width="15%">Periodo</th>
+                                <th width="10%">Tipo</th>
+                                <th width="15%">Categoría</th>
+                                <th width="15%">Fecha</th>
+                                <th width="10%">Docente</th>
+                                <th width="10%">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comportamiento in object_list %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-secondary">#{{ comportamiento.id }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            <i class="bi bi-person"></i>
+                                        </div>
+                                        <div>
+                                            <a href="{% url 'rector:estudiante_detail' comportamiento.estudiante.pk %}" 
+                                               class="text-decoration-none">
+                                                {{ comportamiento.estudiante.usuario.get_full_name|truncatechars:30 }}
+                                            </a>
+                                            <br>
+                                            <small class="text-muted">
+                                                {{ comportamiento.estudiante.usuario.numero_documento }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {{ comportamiento.periodo_academico.periodo.nombre }}<br>
+                                    <small class="text-muted">
+                                        {{ comportamiento.periodo_academico.año_lectivo.anho }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if comportamiento.tipo == 'Positivo' %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle me-1"></i>Positivo
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-x-circle me-1"></i>Negativo
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ comportamiento.get_categoria_display }}</span>
+                                </td>
+                                <td>
+                                    {{ comportamiento.fecha|date:"d/m/Y" }}<br>
+                                    <small class="text-muted">
+                                        {{ comportamiento.created_at|date:"H:i" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if comportamiento.docente %}
+                                    <small>
+                                        {{ comportamiento.docente.usuario.get_full_name|truncatechars:15 }}
+                                    </small>
+                                    {% else %}
+                                    <span class="text-muted">Sistema</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'rector:comportamiento_detail' comportamiento.pk %}" 
+                                           class="btn btn-sm btn-outline-primary" title="Ver">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'rector:comportamiento_edit' comportamiento.pk %}" 
+                                           class="btn btn-sm btn-outline-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'rector:comportamiento_delete' comportamiento.pk %}" 
+                                           class="btn btn-sm btn-outline-danger" title="Eliminar"
+                                           onclick="return confirm('¿Está seguro de eliminar este registro de comportamiento?');">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                                        No se encontraron registros de comportamiento
+                                    </div>
+                                    {% if filtro_form.is_bound %}
+                                    <a href="{% url 'rector:comportamiento_list' %}" class="btn btn-sm btn-outline-primary mt-2">
+                                        Limpiar filtros
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'rector:comportamiento_create' %}" class="btn btn-sm btn-primary mt-2">
+                                        <i class="bi bi-plus-circle me-1"></i>Crear primer registro
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Paginación -->
+            {% if page_obj.paginator.num_pages > 1 %}
+            <div class="card-footer">
+                <nav aria-label="Navegación de páginas">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                Anterior
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                Siguiente
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    <div class="text-center text-muted mt-2">
+                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                    </div>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Gráfico de distribución -->
+{% if distribucion_categorias %}
+<div class="row mt-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-pie-chart me-2"></i>Distribución por Categoría
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Categoría</th>
+                                <th class="text-center">Positivos</th>
+                                <th class="text-center">Negativos</th>
+                                <th class="text-center">Total</th>
+                                <th class="text-center">%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for categoria in distribucion_categorias %}
+                            <tr>
+                                <td>{{ categoria.categoria }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-success">{{ categoria.positivos|default:0 }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-danger">{{ categoria.negativos|default:0 }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <strong>{{ categoria.total }}</strong>
+                                </td>
+                                <td class="text-center">
+                                    {% if total_registros > 0 %}
+                                    {{ categoria.total|floatformat:1 }}%
+                                    {% else %}
+                                    0%
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.badge.bg-info {
+    background-color: #0dcaf0 !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Formatear campos de fecha para usar datepicker
+    const fechaInicio = document.getElementById('id_fecha_inicio');
+    const fechaFin = document.getElementById('id_fecha_fin');
+    
+    if (fechaInicio) fechaInicio.type = 'date';
+    if (fechaFin) fechaFin.type = 'date';
+    
+    // Colapsar/expandir filtros
+    const filtrosToggle = document.querySelector('[data-bs-target="#filtros"]');
+    if (filtrosToggle) {
+        filtrosToggle.addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            if (icon.classList.contains('bi-funnel')) {
+                icon.classList.remove('bi-funnel');
+                icon.classList.add('bi-funnel-fill');
+            } else {
+                icon.classList.remove('bi-funnel-fill');
+                icon.classList.add('bi-funnel');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
