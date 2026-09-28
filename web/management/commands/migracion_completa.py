@@ -5,6 +5,8 @@ from django.utils import timezone
 from django.core.files.base import ContentFile
 import os
 
+from ._credenciales import env_requerida, superadmin_username
+
 from gestioncolegio.models import *
 from usuarios.models import *
 from estudiantes.models import *
@@ -1996,8 +1998,9 @@ class Command(BaseCommand):
             # Actualizar passwords por defecto
             print("  🔒 Actualizando passwords temporales...")
             usuarios_sin_password = Usuario.objects.filter(password__contains='temp123')
+            password_defecto = env_requerida('PASSWORD_MIGRACION')
             for usuario in usuarios_sin_password:
-                usuario.set_password('colegio123')  # Password por defecto
+                usuario.set_password(password_defecto)
                 usuario.save()
             
             print(f"    ✅ {len(usuarios_sin_password)} passwords actualizados")
@@ -2006,15 +2009,15 @@ class Command(BaseCommand):
             if not Usuario.objects.filter(is_superuser=True).exists():
                 print("  👑 Creando superusuario por defecto...")
                 superuser = Usuario.objects.create_superuser(
-                    username='mihael',
-                    email='migueliose@gmail.co',
-                    password='Abigail123+-',
-                    numero_documento='87102471243',
+                    username=superadmin_username(),
+                    email=env_requerida('SUPERADMIN_EMAIL'),
+                    password=env_requerida('SUPERADMIN_PASSWORD'),
+                    numero_documento=env_requerida('SUPERADMIN_DOCUMENTO'),
                     nombres='Administrador',
                     apellidos='Sistema',
                     tipo_usuario=TipoUsuario.objects.filter(nombre__icontains='Administrador').first()
                 )
-                print(f"    ✅ Superusuario creado: mihael / Abigail123+-")
+                print(f"    ✅ Superusuario creado: {superuser.username}")
             
             # Generar reporte final
             print("\n📊 REPORTE FINAL DE MIGRACIÓN:")

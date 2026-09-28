@@ -6,9 +6,6 @@ app_name = 'docentes'
 
 urlpatterns = [
 
-    # ===========DEBUG============= #
-    path('debug/', views.debug_docente, name='logros_debug'),
-
     # ========================
     # DOCENTES - LOGROS
     # ========================

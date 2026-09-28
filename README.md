@@ -19,11 +19,10 @@ Proyecto Django para la gestión del Colegio Cristiano El Shadai.
 - Git
 
 ## Estructura del Proyecto
+```
 colegio_app/
-├── settings/ # Configuraciones separadas
-│ ├── base.py # Configuración común
-│ ├── dev.py # Desarrollo
-│ └── prod.py # Producción
+├── colegio_app/ # Configuración del proyecto (settings.py lee todo desde .env)
+├── antigua_bd/ # Modelos de solo lectura de la base de datos anterior
 ├── web/ # Portal web público
 ├── administrador/ # Panel administrativo
 ├── academico/ # Módulo académico
@@ -34,6 +33,10 @@ colegio_app/
 ├── acudiente/ # Portal acudientes
 ├── comportamiento/ # Gestión de comportamiento
 └── gestioncolegio/ # Configuración del colegio
+```
+
+El entorno (desarrollo o producción) se controla con `DEBUG` en el archivo `.env`.
+En cPanel la aplicación se sirve con `passenger_wsgi.py`.
 
 
 ## Instalación
@@ -59,6 +62,9 @@ cp .env.example .env
 # Editar .env con tus configuraciones
 nano .env  # o usar tu editor favorito
 
+```
+
+```sql
 -- Crear base de datos
 CREATE DATABASE colegioc_gestion CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -66,9 +72,18 @@ CREATE DATABASE colegioc_gestion CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_c
 CREATE USER 'colegio_user'@'localhost' IDENTIFIED BY 'tu_password';
 GRANT ALL PRIVILEGES ON colegioc_gestion.* TO 'colegio_user'@'localhost';
 FLUSH PRIVILEGES;
+```
 
-# En desarrollo
-python manage.py migrate --settings=colegio_app.settings.dev
+```bash
+# Aplicar migraciones
+python manage.py migrate
 
 # Crear superusuario
-python manage.py createsuperuser --settings=colegio_app.settings.dev
+python manage.py createsuperuser
+```
+
+## Credenciales
+
+Las contraseñas **nunca** se escriben en el código. Los comandos `configurar_passwords`,
+`verificar_credenciales` y `migracion_completa` leen las contraseñas desde las variables
+`SUPERADMIN_*` y `PASSWORD_*` del archivo `.env` (vea `.env.example`).

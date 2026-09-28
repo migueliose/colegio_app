@@ -2,6 +2,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import authenticate
 from usuarios.models import Usuario
+from ._credenciales import env_requerida, superadmin_username
 
 class Command(BaseCommand):
     help = 'Verificar que las credenciales funcionen correctamente'
@@ -14,26 +15,26 @@ class Command(BaseCommand):
         credenciales_prueba = [
             {
                 'tipo': 'SuperAdmin',
-                'username': 'mihael',
-                'password': 'Abigail123+-',
+                'username': superadmin_username(),
+                'password': env_requerida('SUPERADMIN_PASSWORD'),
                 'descripcion': 'Acceso completo al sistema'
             },
             {
                 'tipo': 'Administrador Ejemplo',
                 'username': '',  # Se buscará uno real
-                'password': 'AdminShadai',
+                'password': env_requerida('PASSWORD_ADMINISTRADOR'),
                 'descripcion': 'Acceso administrativo'
             },
             {
                 'tipo': 'Docente Ejemplo',
                 'username': '',  # Se buscará uno real
-                'password': 'Docente2025',
+                'password': env_requerida('PASSWORD_DOCENTE'),
                 'descripcion': 'Acceso docente'
             },
             {
                 'tipo': 'Estudiante Ejemplo',
                 'username': '',  # Se buscará uno real
-                'password': 'password',
+                'password': env_requerida('PASSWORD_ESTUDIANTE'),
                 'descripcion': 'Acceso estudiante'
             }
         ]
@@ -43,7 +44,7 @@ class Command(BaseCommand):
             # Buscar un administrador
             admin = Usuario.objects.filter(
                 tipo_usuario__nombre__icontains='Administrador'
-            ).exclude(username='mihael').first()
+            ).exclude(username=superadmin_username()).first()
             
             if admin:
                 credenciales_prueba[1]['username'] = admin.username
@@ -78,7 +79,6 @@ class Command(BaseCommand):
             
             print(f"\n🔑 {cred['tipo']}:")
             print(f"   Usuario: {cred['username']}")
-            print(f"   Contraseña: {cred['password']}")
             
             # Intentar autenticar
             user = authenticate(username=cred['username'], password=cred['password'])

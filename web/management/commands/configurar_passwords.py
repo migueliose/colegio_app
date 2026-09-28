@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from usuarios.models import Usuario, TipoUsuario
 import csv
 from django.utils import timezone
+from ._credenciales import env_requerida, superadmin_username
 
 User = get_user_model()
 
@@ -32,33 +33,33 @@ class Command(BaseCommand):
         # Configuración de contraseñas según especificaciones
         configuracion_passwords = {
             'SuperAdmin': {
-                'username': 'mihael',
-                'password': 'Abigail123+-',
+                'username': superadmin_username(),
+                'password': env_requerida('SUPERADMIN_PASSWORD'),
                 'tipo_buscar': ['Administrador', 'Superusuario'],
-                'documento': '87102471243',
-                'nombres': 'Mihael',
+                'documento': env_requerida('SUPERADMIN_DOCUMENTO'),
+                'nombres': 'Super',
                 'apellidos': 'Administrador',
-                'email': 'migueliose@gmail.com'
+                'email': env_requerida('SUPERADMIN_EMAIL')
             },
             'Administrador': {
-                'password': 'AdminShadai',
+                'password': env_requerida('PASSWORD_ADMINISTRADOR'),
                 'tipo_buscar': ['Administrador'],
-                'excluir_usuario': 'mihael'
+                'excluir_usuario': superadmin_username()
             },
             'Rector': {
-                'password': 'Shadai2009',
+                'password': env_requerida('PASSWORD_RECTOR'),
                 'tipo_buscar': ['Rector', 'Rector(a)']
             },
             'Docente': {
-                'password': 'Docente2025',
+                'password': env_requerida('PASSWORD_DOCENTE'),
                 'tipo_buscar': ['Docente']
             },
             'Estudiante': {
-                'password': 'password',
+                'password': env_requerida('PASSWORD_ESTUDIANTE'),
                 'tipo_buscar': ['Estudiante']
             },
             'Acudiente': {
-                'password': 'Acudiente2025',  # Agregado por si acaso
+                'password': env_requerida('PASSWORD_ACUDIENTE'),
                 'tipo_buscar': ['Acudiente']
             }
         }
@@ -69,18 +70,18 @@ class Command(BaseCommand):
             superadmin_config = configuracion_passwords['SuperAdmin']
             
             # Verificar si ya existe el usuario mihael
-            usuario_mihael = Usuario.objects.filter(
+            usuario_superadmin = Usuario.objects.filter(
                 username=superadmin_config['username']
             ).first()
             
-            if usuario_mihael:
+            if usuario_superadmin:
                 print(f"  ⚠ Usuario '{superadmin_config['username']}' ya existe")
                 if not solo_reporte:
-                    usuario_mihael.set_password(superadmin_config['password'])
-                    usuario_mihael.is_superuser = True
-                    usuario_mihael.is_staff = True
-                    usuario_mihael.is_active = True
-                    usuario_mihael.save()
+                    usuario_superadmin.set_password(superadmin_config['password'])
+                    usuario_superadmin.is_superuser = True
+                    usuario_superadmin.is_staff = True
+                    usuario_superadmin.is_active = True
+                    usuario_superadmin.save()
                     print(f"  ✅ Contraseña actualizada para SuperAdmin")
             else:
                 # Crear nuevo SuperAdmin
@@ -98,7 +99,7 @@ class Command(BaseCommand):
                         )
                     
                     # Crear el SuperAdmin
-                    usuario_mihael = Usuario.objects.create_superuser(
+                    usuario_superadmin = Usuario.objects.create_superuser(
                         username=superadmin_config['username'],
                         email=superadmin_config['email'],
                         password=superadmin_config['password'],
@@ -238,11 +239,8 @@ class Command(BaseCommand):
             print("   • URL: http://localhost:8000/admin/ (para administradores)")
             print("   • URL: http://localhost:8000/ (para usuarios normales)")
             print("\n2. 🔐 CREDENCIALES PRINCIPALES:")
-            print("   • SuperAdmin: mihael / Abigail123+- (ACCESO COMPLETO)")
-            print("   • Administradores: su documento / AdminShadai")
-            print("   • Rectores: su documento / Shadai2009")
-            print("   • Docentes: su documento / Docente2025")
-            print("   • Estudiantes: su documento / password")
+            print("   • Las contraseñas se toman de las variables de entorno del archivo .env")
+            print("   • Usuario de cada persona: su número de documento")
             print("\n3. ⚠️ SEGURIDAD:")
             print("   • Cambiar contraseñas en primer acceso")
             print("   • No compartir credenciales")
