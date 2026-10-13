@@ -1,0 +1,315 @@
+<!-- rector/templates/rector/institucional/periodo_form.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}{{ titulo }} - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:institucional_dashboard' %}">Institucional</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:periodo_list' %}">Periodos</a></li>
+        <li class="breadcrumb-item active">{{ titulo }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{{ titulo }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row g-3">
+                        <!-- Año Lectivo -->
+                        <div class="col-md-6">
+                            <label for="{{ form.año_lectivo.id_for_label }}" class="form-label">
+                                <i class="bi bi-calendar-range me-1"></i>Año Lectivo *
+                            </label>
+                            {{ form.año_lectivo }}
+                            {% if form.año_lectivo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.año_lectivo.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Periodo -->
+                        <div class="col-md-6">
+                            <label for="{{ form.periodo.id_for_label }}" class="form-label">
+                                <i class="bi bi-calendar-week me-1"></i>Periodo *
+                            </label>
+                            {{ form.periodo }}
+                            {% if form.periodo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.periodo.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Fecha Inicio -->
+                        <div class="col-md-6">
+                            <label for="{{ form.fecha_inicio.id_for_label }}" class="form-label">
+                                <i class="bi bi-calendar-plus me-1"></i>Fecha Inicio *
+                            </label>
+                            {{ form.fecha_inicio }}
+                            {% if form.fecha_inicio.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.fecha_inicio.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Fecha Fin -->
+                        <div class="col-md-6">
+                            <label for="{{ form.fecha_fin.id_for_label }}" class="form-label">
+                                <i class="bi bi-calendar-check me-1"></i>Fecha Fin *
+                            </label>
+                            {{ form.fecha_fin }}
+                            {% if form.fecha_fin.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.fecha_fin.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Estado -->
+                        <div class="col-md-12">
+                            <label for="{{ form.estado.id_for_label }}" class="form-label">
+                                <i class="bi bi-toggle-on me-1"></i>Estado
+                            </label>
+                            <div class="form-check form-switch">
+                                {{ form.estado }}
+                                <label class="form-check-label" for="{{ form.estado.id_for_label }}">
+                                    Activo (los periodos activos son visibles para docentes y estudiantes)
+                                </label>
+                            </div>
+                            {% if form.estado.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.estado.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Vista previa del periodo -->
+                    <div class="card mt-4" id="periodo-preview">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-eye me-2"></i>
+                                Vista Previa del Periodo
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1">
+                                        <strong>Año Lectivo:</strong>
+                                        <span id="preview-anho">-</span>
+                                    </p>
+                                    <p class="mb-1">
+                                        <strong>Periodo:</strong>
+                                        <span id="preview-periodo">-</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1">
+                                        <strong>Duración:</strong>
+                                        <span id="preview-duracion">-</span>
+                                    </p>
+                                    <p class="mb-1">
+                                        <strong>Estado:</strong>
+                                        <span id="preview-estado">-</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'rector:periodo_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save me-1"></i>Guardar Periodo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Periodos disponibles -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-list-check text-primary me-2"></i>
+                    Periodos Disponibles
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Periodo</th>
+                                <th>Descripción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for periodo in periodos_disponibles %}
+                            <tr>
+                                <td><strong>{{ periodo.nombre }}</strong></td>
+                                <td>
+                                    {% if periodo.nombre == 'Primer' %}
+                                    <small class="text-muted">Primer periodo académico del año</small>
+                                    {% elif periodo.nombre == 'Segundo' %}
+                                    <small class="text-muted">Segundo periodo académico del año</small>
+                                    {% elif periodo.nombre == 'Tercero' %}
+                                    <small class="text-muted">Tercer periodo académico del año</small>
+                                    {% elif periodo.nombre == 'Cuarto' %}
+                                    <small class="text-muted">Cuarto periodo académico del año</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-center text-muted py-3">
+                                    No hay periodos disponibles
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elementos del formulario
+        const añoLectivoSelect = document.getElementById('{{ form.año_lectivo.id_for_label }}');
+        const periodoSelect = document.getElementById('{{ form.periodo.id_for_label }}');
+        const fechaInicioInput = document.getElementById('{{ form.fecha_inicio.id_for_label }}');
+        const fechaFinInput = document.getElementById('{{ form.fecha_fin.id_for_label }}');
+        const estadoSwitch = document.getElementById('{{ form.estado.id_for_label }}');
+        
+        // Elementos de vista previa
+        const previewAnho = document.getElementById('preview-anho');
+        const previewPeriodo = document.getElementById('preview-periodo');
+        const previewDuracion = document.getElementById('preview-duracion');
+        const previewEstado = document.getElementById('preview-estado');
+        
+        // Función para actualizar vista previa
+        function actualizarVistaPrevia() {
+            // Año lectivo
+            const selectedOption = añoLectivoSelect.options[añoLectivoSelect.selectedIndex];
+            previewAnho.textContent = selectedOption.text || '-';
+            
+            // Periodo
+            const periodoOption = periodoSelect.options[periodoSelect.selectedIndex];
+            previewPeriodo.textContent = periodoOption.text || '-';
+            
+            // Duración
+            if (fechaInicioInput.value && fechaFinInput.value) {
+                const inicio = new Date(fechaInicioInput.value);
+                const fin = new Date(fechaFinInput.value);
+                const diffTime = Math.abs(fin - inicio);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                previewDuracion.textContent = diffDays + ' días';
+            } else {
+                previewDuracion.textContent = '-';
+            }
+            
+            // Estado
+            previewEstado.textContent = estadoSwitch.checked ? 'Activo' : 'Inactivo';
+            previewEstado.className = estadoSwitch.checked ? 'badge bg-success' : 'badge bg-danger';
+        }
+        
+        // Event listeners para actualizar vista previa
+        [añoLectivoSelect, periodoSelect, fechaInicioInput, fechaFinInput].forEach(element => {
+            if (element) {
+                element.addEventListener('change', actualizarVistaPrevia);
+            }
+        });
+        
+        if (estadoSwitch) {
+            estadoSwitch.addEventListener('change', actualizarVistaPrevia);
+        }
+        
+        // Inicializar vista previa
+        actualizarVistaPrevia();
+        
+        // Validación del formulario
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            // Validar fechas
+            if (fechaInicioInput.value && fechaFinInput.value) {
+                const inicio = new Date(fechaInicioInput.value);
+                const fin = new Date(fechaFinInput.value);
+                
+                if (inicio >= fin) {
+                    event.preventDefault();
+                    alert('La fecha de inicio debe ser anterior a la fecha de fin');
+                    fechaInicioInput.focus();
+                }
+                
+                // Validar que no sea muy corto (mínimo 15 días)
+                const diffTime = Math.abs(fin - inicio);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays < 15) {
+                    if (!confirm('El periodo es muy corto (' + diffDays + ' días). ¿Está seguro de continuar?')) {
+                        event.preventDefault();
+                    }
+                }
+            }
+            
+            // Validar que se haya seleccionado año y periodo
+            if (!añoLectivoSelect.value) {
+                event.preventDefault();
+                alert('Por favor seleccione un año lectivo');
+                añoLectivoSelect.focus();
+            }
+            
+            if (!periodoSelect.value) {
+                event.preventDefault();
+                alert('Por favor seleccione un periodo');
+                periodoSelect.focus();
+            }
+        });
+        
+        // Establecer fecha mínima para fecha fin
+        if (fechaInicioInput) {
+            fechaInicioInput.addEventListener('change', function() {
+                if (fechaFinInput) {
+                    fechaFinInput.min = this.value;
+                    if (fechaFinInput.value && new Date(fechaFinInput.value) < new Date(this.value)) {
+                        fechaFinInput.value = this.value;
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

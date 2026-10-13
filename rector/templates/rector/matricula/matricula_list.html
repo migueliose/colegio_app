@@ -1,0 +1,570 @@
+<!-- rector/templates/rector/matricula/matricula_list.html -->
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+
+{% block title %}Gestión de Matrículas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .stats-card {
+        border-radius: 10px;
+        transition: transform 0.3s ease;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    .matricula-item {
+        border-left: 4px solid transparent;
+        transition: all 0.3s ease;
+    }
+    .matricula-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .badge-activa {
+        background-color: #28a745;
+    }
+    .badge-pendiente {
+        background-color: #ffc107;
+    }
+    .badge-pre {
+        background-color: #17a2b8;
+    }
+    .badge-inactiva {
+        background-color: #6c757d;
+    }
+    .badge-retirada {
+        background-color: #dc3545;
+    }
+    .student-avatar {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+    }
+    .filter-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+    }
+    .table-responsive {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado y estadísticas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">
+                                <i class="bi bi-clipboard-data me-2"></i>Gestión de Matrículas
+                            </h4>
+                            <p class="mb-0 opacity-75">Administre todas las matrículas del sistema</p>
+                        </div>
+                        <a href="{% url 'rector:matricula_rapida' %}" class="btn btn-success">
+                            <i class="bi bi-plus-circle me-1"></i>Nueva Matrícula Rápida
+                        </a>
+                        <a href="{% url 'rector:estudiante_list' %}" class="btn btn-light">
+                            <i class="bi bi-people me-1"></i>Ver Estudiantes
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <!-- Tarjeta de estadísticas -->
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card stats-card border-primary">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="text-muted mb-1">Total Matrículas</h6>
+                                            <h3 class="mb-0">{{ estadisticas.total }}</h3>
+                                        </div>
+                                        <div class="bg-primary rounded-circle p-3">
+                                            <i class="bi bi-clipboard-check text-white" style="font-size: 1.5rem;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Matrículas Activas -->
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card stats-card border-success">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="text-muted mb-1">Activas</h6>
+                                            <h3 class="mb-0">{{ estadisticas.activas }}</h3>
+                                            <small class="text-muted">{{ estadisticas.activas_porcentaje }}% del total</small>
+                                        </div>
+                                        <div class="bg-success rounded-circle p-3">
+                                            <i class="bi bi-check-circle text-white" style="font-size: 1.5rem;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Matrículas Pendientes -->
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card stats-card border-warning">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="text-muted mb-1">Pendientes</h6>
+                                            <h3 class="mb-0">{{ estadisticas.pendientes }}</h3>
+                                            <small class="text-muted">{{ estadisticas.pendientes_porcentaje }}% del total</small>
+                                        </div>
+                                        <div class="bg-warning rounded-circle p-3">
+                                            <i class="bi bi-clock-history text-white" style="font-size: 1.5rem;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Pre-Matrículas -->
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card stats-card border-info">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="text-muted mb-1">Pre-Matrículas</h6>
+                                            <h3 class="mb-0">{{ estadisticas.pre_matriculas }}</h3>
+                                            <small class="text-muted">Por confirmar</small>
+                                        </div>
+                                        <div class="bg-info rounded-circle p-3">
+                                            <i class="bi bi-hourglass-split text-white" style="font-size: 1.5rem;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros de búsqueda -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-body filter-section">
+                    <form method="get" id="filtrosForm">
+                        <div class="row g-3">
+                            <!-- Búsqueda por texto -->
+                            <div class="col-xl-4 col-md-6">
+                                <label class="form-label">
+                                    <i class="bi bi-search me-1"></i>Buscar
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" 
+                                           name="search" 
+                                           class="form-control" 
+                                           placeholder="Nombre, documento o código..."
+                                           value="{{ filtros_actuales.search }}">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="limpiarBusqueda()">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Filtro por año lectivo -->
+                            <div class="col-xl-2 col-md-4">
+                                <label class="form-label">
+                                    <i class="bi bi-calendar me-1"></i>Año Lectivo
+                                </label>
+                                <select name="año" class="form-select" onchange="this.form.submit()">
+                                    <option value="todos" {% if filtros_actuales.año == 'todos' %}selected{% endif %}>
+                                        Todos los años
+                                    </option>
+                                    {% for año in años_lectivos %}
+                                    <option value="{{ año.id }}" 
+                                            {% if filtros_actuales.año == año.id|stringformat:"i" %}selected{% endif %}>
+                                        {{ año.anho }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Filtro por sede -->
+                            <div class="col-xl-2 col-md-4">
+                                <label class="form-label">
+                                    <i class="bi bi-building me-1"></i>Sede
+                                </label>
+                                <select name="sede" class="form-select" onchange="this.form.submit()">
+                                    <option value="todas" {% if filtros_actuales.sede == 'todas' %}selected{% endif %}>
+                                        Todas las sedes
+                                    </option>
+                                    {% for sede in sedes %}
+                                    <option value="{{ sede.id }}" 
+                                            {% if filtros_actuales.sede == sede.id|stringformat:"i" %}selected{% endif %}>
+                                        {{ sede.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Filtro por grado -->
+                            <div class="col-xl-2 col-md-4">
+                                <label class="form-label">
+                                    <i class="bi bi-mortarboard me-1"></i>Grado
+                                </label>
+                                <select name="grado" class="form-select" onchange="this.form.submit()">
+                                    <option value="todos" {% if filtros_actuales.grado == 'todos' %}selected{% endif %}>
+                                        Todos los grados
+                                    </option>
+                                    {% for grado in grados_año_lectivo %}
+                                    <option value="{{ grado.id }}" 
+                                            {% if filtros_actuales.grado == grado.id|stringformat:"i" %}selected{% endif %}>
+                                        {{ grado.grado.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Filtro por estado -->
+                            <div class="col-xl-2 col-md-4">
+                                <label class="form-label">
+                                    <i class="bi bi-toggle-on me-1"></i>Estado
+                                </label>
+                                <select name="estado" class="form-select" onchange="this.form.submit()">
+                                    <option value="todos" {% if filtros_actuales.estado == 'todos' %}selected{% endif %}>
+                                        Todos los estados
+                                    </option>
+                                    <option value="ACT" {% if filtros_actuales.estado == 'ACT' %}selected{% endif %}>
+                                        Activas
+                                    </option>
+                                    <option value="PEN" {% if filtros_actuales.estado == 'PEN' %}selected{% endif %}>
+                                        Pendientes
+                                    </option>
+                                    <option value="PRE" {% if filtros_actuales.estado == 'PRE' %}selected{% endif %}>
+                                        Pre-Matrículas
+                                    </option>
+                                    <option value="INA" {% if filtros_actuales.estado == 'INA' %}selected{% endif %}>
+                                        Inactivas
+                                    </option>
+                                    <option value="RET" {% if filtros_actuales.estado == 'RET' %}selected{% endif %}>
+                                        Retiradas
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <!-- Botones de acción -->
+                            <div class="col-xl-12">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-funnel me-1"></i>Aplicar Filtros
+                                        </button>
+                                        <a href="{% url 'rector:matricula_list' %}" class="btn btn-outline-secondary">
+                                            <i class="bi bi-arrow-clockwise me-1"></i>Limpiar
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exportarModal">
+                                            <i class="bi bi-download me-1"></i>Exportar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de matrículas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-list-check me-2"></i>Lista de Matrículas
+                            <span class="badge bg-primary ms-2">{{ matriculas.paginator.count }}</span>
+                        </h5>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="actualizarTabla()">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if matriculas %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Estudiante</th>
+                                    <th>Código</th>
+                                    <th>Año Lectivo</th>
+                                    <th>Grado</th>
+                                    <th>Sede</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for matricula in matriculas %}
+                                <tr class="matricula-item">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if matricula.estudiante.foto %}
+                                            <img src="{{ matricula.estudiante.foto.url }}" 
+                                                 alt="Foto" 
+                                                 class="rounded-circle student-avatar me-2">
+                                            {% else %}
+                                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2 student-avatar">
+                                                <i class="bi bi-person text-secondary"></i>
+                                            </div>
+                                            {% endif %}
+                                            <div>
+                                                <h6 class="mb-0">{{ matricula.estudiante.usuario.get_full_name }}</h6>
+                                                <small class="text-muted">{{ matricula.estudiante.usuario.numero_documento }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <code>{{ matricula.codigo_matricula|default:"Sin código" }}</code>
+                                    </td>
+                                    <td>
+                                        {{ matricula.año_lectivo.anho }}
+                                        <br>
+                                        <small class="text-muted">{{ matricula.año_lectivo.sede.nombre }}</small>
+                                    </td>
+                                    <td>
+                                        {{ matricula.grado_año_lectivo.grado.nombre }}
+                                        <br>
+                                        <small class="text-muted">{{ matricula.grado_año_lectivo.grado.nivel_escolar.nombre }}</small>
+                                    </td>
+                                    <td>{{ matricula.sede.nombre }}</td>
+                                    <td>{{ matricula.fecha_matricula|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if matricula.estado == 'ACT' %}
+                                        <span class="badge badge-activa">Activa</span>
+                                        {% elif matricula.estado == 'PEN' %}
+                                        <span class="badge badge-pendiente">Pendiente</span>
+                                        {% elif matricula.estado == 'PRE' %}
+                                        <span class="badge badge-pre">Pre-Matrícula</span>
+                                        {% elif matricula.estado == 'INA' %}
+                                        <span class="badge badge-inactiva">Inactiva</span>
+                                        {% elif matricula.estado == 'RET' %}
+                                        <span class="badge badge-retirada">Retirada</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'rector:matricula_detail' matricula.id %}" 
+                                               class="btn btn-outline-primary" 
+                                               title="Ver detalle">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'rector:matricula_edit' matricula.id %}" 
+                                               class="btn btn-outline-warning" 
+                                               title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="{% url 'rector:matricula_delete' matricula.id %}" 
+                                                class="btn btn-outline-danger" 
+                                                title="Eliminar"
+                                                onclick="return confirm('¿Está seguro de eliminar esta matrícula?');">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                            <a href="{% url 'rector:estudiante_detail' matricula.estudiante.id %}" 
+                                               class="btn btn-outline-info" 
+                                               title="Ver estudiante">
+                                                <i class="bi bi-person"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Paginación -->
+                    {% if matriculas.paginator.num_pages > 1 %}
+                    <nav aria-label="Paginación de matrículas">
+                        <ul class="pagination justify-content-center mt-4">
+                            {% if matriculas.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="?page={{ matriculas.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="bi bi-chevron-left"></i> Anterior
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for i in matriculas.paginator.page_range %}
+                            {% if i >= matriculas.number|add:"-2" and i <= matriculas.number|add:"2" %}
+                            <li class="page-item {% if i == matriculas.number %}active{% endif %}">
+                                <a class="page-link" 
+                                   href="?page={{ i }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    {{ i }}
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
+                            
+                            {% if matriculas.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="?page={{ matriculas.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    Siguiente <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-clipboard-x text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">No se encontraron matrículas</h5>
+                        <p class="text-muted">Intente con otros criterios de búsqueda</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para exportar -->
+<div class="modal fade" id="exportarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-download me-2"></i>Exportar Matrículas
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="exportarForm">
+                    <div class="mb-3">
+                        <label class="form-label">Formato</label>
+                        <select class="form-select" name="formato">
+                            <option value="excel">Excel (.xlsx)</option>
+                            <option value="pdf">PDF</option>
+                            <option value="csv">CSV</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Incluir columnas</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="columnas[]" value="estudiante" checked>
+                            <label class="form-check-label">Estudiante</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="columnas[]" value="documento" checked>
+                            <label class="form-check-label">Documento</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="columnas[]" value="grado" checked>
+                            <label class="form-check-label">Grado</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="columnas[]" value="estado" checked>
+                            <label class="form-check-label">Estado</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="exportarMatriculas()">
+                    <i class="bi bi-download me-1"></i>Exportar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function limpiarBusqueda() {
+    document.querySelector('input[name="search"]').value = '';
+    document.getElementById('filtrosForm').submit();
+}
+
+function actualizarTabla() {
+    // Podrías implementar actualización AJAX aquí
+    location.reload();
+}
+
+function exportarMatriculas() {
+    const form = document.getElementById('exportarForm');
+    const formData = new FormData(form);
+    const filtros = new URLSearchParams(window.location.search);
+    
+    // Agregar filtros actuales
+    for (const [key, value] of filtros.entries()) {
+        formData.append(key, value);
+    }
+    
+    // Enviar solicitud de exportación
+    fetch('{% url "rector:exportar_matriculas" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `matriculas_${new Date().toISOString().slice(0,10)}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('exportarModal'));
+        modal.hide();
+    })
+    .catch(error => {
+        console.error('Error al exportar:', error);
+        alert('Error al exportar las matrículas');
+    });
+}
+
+// Función para cargar matrículas vía AJAX (opcional)
+function cargarMatriculasAjax() {
+    const form = document.getElementById('filtrosForm');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    
+    fetch(`/rector/ajax/matriculas/filtradas/?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Actualizar tabla con datos AJAX
+                actualizarTablaConDatos(data.matriculas);
+                actualizarPaginacion(data);
+            }
+        });
+}
+</script>
+{% endblock %}

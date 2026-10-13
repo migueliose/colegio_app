@@ -1,0 +1,146 @@
+{% extends 'rector/base_rector2.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} - Módulo Rector{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-link me-2"></i>{{ titulo }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row g-3">
+                            <!-- Asignatura -->
+                            <div class="col-md-12">
+                                <label for="{{ form.asignatura.id_for_label }}" class="form-label">
+                                    {{ form.asignatura.label }} *
+                                </label>
+                                {{ form.asignatura }}
+                                {% if form.asignatura.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.asignatura.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Grado Año Lectivo -->
+                            <div class="col-md-12">
+                                <label for="{{ form.grado_año_lectivo.id_for_label }}" class="form-label">
+                                    {{ form.grado_año_lectivo.label }} *
+                                </label>
+                                {{ form.grado_año_lectivo }}
+                                {% if form.grado_año_lectivo.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.grado_año_lectivo.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Sede -->
+                            <div class="col-md-12">
+                                <label for="{{ form.sede.id_for_label }}" class="form-label">
+                                    {{ form.sede.label }} *
+                                </label>
+                                {{ form.sede }}
+                                {% if form.sede.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.sede.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Docente -->
+                            <div class="col-md-12">
+                                <label for="{{ form.docente.id_for_label }}" class="form-label">
+                                    {{ form.docente.label }}
+                                </label>
+                                {{ form.docente }}
+                                {% if form.docente.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.docente.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Opcional. Puede asignar el docente más adelante.
+                                </div>
+                            </div>
+                            
+                            <!-- Información del año lectivo -->
+                            {% if año_lectivo_actual %}
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <h6 class="alert-heading">
+                                        <i class="fas fa-info-circle me-2"></i>Año Lectivo Actual
+                                    </h6>
+                                    <p class="mb-0">
+                                        Se asignará para el año lectivo: 
+                                        <strong>{{ año_lectivo_actual.anho }}</strong> - 
+                                        <strong>{{ año_lectivo_actual.sede.nombre }}</strong>
+                                    </p>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% if object %}{% url 'rector:asignatura_detail' object.asignatura.pk %}{% else %}{% url 'rector:asignatura_list' %}{% endif %}" 
+                               class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>{{ accion }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializar select2
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            width: '100%'
+        });
+        
+        // Actualizar opciones de grado_año_lectivo cuando cambia la sede
+        $('#id_sede').change(function() {
+            const sedeId = $(this).val();
+            if (sedeId) {
+                // Aquí podrías cargar grados disponibles para esta sede via AJAX
+                console.log('Sede seleccionada:', sedeId);
+            }
+        });
+    });
+</script>
+{% endblock %}

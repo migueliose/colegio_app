@@ -1,0 +1,404 @@
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}{{ titulo }} - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:seguimiento_dashboard' %}">Seguimiento</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:comportamiento_list' %}">Comportamientos</a></li>
+        <li class="breadcrumb-item active">{{ titulo }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header {% if object %}bg-warning text-dark{% else %}bg-success text-white{% endif %}">
+                <h5 class="mb-0">
+                    <i class="bi {% if object %}bi-pencil-square{% else %}bi-plus-circle{% endif %} me-2"></i>
+                    {{ titulo }}
+                </h5>
+            </div>
+            
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                <div class="card-body">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                        <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row g-3">
+                        <!-- Estudiante -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.estudiante.id_for_label }}" class="form-label">
+                                    <i class="bi bi-person me-1"></i>Estudiante *
+                                </label>
+                                {{ form.estudiante }}
+                                {% if form.estudiante.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.estudiante.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <small class="text-muted">Seleccione el estudiante</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Periodo Académico -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.periodo_academico.id_for_label }}" class="form-label">
+                                    <i class="bi bi-calendar-range me-1"></i>Periodo Académico *
+                                </label>
+                                {{ form.periodo_academico }}
+                                {% if form.periodo_academico.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.periodo_academico.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Tipo -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.tipo.id_for_label }}" class="form-label">
+                                    <i class="bi bi-tags me-1"></i>Tipo *
+                                </label>
+                                {{ form.tipo }}
+                                {% if form.tipo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.tipo.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Categoría -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.categoria.id_for_label }}" class="form-label">
+                                    <i class="bi bi-grid me-1"></i>Categoría *
+                                </label>
+                                {{ form.categoria }}
+                                {% if form.categoria.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.categoria.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Fecha -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.fecha.id_for_label }}" class="form-label">
+                                    <i class="bi bi-calendar-date me-1"></i>Fecha *
+                                </label>
+                                {{ form.fecha }}
+                                {% if form.fecha.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.fecha.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Docente -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.docente.id_for_label }}" class="form-label">
+                                    <i class="bi bi-person-badge me-1"></i>Docente
+                                </label>
+                                {{ form.docente }}
+                                {% if form.docente.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.docente.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <small class="text-muted">Opcional. Si está vacío, se registrará como "Sistema"</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Descripción -->
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+                                    <i class="bi bi-card-text me-1"></i>Descripción *
+                                </label>
+                                {{ form.descripcion }}
+                                {% if form.descripcion.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.descripcion.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <small class="text-muted">Describa el comportamiento de manera clara y objetiva</small>
+                            </div>
+                        </div>
+                        
+                        {% if request.user.tipo_usuario.nombre == 'Docente' %}
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Nota:</strong> Como docente, usted será registrado automáticamente como responsable de este comportamiento.
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'rector:comportamiento_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn {% if object %}btn-warning{% else %}btn-success{% endif %}">
+                            <i class="bi {% if object %}bi-check-circle{% else %}bi-plus-circle{% endif %} me-1"></i>
+                            {% if object %}Actualizar{% else %}Crear{% endif %} Comportamiento
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Información del estudiante seleccionado -->
+        {% if form.estudiante.value %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-person-badge me-2"></i>Información del Estudiante
+                </h6>
+            </div>
+            <div class="card-body" id="estudiante-info">
+                <!-- Se carga dinámicamente -->
+                <div class="text-center text-muted">
+                    <i class="bi bi-hourglass-split display-6 d-block mb-2"></i>
+                    Seleccione un estudiante para ver su información
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-label {
+    font-weight: 500;
+}
+
+textarea {
+    min-height: 100px;
+}
+
+.invalid-feedback {
+    display: block !important;
+}
+
+select.form-control:invalid,
+input.form-control:invalid,
+textarea.form-control:invalid {
+    border-color: #dc3545;
+}
+
+select.form-control:valid,
+input.form-control:valid,
+textarea.form-control:valid {
+    border-color: #198754;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Formatear campo de fecha
+    const fechaInput = document.getElementById('id_fecha');
+    if (fechaInput) {
+        fechaInput.type = 'date';
+        if (!fechaInput.value) {
+            const today = new Date().toISOString().split('T')[0];
+            fechaInput.value = today;
+        }
+    }
+    
+    // Cargar información del estudiante
+    const estudianteSelect = document.getElementById('id_estudiante');
+    const estudianteInfoDiv = document.getElementById('estudiante-info');
+    
+    function cargarInfoEstudiante(estudianteId) {
+        if (!estudianteId || !estudianteInfoDiv) return;
+        
+        fetch(`{% url "rector:ajax_informacion_estudiante" %}?estudiante_id=${estudianteId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.estudiante) {
+                    const estudiante = data.estudiante;
+                    
+                    let html = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Nombre:</strong><br>
+                                ${estudiante.nombre_completo}</p>
+                                
+                                <p><strong>Documento:</strong><br>
+                                ${estudiante.documento}</p>
+                                
+                                <p><strong>Edad:</strong><br>
+                                ${estudiante.edad || 'N/A'} años</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Grado Actual:</strong><br>
+                                ${estudiante.grado_actual ? `<span class="badge bg-primary">${estudiante.grado_actual}</span>` : 'Sin grado'}</p>
+                                
+                                <p><strong>Sede:</strong><br>
+                                ${estudiante.sede || 'Sin sede'}</p>
+                                
+                                <p><strong>Estado:</strong><br>
+                                <span class="badge ${estudiante.estado ? 'bg-success' : 'bg-danger'}">
+                                    ${estudiante.estado ? 'Activo' : 'Inactivo'}
+                                </span></p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Agregar historial reciente si existe
+                    fetch(`{% url "rector:ajax_historial_inconsistencias_estudiante" %}?estudiante_id=${estudianteId}`)
+                        .then(response => response.json())
+                        .then(historialData => {
+                            if (historialData.success && historialData.inconsistencias.length > 0) {
+                                html += `
+                                    <hr>
+                                    <h6><i class="bi bi-clock-history me-2"></i>Inconsistencias Recientes</h6>
+                                    <div class="table-responsive mt-2">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Fecha</th>
+                                                    <th>Tipo</th>
+                                                    <th>Descripción</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                `;
+                                
+                                historialData.inconsistencias.forEach(inc => {
+                                    html += `
+                                        <tr>
+                                            <td>${inc.fecha}</td>
+                                            <td><span class="badge bg-warning">${inc.tipo}</span></td>
+                                            <td>${inc.descripcion}</td>
+                                        </tr>
+                                    `;
+                                });
+                                
+                                html += `
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                `;
+                            }
+                            
+                            estudianteInfoDiv.innerHTML = html;
+                        });
+                } else {
+                    estudianteInfoDiv.innerHTML = `
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            No se pudo cargar la información del estudiante
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                estudianteInfoDiv.innerHTML = `
+                    <div class="alert alert-danger mb-0">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Error al cargar información: ${error}
+                    </div>
+                `;
+            });
+    }
+    
+    if (estudianteSelect && estudianteInfoDiv) {
+        // Cargar info inicial si hay un estudiante seleccionado
+        if (estudianteSelect.value) {
+            cargarInfoEstudiante(estudianteSelect.value);
+        }
+        
+        // Cargar info cuando cambia la selección
+        estudianteSelect.addEventListener('change', function() {
+            cargarInfoEstudiante(this.value);
+        });
+    }
+    
+    // Validación del formulario
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            let valid = true;
+            const requiredFields = form.querySelectorAll('[required]');
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    valid = false;
+                    field.classList.add('is-invalid');
+                    
+                    let errorDiv = field.nextElementSibling;
+                    if (!errorDiv || !errorDiv.classList.contains('invalid-feedback')) {
+                        errorDiv = document.createElement('div');
+                        errorDiv.className = 'invalid-feedback d-block';
+                        errorDiv.textContent = 'Este campo es requerido';
+                        field.parentNode.insertBefore(errorDiv, field.nextSibling);
+                    }
+                } else {
+                    field.classList.remove('is-invalid');
+                    const errorDiv = field.nextElementSibling;
+                    if (errorDiv && errorDiv.classList.contains('invalid-feedback')) {
+                        errorDiv.remove();
+                    }
+                }
+            });
+            
+            if (!valid) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                // Mostrar mensaje de error
+                let alertDiv = form.querySelector('.alert-danger');
+                if (!alertDiv) {
+                    alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger';
+                    alertDiv.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Por favor, complete todos los campos requeridos';
+                    form.querySelector('.card-body').insertBefore(alertDiv, form.querySelector('.card-body').firstChild);
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

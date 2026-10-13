@@ -1,0 +1,186 @@
+<!-- rector/templates/rector/academico/acudiente_editar_informacion.html -->
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .section-title {
+        color: #4e54c8;
+        border-bottom: 2px solid #4e54c8;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .student-info {
+        background: #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow form-container">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-person-badge me-2"></i>{{ titulo }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Información del estudiante y acudiente -->
+                    <div class="student-info">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="mb-2">
+                                    <i class="bi bi-person me-1"></i>Estudiante
+                                </h6>
+                                <p class="mb-1"><strong>Nombre:</strong> {{ estudiante.usuario.get_full_name }}</p>
+                                <p class="mb-1"><strong>Documento:</strong> {{ estudiante.usuario.numero_documento }}</p>
+                                <p class="mb-0"><strong>Grado:</strong> 
+                                    {% if estudiante.matricula_actual %}
+                                        {{ estudiante.matricula_actual.grado_año_lectivo.grado.nombre }}
+                                    {% else %}
+                                        Sin matrícula
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="mb-2">
+                                    <i class="bi bi-person-heart me-1"></i>Acudiente
+                                </h6>
+                                <p class="mb-1"><strong>Parentesco:</strong> {{ acudiente_rel.parentesco }}</p>
+                                <p class="mb-0"><strong>Relación desde:</strong> {{ acudiente_rel.created_at|date:"d/m/Y" }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Información personal del acudiente -->
+                        <div class="form-section">
+                            <h5 class="section-title">
+                                <i class="bi bi-person-circle me-2"></i>Información Personal
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.nombres.id_for_label }}" class="form-label required">
+                                        <i class="bi bi-person me-1"></i>Nombres
+                                    </label>
+                                    {% render_field form.nombres class="form-control" %}
+                                    {% if form.nombres.errors %}
+                                    <div class="text-danger small">{{ form.nombres.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.apellidos.id_for_label }}" class="form-label required">
+                                        <i class="bi bi-person me-1"></i>Apellidos
+                                    </label>
+                                    {% render_field form.apellidos class="form-control" %}
+                                    {% if form.apellidos.errors %}
+                                    <div class="text-danger small">{{ form.apellidos.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.tipo_documento.id_for_label }}" class="form-label required">
+                                        <i class="bi bi-card-text me-1"></i>Tipo de Documento
+                                    </label>
+                                    {% render_field form.tipo_documento class="form-select" %}
+                                    {% if form.tipo_documento.errors %}
+                                    <div class="text-danger small">{{ form.tipo_documento.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.numero_documento.id_for_label }}" class="form-label required">
+                                        <i class="bi bi-123 me-1"></i>Número de Documento
+                                    </label>
+                                    {% render_field form.numero_documento class="form-control" %}
+                                    {% if form.numero_documento.errors %}
+                                    <div class="text-danger small">{{ form.numero_documento.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información de contacto -->
+                        <div class="form-section">
+                            <h5 class="section-title">
+                                <i class="bi bi-telephone me-2"></i>Información de Contacto
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                                        <i class="bi bi-envelope me-1"></i>Email
+                                    </label>
+                                    {% render_field form.email class="form-control" type="email" %}
+                                    {% if form.email.errors %}
+                                    <div class="text-danger small">{{ form.email.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.telefono.id_for_label }}" class="form-label">
+                                        <i class="bi bi-phone me-1"></i>Teléfono
+                                    </label>
+                                    {% render_field form.telefono class="form-control" %}
+                                    {% if form.telefono.errors %}
+                                    <div class="text-danger small">{{ form.telefono.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label for="{{ form.direccion.id_for_label }}" class="form-label">
+                                        <i class="bi bi-geo-alt me-1"></i>Dirección
+                                    </label>
+                                    {% render_field form.direccion class="form-control" rows="2" %}
+                                    {% if form.direccion.errors %}
+                                    <div class="text-danger small">{{ form.direccion.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between border-top pt-4 mt-4">
+                            <div>
+                                <a href="{% url 'rector:estudiante_detail' estudiante.pk %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                                </a>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i>Guardar Cambios
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

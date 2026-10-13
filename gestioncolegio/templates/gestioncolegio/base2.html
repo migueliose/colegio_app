@@ -1,3 +1,4 @@
+<!--gestioncolegio/base2.html-->
 {% load static %}
 <!DOCTYPE html>
 <html lang="es" data-bs-theme="light">
@@ -39,6 +40,8 @@
     <main class="container-fluid py-4 fade-in" style="padding-top: var(--header-height);">
         {% include 'gestioncolegio/includes/messages.html' %}
         {% block content %}{% endblock %}
+        <!-- Breadcrumb opcional -->
+        {% block breadcrumb %}{% endblock %}
     </main>
 
     <!-- Footer -->

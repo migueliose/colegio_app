@@ -1,0 +1,717 @@
+{% extends 'rector/base_rector.html' %}
+{% load static schedule_filters %}
+
+{% block title %}Horario por Grado - Rector{% endblock %}
+
+{% block extra_css %}
+<style>
+    .schedule-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    .schedule-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+    }
+    .table-schedule {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .table-schedule thead th {
+        background: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        text-align: center;
+        vertical-align: middle;
+        padding: 1rem;
+        font-weight: 600;
+        color: #495057;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    .time-column {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #495057;
+        width: 100px;
+        text-align: center;
+        position: sticky;
+        left: 0;
+        z-index: 5;
+    }
+    .table-schedule tbody td {
+        border: 1px solid #e9ecef;
+        padding: 0.5rem;
+        vertical-align: top;
+        height: 85px;
+        min-width: 150px;
+    }
+    .class-event {
+        background: white;
+        border: 2px solid;
+        border-radius: 6px;
+        padding: 0.5rem;
+        margin: 1px;
+        font-size: 0.8rem;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .class-event:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .class-event-title {
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+        line-height: 1.1;
+        font-size: 0.75rem;
+    }
+    .class-event-details {
+        font-size: 0.7rem;
+        color: #6c757d;
+        line-height: 1.1;
+    }
+    .recreo-cell {
+        background: #fff3cd !important;
+        color: #856404;
+        font-weight: 600;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 0.85rem;
+        border: 2px dashed #ffc107 !important;
+    }
+    .tiempo-libre-cell {
+        background: #d4edda !important;
+        color: #155724;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 0.8rem;
+        border: 1px solid #c3e6cb !important;
+    }
+    .empty-cell {
+        background: #f8f9fa;
+    }
+    
+    /* Colores por día */
+    .monday { border-color: #0d6efd !important; }
+    .tuesday { border-color: #20c997 !important; }
+    .wednesday { border-color: #fd7e14 !important; }
+    .thursday { border-color: #6f42c1 !important; }
+    .friday { border-color: #dc3545 !important; }
+    
+    /* Duración de clases */
+    .duracion-45 { height: 85px; }
+    .duracion-30 { height: 60px; }
+    
+    /* Info cards */
+    .info-card {
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .jornada-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .jornada-preescolar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .jornada-primaria {
+        background: linear-gradient(135deg, #20c997 0%, #0d6efd 100%);
+        color: white;
+    }
+    
+    /* Tooltip mejorado */
+    .custom-tooltip {
+        --bs-tooltip-bg: #333;
+        --bs-tooltip-color: white;
+    }
+</style>
+{% endblock %}
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:academico_dashboard' %}">Académico</a></li>
+        <li class="breadcrumb-item active">Horario por grados</li>
+    </ol>
+</nav>
+{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-calendar-week me-2"></i>Horario por Grado
+                </h1>
+                <div class="d-flex gap-2">
+                    <button onclick="window.print()" class="btn btn-outline-primary">
+                        <i class="bi bi-printer me-1"></i>Imprimir
+                    </button>
+                    <a href="{% url 'rector:horario_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Volver
+                    </a>
+                </div>
+            </div>
+            <p class="text-muted">Visualiza el horario completo organizado por día y hora</p>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-5">
+                    <label class="form-label">Grado</label>
+                    <select name="grado" class="form-select" required id="gradoSelect">
+                        <option value="">Seleccione un grado</option>
+                        {% for grado in grados %}
+                        <option value="{{ grado.id }}" 
+                            {% if request.GET.grado == grado.id|stringformat:"i" %}selected{% endif %}
+                            data-nivel="{{ grado.nivel_escolar.nombre }}">
+                            {{ grado.nombre }} ({{ grado.nivel_escolar.nombre }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-5">
+                    <label class="form-label">Sede</label>
+                    <select name="sede" class="form-select" required id="sedeSelect">
+                        <option value="">Seleccione una sede</option>
+                        {% for sede in sedes %}
+                        <option value="{{ sede.id }}" 
+                            {% if request.GET.sede == sede.id|stringformat:"i" %}selected{% endif %}>
+                            {{ sede.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search me-1"></i>Generar Horario
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if horarios_organizados %}
+    <!-- Información del horario -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card info-card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3 text-center">
+                            <h2 class="mb-0">{{ grado_seleccionado.nombre }}</h2>
+                            <small class="text-muted">Grado</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h4 class="mb-0">{{ sede_seleccionada.nombre }}</h4>
+                            <small class="text-muted">Sede</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h4 class="mb-0">{{ año_lectivo_actual.anho }}</h4>
+                            <small class="text-muted">Año Lectivo</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="jornada-badge {% if nivel_seleccionado == 'Preescolar' %}jornada-preescolar{% else %}jornada-primaria{% endif %}">
+                                {% if nivel_seleccionado == 'Preescolar' %}
+                                    7:00 AM - 12:00 M
+                                {% else %}
+                                    6:25 AM - 12:45 PM
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">Jornada</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card info-card h-100">
+                <div class="card-body">
+                    <h6 class="mb-3"><i class="bi bi-bar-chart me-2"></i>Estadísticas</h6>
+                    <div class="row">
+                        <div class="col-6 text-center">
+                            <h3 class="text-primary mb-1">{{ total_clases }}</h3>
+                            <small class="text-muted">Clases/Semana</small>
+                        </div>
+                        <div class="col-6 text-center">
+                            <h3 class="text-success mb-1">{{ total_horas|floatformat:1 }}</h3>
+                            <small class="text-muted">Horas/Semana</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Horario en tabla -->
+    <div class="schedule-container mb-4">
+        <div class="schedule-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="h4 mb-1 text-white">Horario de Clases</h3>
+                    <p class="mb-0 text-white-50">
+                        {{ grado_seleccionado.nombre }} - {{ sede_seleccionada.nombre }}
+                    </p>
+                </div>
+                <div>
+                    <span class="badge bg-light text-dark me-2">
+                        <i class="bi bi-clock me-1"></i>
+                        {% if nivel_seleccionado == 'Preescolar' %}
+                            Jornada Preescolar
+                        {% else %}
+                            Jornada Primaria
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-schedule table-bordered mb-0">
+                <thead>
+                    <tr>
+                        <th class="time-column">Hora</th>
+                        <th class="day-header monday">Lunes</th>
+                        <th class="day-header tuesday">Martes</th>
+                        <th class="day-header wednesday">Miércoles</th>
+                        <th class="day-header thursday">Jueves</th>
+                        <th class="day-header friday">Viernes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hora in horas %}
+                    <tr>
+                        <td class="time-column align-middle">
+                            {{ hora }}
+                            {% if nivel_seleccionado == 'Preescolar' and hora == '09:00' %}
+                                <br><small class="text-warning">Recreo</small>
+                            {% elif nivel_seleccionado == 'Primaria' and hora == '09:30' %}
+                                <br><small class="text-warning">Recreo</small>
+                            {% endif %}
+                        </td>
+                        
+                        {% for dia_key, dia_name in dias_semana %}
+                        {% with horario=horarios_organizados|get_item:dia_key|get_item:hora %}
+                        <td class="{% if nivel_seleccionado == 'Preescolar' and hora == '09:00' %}recreo-cell{% elif nivel_seleccionado == 'Primaria' and hora == '09:30' %}recreo-cell{% elif horario %}hour-cell{% else %}empty-cell{% endif %}"
+                            data-day="{{ dia_key }}" 
+                            data-hour="{{ hora }}">
+                            
+                            {% if nivel_seleccionado == 'Preescolar' and hora == '09:00' %}
+                                <div class="text-center py-3">
+                                    <i class="bi bi-cup-hot-fill text-warning fs-4"></i><br>
+                                    <strong>Recreo</strong><br>
+                                    <small>9:00 - 9:30<br>(30 min)</small>
+                                </div>
+                            
+                            {% elif nivel_seleccionado == 'Primaria' and hora == '09:30' %}
+                                <div class="text-center py-3">
+                                    <i class="bi bi-cup-hot-fill text-warning fs-4"></i><br>
+                                    <strong>Recreo</strong><br>
+                                    <small>9:30 - 9:45<br>(15 min)</small>
+                                </div>
+                            
+                            {% elif nivel_seleccionado == 'Preescolar' and hora == '11:45' %}
+                                <div class="tiempo-libre-cell text-center py-3">
+                                    <i class="bi bi-clock-history text-success"></i><br>
+                                    <small>Tiempo Libre</small><br>
+                                    <small>11:45 - 12:00</small>
+                                </div>
+                            
+                            {% elif horario %}
+                                {% with inicio=horario.hora_inicio|time:"H:i" fin=horario.hora_fin|time:"H:i" %}
+                                {% with diff=horario|calculate_duration %}
+                                <div class="class-event {{ dia_key|lower }} duracion-{{ diff }}"
+                                     data-bs-toggle="tooltip" 
+                                     data-bs-html="true"
+                                     data-bs-custom-class="custom-tooltip"
+                                     title="<div class='text-start'>
+                                        <strong>{{ horario.asignatura_grado.asignatura.nombre }}</strong><br>
+                                        <hr class='my-1'>
+                                        <small><i class='bi bi-clock'></i> {{ inicio }} - {{ fin }} ({{ diff }} min)</small><br>
+                                        <small><i class='bi bi-person'></i> {{ horario.asignatura_grado.docente.usuario.get_full_name|default:'Por asignar' }}</small><br>
+                                        <small><i class='bi bi-door-closed'></i> {{ horario.salon|default:'Por asignar' }}</small>
+                                     </div>">
+                                    <div class="class-event-title">
+                                        {{ horario.asignatura_grado.asignatura.nombre|truncatechars:20 }}
+                                    </div>
+                                    <div class="class-event-details">
+                                        <i class="bi bi-clock"></i>
+                                        {{ inicio }}-{{ fin }}
+                                    </div>
+                                    <div class="class-event-details">
+                                        <i class="bi bi-person"></i>
+                                        {{ horario.asignatura_grado.docente.usuario.get_full_name|truncatechars:15|default:'Sin docente' }}
+                                    </div>
+                                    {% if horario.salon %}
+                                    <div class="class-event-details">
+                                        <i class="bi bi-door-closed"></i>
+                                        {{ horario.salon|truncatechars:12 }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endwith %}
+                                {% endwith %}
+                            
+                            {% else %}
+                                <div class="empty-cell" style="height: 100%;"></div>
+                            {% endif %}
+                        </td>
+                        {% endwith %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Información detallada de la jornada -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        {% if nivel_seleccionado == 'Preescolar' %}
+                            Jornada Preescolar
+                        {% else %}
+                            Jornada Primaria
+                        {% endif %}
+                    </h6>
+                    
+                    {% if nivel_seleccionado == 'Preescolar' %}
+                    <div class="timeline">
+                        <div class="d-flex mb-2">
+                            <div class="timeline-time me-3" style="width: 80px;">7:00 - 7:45</div>
+                            <div class="timeline-content">Primera clase (45 min)</div>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <div class="timeline-time me-3" style="width: 80px;">7:45 - 8:30</div>
+                            <div class="timeline-content">Segunda clase (45 min)</div>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <div class="timeline-time me-3" style="width: 80px;">8:30 - 9:00</div>
+                            <div class="timeline-content">Tercera clase (30 min)</div>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <div class="timeline-time me-3" style="width: 80px;">9:00 - 9:30</div>
+                            <div class="timeline-content"><strong class="text-warning">Recreo (30 min)</strong></div>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <div class="timeline-time me-3" style="width: 80px;">9:30 - 10:15</div>
+                            <div class="timeline-content">Cuarta clase (45 min)</div>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <div class="timeline-time me-3" style="width: 80px;">10:15 - 11:00</div>
+                            <div class="timeline-content">Quinta clase (45 min)</div>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <div class="timeline-time me-3" style="width: 80px;">11:00 - 11:45</div>
+                            <div class="timeline-content">Sexta clase (45 min)</div>
+                        </div>
+                        <div class="d-flex">
+                            <div class="timeline-time me-3" style="width: 80px;">11:45 - 12:00</div>
+                            <div class="timeline-content"><em class="text-success">Tiempo libre (15 min)</em></div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="timeline">
+                        <div class="d-flex mb-2">
+                            <div class="timeline-time me-3" style="width: 80px;">6:25 - 7:15</div>
+                            <div class="timeline-content">Primera clase (50 min)</div>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <div class="timeline-time me-3" style="width: 80px;">7:15 - 8:00</div>
+                            <div class="timeline-content">Segunda clase (45 min)</div>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <div class="timeline-time me-3" style="width: 80px;">8:00 - 8:45</div>
+                            <div class="timeline-content">Tercera clase (45 min)</div>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <div class="timeline-time me-3" style="width: 80px;">8:45 - 9:30</div>
+                            <div class="timeline-content">Cuarta clase (45 min)</div>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <div class="timeline-time me-3" style="width: 80px;">9:30 - 9:45</div>
+                            <div class="timeline-content"><strong class="text-warning">Recreo (15 min)</strong></div>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <div class="timeline-time me-3" style="width: 80px;">9:45 - 10:30</div>
+                            <div class="timeline-content">Quinta clase (45 min)</div>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <div class="timeline-time me-3" style="width: 80px;">10:30 - 11:15</div>
+                            <div class="timeline-content">Sexta clase (45 min)</div>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <div class="timeline-time me-3" style="width: 80px;">11:15 - 12:00</div>
+                            <div class="timeline-content">Séptima clase (45 min)</div>
+                        </div>
+                        <div class="d-flex">
+                            <div class="timeline-time me-3" style="width: 80px;">12:00 - 12:45</div>
+                            <div class="timeline-content">Octava clase (45 min)</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3"><i class="bi bi-palette me-2"></i>Leyenda</h6>
+                    <div class="row g-2">
+                        <div class="col-4">
+                            <div class="p-2 border rounded text-center">
+                                <div class="class-event monday mb-1" style="height: 40px;"></div>
+                                <small>Lunes</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 border rounded text-center">
+                                <div class="class-event tuesday mb-1" style="height: 40px;"></div>
+                                <small>Martes</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 border rounded text-center">
+                                <div class="class-event wednesday mb-1" style="height: 40px;"></div>
+                                <small>Miércoles</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 border rounded text-center">
+                                <div class="class-event thursday mb-1" style="height: 40px;"></div>
+                                <small>Jueves</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 border rounded text-center">
+                                <div class="class-event friday mb-1" style="height: 40px;"></div>
+                                <small>Viernes</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 border rounded text-center bg-warning bg-opacity-25">
+                                <i class="bi bi-cup-hot-fill text-warning"></i><br>
+                                <small>Recreo</small>
+                            </div>
+                        </div>
+                        {% if nivel_seleccionado == 'Preescolar' %}
+                        <div class="col-6">
+                            <div class="p-2 border rounded text-center bg-success bg-opacity-25">
+                                <i class="bi bi-clock-history text-success"></i><br>
+                                <small>Tiempo Libre</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h6 class="mb-2">Duración de clases:</h6>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-primary">45 min</span>
+                            {% if nivel_seleccionado == 'Preescolar' %}
+                            <span class="badge bg-info">30 min</span>
+                            {% endif %}
+                            {% if nivel_seleccionado == 'Primaria' %}
+                            <span class="badge bg-secondary">50 min</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="d-flex justify-content-center gap-3 mt-4">
+        <a href="{% url 'rector:horario_create' %}?grado={{ grado_seleccionado.id }}&sede={{ sede_seleccionada.id }}" 
+           class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Agregar Clase
+        </a>
+        <button onclick="exportSchedule()" class="btn btn-success">
+            <i class="bi bi-download me-1"></i>Exportar
+        </button>
+        <a href="{% url 'rector:horario_list' %}?grado={{ grado_seleccionado.id }}&sede={{ sede_seleccionada.id }}" 
+           class="btn btn-info">
+            <i class="bi bi-list-ul me-1"></i>Ver Lista
+        </a>
+    </div>
+
+    {% elif request.GET.grado and request.GET.sede %}
+    <!-- Estado vacío cuando no hay horarios -->
+    <div class="card text-center py-5">
+        <div class="card-body">
+            <i class="bi bi-calendar-x text-muted mb-4" style="font-size: 4rem;"></i>
+            <h4 class="text-muted mb-3">No hay horarios registrados</h4>
+            <p class="text-muted mb-4">
+                No se encontraron horarios para el grado seleccionado en esta sede.
+            </p>
+            <a href="{% url 'rector:horario_create' %}?grado={{ request.GET.grado }}&sede={{ request.GET.sede }}" 
+               class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Crear Primer Horario
+            </a>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Instrucciones -->
+    <div class="card text-center py-5">
+        <div class="card-body">
+            <i class="bi bi-calendar-week text-muted mb-4" style="font-size: 4rem;"></i>
+            <h4 class="text-muted mb-3">Seleccione un grado y una sede</h4>
+            <p class="text-muted mb-4">
+                Para visualizar el horario completo, seleccione un grado y una sede en los filtros superiores.
+            </p>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                El sistema detectará automáticamente si es <strong>Preescolar (7:00-12:00)</strong> o <strong>Primaria (6:25-12:45)</strong>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            container: 'body',
+            boundary: 'window'
+        });
+    });
+    
+    // Mostrar información de la jornada al seleccionar grado
+    const gradoSelect = document.getElementById('gradoSelect');
+    const infoAlert = document.createElement('div');
+    infoAlert.className = 'alert alert-info mt-2';
+    infoAlert.style.display = 'none';
+    
+    if (gradoSelect) {
+        gradoSelect.parentElement.appendChild(infoAlert);
+        
+        gradoSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const nivel = selectedOption.getAttribute('data-nivel');
+            
+            if (nivel) {
+                if (nivel === 'Preescolar') {
+                    infoAlert.innerHTML = `
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Jornada Preescolar:</strong> 7:00 AM - 12:00 PM<br>
+                        <small>• 6 clases diarias (5 de 45 min, 1 de 30 min)<br>
+                        • Recreo: 9:00 - 9:30 (30 minutos)<br>
+                        • Tiempo libre final: 11:45 - 12:00</small>
+                    `;
+                } else if (nivel === 'Primaria') {
+                    infoAlert.innerHTML = `
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Jornada Primaria:</strong> 6:25 AM - 12:45 PM<br>
+                        <small>• 8 clases diarias (7 de 45 min, 1 de 50 min)<br>
+                        • Recreo: 9:30 - 9:45 (15 minutos)<br>
+                        • Primera clase: 50 minutos</small>
+                    `;
+                }
+                infoAlert.style.display = 'block';
+            } else {
+                infoAlert.style.display = 'none';
+            }
+        });
+        
+        // Mostrar info si ya hay un grado seleccionado
+        if (gradoSelect.value) {
+            gradoSelect.dispatchEvent(new Event('change'));
+        }
+    }
+    
+    // Función para exportar horario
+    function exportSchedule() {
+        const jornada = '{{ nivel_seleccionado|default:"Preescolar" }}';
+        const grado = '{{ grado_seleccionado.nombre|default:"" }}';
+        const sede = '{{ sede_seleccionada.nombre|default:"" }}';
+        
+        // Crear una tabla HTML para exportar
+        const table = document.querySelector('.table-schedule');
+        const clonedTable = table.cloneNode(true);
+        
+        // Limpiar estilos y eventos
+        clonedTable.querySelectorAll('.class-event').forEach(el => {
+            el.removeAttribute('data-bs-toggle');
+            el.removeAttribute('data-bs-html');
+            el.removeAttribute('title');
+        });
+        
+        // Convertir a texto plano
+        const tableText = clonedTable.outerHTML;
+        
+        // Crear blob y descargar
+        const blob = new Blob([`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Horario - ${grado} - ${sede}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    table { border-collapse: collapse; width: 100%; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+                    th { background-color: #f2f2f2; }
+                    .recreo { background-color: #fff3cd; }
+                </style>
+            </head>
+            <body>
+                <h1>Horario de Clases</h1>
+                <h3>${grado} - ${sede}</h3>
+                <p>Jornada: ${jornada} | Fecha: ${new Date().toLocaleDateString()}</p>
+                ${tableText}
+            </body>
+            </html>
+        `], { type: 'text/html' });
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Horario_${grado}_${sede}_${new Date().toISOString().split('T')[0]}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    
+    // Agregar eventos de clic a las clases para ver detalles
+    document.querySelectorAll('.class-event').forEach(event => {
+        event.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // Ya tenemos tooltips, así que no hacemos nada adicional
+        });
+    });
+});
+</script>
+{% endblock %}

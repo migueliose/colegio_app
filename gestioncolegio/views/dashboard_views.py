@@ -6,6 +6,10 @@ from django.shortcuts import redirect
 from django.views.generic import TemplateView
 from django.contrib import messages
 from datetime import timedelta
+from datetime import datetime
+from django.db.models import Count, Avg, Q, Sum
+from django.db.models.functions import TruncMonth
+import json
 
 # Mixins
 from gestioncolegio.mixins import RoleRequiredMixin
@@ -14,9 +18,9 @@ from gestioncolegio.mixins import RoleRequiredMixin
 from estudiantes.models import Estudiante, Matricula, Nota, Acudiente
 from usuarios.models import Docente, Usuario
 from gestioncolegio.models import AñoLectivo, Sede, Colegio, AuditoriaSistema
-from matricula.models import AsignaturaGradoAñoLectivo, PeriodoAcademico
+from matricula.models import AsignaturaGradoAñoLectivo, PeriodoAcademico, Grado, Asignatura
 from django.utils import timezone
-from comportamiento.models import Asistencia, Comportamiento
+from comportamiento.models import Asistencia, Comportamiento, Inconsistencia
 
 
 class DashboardView(RoleRequiredMixin, TemplateView):
@@ -330,26 +334,220 @@ class DashboardAcudienteView(RoleRequiredMixin, TemplateView):
         return estadisticas
 
 class DashboardRectorView(RoleRequiredMixin, TemplateView):
-    """Dashboard rector - SIN SERVICIOS"""
-    template_name = 'gestioncolegio/dashboard_rector.html'
+    template_name = 'rector/dashboard.html'
     allowed_roles = ['Rector']
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Estadísticas para rector
-        context['total_estudiantes'] = Estudiante.objects.filter(estado=True).count()
-        context['total_docentes'] = Docente.objects.filter(estado=True).count()
-        context['total_sedes'] = Sede.objects.filter(estado=True).count()
-        
-        # Matrículas por año
-        año_actual = AñoLectivo.objects.filter(estado=True).first()
-        if año_actual:
-            context['matriculas_actual'] = Matricula.objects.filter(
-                año_lectivo=año_actual
-            ).count()
+        try:
+            # Año lectivo actual
+            año_actual = AñoLectivo.objects.filter(estado=True).first()
+            context['año_lectivo_actual'] = año_actual
+            
+            # Información del usuario
+            context['usuario_actual'] = self.request.user
+            
+            # Estadísticas principales
+            context.update(self.get_estadisticas_principales(año_actual))
+            
+            # Datos para gráficos
+            context.update(self.get_datos_graficos(año_actual))
+            
+            # Últimas actividades
+            context.update(self.get_actividades_recientes())
+            
+            # Alertas
+            context['alertas'] = self.get_alertas(año_actual)
+            
+            # Fecha actual
+            context['fecha_actual'] = datetime.now().strftime('%d de %B de %Y')
+            
+        except Exception as e:
+            context['error'] = f"Error al cargar datos: {str(e)}"
         
         return context
+    
+    def get_estadisticas_principales(self, año_actual):
+        """Obtiene las estadísticas principales"""
+        stats = {}
+        
+        # Total de estudiantes
+        stats['total_estudiantes'] = Estudiante.objects.filter(estado=True).count()
+        
+        # Estudiantes activos este año
+        if año_actual:
+            stats['estudiantes_activos'] = Matricula.objects.filter(
+                año_lectivo=año_actual,
+                estado='ACT'
+            ).count()
+        else:
+            stats['estudiantes_activos'] = 0
+        
+        # Docentes
+        stats['total_docentes'] = Docente.objects.filter(estado=True).count()
+        
+        # Sedes activas
+        stats['total_sedes'] = Sede.objects.filter(estado=True).count()
+        
+        # Asistencia promedio (último mes)
+        if año_actual:
+            ultimo_mes = timezone.now() - timedelta(days=30)
+            asistencia = Asistencia.objects.filter(
+                periodo_academico__año_lectivo=año_actual,
+                fecha__gte=ultimo_mes
+            ).aggregate(
+                total=Count('id'),
+                asistieron=Count('id', filter=Q(estado='A'))
+            )
+            
+            if asistencia['total'] > 0:
+                stats['porcentaje_asistencia'] = round(
+                    (asistencia['asistieron'] / asistencia['total']) * 100, 1
+                )
+            else:
+                stats['porcentaje_asistencia'] = 0
+        else:
+            stats['porcentaje_asistencia'] = 0
+        
+        # Promedio académico
+        if año_actual:
+            notas = Nota.objects.filter(
+                periodo_academico__año_lectivo=año_actual
+            ).aggregate(promedio=Avg('calificacion'))
+            stats['promedio_academico'] = round(notas['promedio'] or 0, 1)
+        else:
+            stats['promedio_academico'] = 0
+        
+        # Comportamientos positivos vs negativos
+        if año_actual:
+            comportamientos = Comportamiento.objects.filter(
+                periodo_academico__año_lectivo=año_actual
+            ).values('tipo').annotate(total=Count('id'))
+            
+            stats['comportamientos_positivos'] = next(
+                (c['total'] for c in comportamientos if c['tipo'] == 'Positivo'), 0
+            )
+            stats['comportamientos_negativos'] = next(
+                (c['total'] for c in comportamientos if c['tipo'] == 'Negativo'), 0
+            )
+        
+        return stats
+    
+    def get_datos_graficos(self, año_actual):
+        """Prepara datos para gráficos"""
+        datos = {}
+        
+        if año_actual:
+            # Distribución por género
+            datos['distribucion_genero'] = Matricula.objects.filter(
+                año_lectivo=año_actual,
+                estado='ACT'
+            ).values(
+                'estudiante__usuario__sexo'
+            ).annotate(
+                total=Count('id')
+            )
+            
+            # Matrículas por grado
+            datos['matriculas_grado'] = Matricula.objects.filter(
+                año_lectivo=año_actual,
+                estado='ACT'
+            ).values(
+                'grado_año_lectivo__grado__nombre'
+            ).annotate(
+                total=Count('id')
+            ).order_by('grado_año_lectivo__grado__nombre')
+            
+            # Asistencia mensual (últimos 6 meses)
+            seis_meses = timezone.now() - timedelta(days=180)
+            datos['asistencia_mensual'] = Asistencia.objects.filter(
+                periodo_academico__año_lectivo=año_actual,
+                fecha__gte=seis_meses
+            ).annotate(
+                mes=TruncMonth('fecha')
+            ).values('mes').annotate(
+                porcentaje=Count('id', filter=Q(estado='A')) * 100.0 / Count('id')
+            ).order_by('mes')
+        
+        return datos
+    
+    def get_actividades_recientes(self):
+        """Obtiene actividades recientes del sistema"""
+        actividades = {}
+        
+        # Últimas 10 auditorías
+        actividades['ultimas_auditorias'] = AuditoriaSistema.objects.select_related(
+            'usuario'
+        ).order_by('-created_at')[:10]
+        
+        # Últimos 5 comportamientos
+        actividades['ultimos_comportamientos'] = Comportamiento.objects.select_related(
+            'estudiante__usuario',
+            'docente__usuario'
+        ).order_by('-fecha')[:5]
+        
+        # Últimas inconsistencias
+        actividades['ultimas_inconsistencias'] = Inconsistencia.objects.select_related(
+            'estudiante__usuario'
+        ).order_by('-fecha')[:5]
+        
+        return actividades
+    
+    def get_alertas(self, año_actual):
+        """Genera alertas importantes para el rector"""
+        alertas = []
+        hoy = timezone.now().date()
+        
+        # Matrículas pendientes
+        if año_actual:
+            pendientes = Matricula.objects.filter(
+                año_lectivo=año_actual,
+                estado='PEN'
+            ).count()
+            if pendientes > 0:
+                alertas.append({
+                    'tipo': 'warning',
+                    'icono': 'bi-person-plus',
+                    'mensaje': f'{pendientes} matrícula(s) pendientes de aprobación',
+                    'accion': 'Ver matrículas pendientes',
+                    'url': '{% url "estudiantes:matriculas" %}?estado=PEN'
+                })
+        
+        # Comportamientos negativos recientes
+        if año_actual:
+            negativos = Comportamiento.objects.filter(
+                periodo_academico__año_lectivo=año_actual,
+                tipo='Negativo',
+                fecha__gte=hoy - timedelta(days=7)
+            ).count()
+            if negativos > 5:
+                alertas.append({
+                    'tipo': 'danger',
+                    'icono': 'bi-exclamation-triangle',
+                    'mensaje': f'{negativos} comportamientos negativos en la última semana',
+                    'accion': 'Revisar comportamientos',
+                    'url': '{% url "comportamiento:comportamientos" %}'
+                })
+        
+        # Periodos académicos próximos a terminar
+        if año_actual:
+            periodos = PeriodoAcademico.objects.filter(
+                año_lectivo=año_actual,
+                estado=True,
+                fecha_fin__gte=hoy,
+                fecha_fin__lte=hoy + timedelta(days=7)
+            )
+            for periodo in periodos:
+                alertas.append({
+                    'tipo': 'info',
+                    'icono': 'bi-calendar-event',
+                    'mensaje': f'El período {periodo.periodo.nombre} termina el {periodo.fecha_fin.strftime("%d/%m")}',
+                    'accion': 'Ver detalles',
+                    'url': '{% url "matricula:periodos" %}'
+                })
+        
+        return alertas
     
 class DashboardAdministradorView(RoleRequiredMixin, TemplateView):
     """Dashboard administrador"""

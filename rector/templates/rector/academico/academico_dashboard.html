@@ -1,0 +1,361 @@
+<!-- rector/templates/rector/academico/academico_dashboard.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Dashboard Académico - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Académico</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-mortarboard-fill text-primary me-2"></i>
+                Dashboard Académico
+            </h1>
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown">
+                    <i class="bi bi-plus-circle me-1"></i>Acciones Rápidas
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'rector:grado_añoelectivo_create' %}">
+                            <i class="bi bi-mortarboard me-2"></i>Asignar Grado
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'rector:logro_create' %}">
+                            <i class="bi bi-trophy me-2"></i>Crear Logro
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'rector:horario_create' %}">
+                            <i class="bi bi-calendar-week me-2"></i>Crear Horario
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <p class="text-muted mb-0">Gestión integral del área académica del colegio</p>
+    </div>
+</div>
+
+<!-- Estadísticas generales -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Estudiantes</h6>
+                        <h3 class="mb-0 text-white">{{ total_estudiantes }}</h3>
+                        <small class="text-white-75">Total activos</small>
+                    </div>
+                    <i class="bi bi-people stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Docentes</h6>
+                        <h3 class="mb-0 text-white">{{ total_docentes }}</h3>
+                        <small class="text-white-75">Total activos</small>
+                    </div>
+                    <i class="bi bi-person-badge stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Grados</h6>
+                        <h3 class="mb-0 text-white">{{ total_grados }}</h3>
+                        <small class="text-white-75">{{ grados_activos }} activos</small>
+                    </div>
+                    <i class="bi bi-mortarboard stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Promedio</h6>
+                        <h3 class="mb-0 text-white">{{ promedio_general|floatformat:1 }}</h3>
+                        <small class="text-white-75">Rendimiento general</small>
+                    </div>
+                    <i class="bi bi-graph-up stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Módulos principales -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-4">
+        <div class="card action-card">
+            <div class="card-body text-center">
+                <div class="action-icon text-primary">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <h5 class="card-title">Estudiantes</h5>
+                <p class="card-text text-muted">Gestión completa de estudiantes, matrículas y seguimiento académico.</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'rector:estudiante_list' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-list me-1"></i>Listar Estudiantes
+                    </a>
+                    <a href="#" class="btn btn-outline-secondary">
+                        <i class="bi bi-graph-up me-1"></i>Reportes
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    {{ estudiantes_nuevos }} nuevos este año
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card action-card">
+            <div class="card-body text-center">
+                <div class="action-icon text-success">
+                    <i class="bi bi-person-badge"></i>
+                </div>
+                <h5 class="card-title">Docentes</h5>
+                <p class="card-text text-muted">Administración de docentes, asignaturas y carga académica.</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'rector:docente_list' %}" class="btn btn-outline-success">
+                        <i class="bi bi-list me-1"></i>Listar Docentes
+                    </a>
+                    <a href="#" class="btn btn-outline-secondary">
+                        <i class="bi bi-calendar-week me-1"></i>Asignar Horarios
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    {{ docentes_activos }} docentes activos
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card action-card">
+            <div class="card-body text-center">
+                <div class="action-icon text-warning">
+                    <i class="bi bi-mortarboard"></i>
+                </div>
+                <h5 class="card-title">Grados y Niveles</h5>
+                <p class="card-text text-muted">Configuración de grados, niveles y su asignación a años lectivos.</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'rector:grado_list' %}" class="btn btn-outline-warning">
+                        <i class="bi bi-list me-1"></i>Ver Grados
+                    </a>
+                    <a href="{% url 'rector:nivel_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-layers me-1"></i>Ver Niveles
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    {{ niveles_count }} niveles configurados
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tablero de control -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Actividad Reciente</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% for actividad in actividades_recientes %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between">
+                                <h6 class="mb-1">{{ actividad.titulo }}</h6>
+                                <small class="text-muted">{{ actividad.fecha|timesince }}</small>
+                            </div>
+                            <p class="mb-1 text-muted">{{ actividad.descripcion }}</p>
+                            <small class="text-primary">{{ actividad.usuario }}</small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-activity text-muted display-6"></i>
+                        <p class="text-muted mt-2">No hay actividad reciente</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Accesos Directos</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'rector:asignatura_list' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-book text-primary me-3"></i>
+                            <div>
+                                <h6 class="mb-0">Asignaturas</h6>
+                                <small class="text-muted">Gestión de asignaturas</small>
+                            </div>
+                        </div>
+                    </a>
+                    <a href="{% url 'rector:logro_list' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-trophy text-success me-3"></i>
+                            <div>
+                                <h6 class="mb-0">Logros</h6>
+                                <small class="text-muted">Logros académicos</small>
+                            </div>
+                        </div>
+                    </a>
+                    <a href="{% url 'rector:horario_list' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-calendar-week text-warning me-3"></i>
+                            <div>
+                                <h6 class="mb-0">Horarios</h6>
+                                <small class="text-muted">Horarios de clase</small>
+                            </div>
+                        </div>
+                    </a>
+                    <a href="{% url 'rector:horario_por_grado' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-calendar-range text-info me-3"></i>
+                            <div>
+                                <h6 class="mb-0">Horarios por Grado</h6>
+                                <small class="text-muted">Vista completa</small>
+                            </div>
+                        </div>
+                    </a>
+                    <a href="{% url 'rector:logros_por_asignatura' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-bar-chart text-danger me-3"></i>
+                            <div>
+                                <h6 class="mb-0">Logros por Asignatura</h6>
+                                <small class="text-muted">Estadísticas</small>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas por nivel -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Estadísticas por Nivel Escolar</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nivel</th>
+                        <th>Grados</th>
+                        <th>Estudiantes</th>
+                        <th>Promedio</th>
+                        <th>Docentes</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for estadistica in estadisticas_niveles %}
+                    <tr>
+                        <td>
+                            <strong>{{ estadistica.nivel.nombre }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">{{ estadistica.total_grados }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-success">{{ estadistica.total_estudiantes }}</span>
+                        </td>
+                        <td>
+                            <span class="badge {% if estadistica.promedio >= 3.5 %}bg-success{% elif estadistica.promedio >= 3.0 %}bg-warning{% else %}bg-danger{% endif %}">
+                                {{ estadistica.promedio|floatformat:1 }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ estadistica.total_docentes }}</span>
+                        </td>
+                        <td>
+                            {% if estadistica.activo %}
+                            <span class="badge bg-success">Activo</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Inactivo</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-3">
+                            <span class="text-muted">No hay estadísticas disponibles</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Auto-refresh para datos en tiempo real
+        setInterval(function() {
+            $.ajax({
+                url: '{% url "rector:ajax_actualizar_estadisticas" %}',
+                success: function(data) {
+                    if (data.success) {
+                        // Actualizar contadores
+                        $('#total-estudiantes').text(data.estadisticas.total_estudiantes);
+                        $('#total-docentes').text(data.estadisticas.total_docentes);
+                        $('#promedio-general').text(data.estadisticas.promedio_general);
+                    }
+                }
+            });
+        }, 30000); // Cada 30 segundos
+    });
+</script>
+{% endblock %}

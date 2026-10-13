@@ -1,0 +1,223 @@
+<!-- rector/templates/rector/academico/grado/gradoañoelectivo_form.html -->
+{% extends 'rector/academico/grado/base_grado.html' %}
+
+{% block title %}{{ titulo }} - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:academico_dashboard' %}">Académico</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:grado_list' %}">Grados</a></li>
+        <li class="breadcrumb-item active">{{ accion }} Grado</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-{% if accion == 'Asignar' %}plus-circle{% else %}pencil{% endif %} text-primary me-2"></i>
+                    {{ titulo }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if accion == 'Asignar' %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Instrucciones:</strong> Seleccione un grado y el año lectivo al que desea asignarlo.
+                        Solo podrá asignar grados que no estén ya asignados al año seleccionado.
+                    </div>
+                    
+                    {% if año_lectivo %}
+                    <div class="mb-4">
+                        <h6 class="border-bottom pb-2">Información del Año Lectivo</h6>
+                        <div class="alert alert-success">
+                            <i class="bi bi-calendar-check me-2"></i>
+                            <strong>Año seleccionado:</strong> {{ año_lectivo.anho }} - {{ año_lectivo.sede.nombre }}
+                            <input type="hidden" name="año_lectivo" value="{{ año_lectivo.id }}">
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Modificación:</strong> Está modificando la asignación del grado 
+                        <strong>{{ grado_actual.nombre }}</strong> para el año lectivo 
+                        <strong>{{ año_lectivo_actual.anho }}</strong>.
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Renderizar campos del formulario manualmente -->
+                    <div class="row">
+                        {% if accion == 'Asignar' %}
+                        <div class="col-md-12 mb-3">
+                            <label for="{{ form.grado.id_for_label }}" class="form-label">
+                                {{ form.grado.label }}
+                            </label>
+                            {{ form.grado }}
+                            {% if form.grado.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.grado.errors }}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">{{ form.grado.help_text }}</small>
+                        </div>
+                        
+                        {% if not año_lectivo %}
+                        <div class="col-md-12 mb-3">
+                            <label for="{{ form.año_lectivo.id_for_label }}" class="form-label">
+                                {{ form.año_lectivo.label }}
+                            </label>
+                            {{ form.año_lectivo }}
+                            {% if form.año_lectivo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.año_lectivo.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                        
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check">
+                                {{ form.estado }}
+                                <label for="{{ form.estado.id_for_label }}" class="form-check-label">
+                                    {{ form.estado.label }}
+                                </label>
+                                {% if form.estado.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.estado.errors }}
+                                </div>
+                                {% endif %}
+                                <small class="form-text text-muted d-block">
+                                    {% if accion == 'Asignar' %}
+                                    Active esta opción para que el grado esté disponible inmediatamente.
+                                    {% else %}
+                                    Desactive esta opción para ocultar temporalmente este grado del año lectivo.
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-top">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'rector:grado_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-{% if accion == 'Asignar' %}plus-circle{% else %}check-circle{% endif %} me-1"></i>
+                                {{ accion }} Grado
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Información adicional solo para creación -->
+        {% if accion == 'Asignar' and grados_disponibles %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">Grados Disponibles</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Grado</th>
+                                <th>Nivel</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for grado in grados_disponibles %}
+                            <tr>
+                                <td>{{ grado.nombre }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ grado.nivel_escolar.nombre }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">Disponible</span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-3">
+                                    <span class="text-muted">No hay grados disponibles para asignar</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializar select2 si existen los campos
+        if ($('.select2').length) {
+            $('.select2').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Seleccione una opción',
+                allowClear: true,
+                language: {
+                    noResults: function() {
+                        return "No se encontraron resultados";
+                    }
+                }
+            });
+        }
+        
+        // Cambiar dinámicamente los grados disponibles según el año seleccionado
+        $('#id_año_lectivo').on('change', function() {
+            const añoId = $(this).val();
+            if (añoId) {
+                $.ajax({
+                    url: '{% url "rector:ajax_grados_por_nivel_año" %}',
+                    data: {
+                        'año': añoId,
+                        'nivel': 'todos',
+                        'sede': 'todos'
+                    },
+                    success: function(data) {
+                        if (data.success) {
+                            const selectGrado = $('#id_grado');
+                            selectGrado.empty();
+                            selectGrado.append('<option value="">Seleccione un grado</option>');
+                            
+                            data.grados.forEach(function(grado) {
+                                selectGrado.append(new Option(grado.descripcion, grado.id));
+                            });
+                            
+                            // Re-inicializar select2
+                            selectGrado.select2({
+                                theme: 'bootstrap-5',
+                                placeholder: 'Seleccione un grado',
+                                allowClear: true
+                            });
+                        }
+                    },
+                    error: function() {
+                        console.error('Error al cargar los grados');
+                    }
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,756 @@
+<!-- rector/templates/rector/institucional/dashboard.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Dashboard Institucional - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Institucional</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-building text-primary me-2"></i>
+                Dashboard Institucional
+            </h1>
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown">
+                    <i class="bi bi-gear me-1"></i>Configuración
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'rector:año_lectivo_create' %}">
+                            <i class="bi bi-calendar-plus me-2"></i>Nuevo Año Lectivo
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'rector:periodo_create' %}">
+                            <i class="bi bi-calendar-week me-2"></i>Nuevo Periodo
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="bi bi-clipboard-data me-2"></i>Reportes
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <p class="text-muted mb-0">Gestión de estructura institucional y configuración académica</p>
+    </div>
+</div>
+
+<!-- Alertas del sistema -->
+{% if alertas %}
+<div class="row mb-4">
+    <div class="col-12">
+        {% for alerta in alertas %}
+        <div class="alert alert-{% if alerta.tipo == 'warning' %}warning{% elif alerta.tipo == 'danger' %}danger{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ alerta.mensaje }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Estadísticas generales -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Año Actual</h6>
+                        <h3 class="mb-0 text-white">
+                            {% if año_lectivo_actual %}
+                                {{ año_lectivo_actual.anho }}
+                            {% else %}
+                                No config.
+                            {% endif %}
+                        </h3>
+                        <small class="text-white-75">
+                            {% if año_lectivo_actual %}
+                                {{ año_lectivo_actual.sede.nombre }}
+                            {% endif %}
+                        </small>
+                    </div>
+                    <i class="bi bi-calendar-check stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Sedes</h6>
+                        <h3 class="mb-0 text-white">{{ sedes_activas }}</h3>
+                        <small class="text-white-75">Sedes activas</small>
+                    </div>
+                    <i class="bi bi-buildings stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Años Lectivos</h6>
+                        <h3 class="mb-0 text-white">{{ años_lectivos|length }}</h3>
+                        <small class="text-white-75">Total registrados</small>
+                    </div>
+                    <i class="bi bi-calendar-range stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Periodos</h6>
+                        <h3 class="mb-0 text-white">{{ periodos_configurados }}</h3>
+                        <small class="text-white-75">Configurados</small>
+                    </div>
+                    <i class="bi bi-calendar-event stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Módulos principales -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-4">
+        <div class="card action-card">
+            <div class="card-body text-center">
+                <div class="action-icon text-primary">
+                    <i class="bi bi-buildings"></i>
+                </div>
+                <h5 class="card-title">Sedes</h5>
+                <p class="card-text text-muted">Gestión de sedes, director y configuración de cada campus.</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'rector:sedes' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-list me-1"></i>Ver Sedes
+                    </a>
+                    <a href="#" class="btn btn-outline-secondary">
+                        <i class="bi bi-graph-up me-1"></i>Estadísticas
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    {{ total_estudiantes }} estudiantes activos
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card action-card">
+            <div class="card-body text-center">
+                <div class="action-icon text-success">
+                    <i class="bi bi-calendar-range"></i>
+                </div>
+                <h5 class="card-title">Años Lectivos</h5>
+                <p class="card-text text-muted">Configuración de años académicos, fechas y períodos.</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'rector:año_lectivo_list' %}" class="btn btn-outline-success">
+                        <i class="bi bi-list me-1"></i>Ver Años
+                    </a>
+                    <a href="{% url 'rector:año_lectivo_create' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-plus-circle me-1"></i>Crear Nuevo
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    {% if año_lectivo_actual %}
+                        {{ año_lectivo_actual.anho }} es el año actual
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card action-card">
+            <div class="card-body text-center">
+                <div class="action-icon text-warning">
+                    <i class="bi bi-calendar-week"></i>
+                </div>
+                <h5 class="card-title">Periodos Académicos</h5>
+                <p class="card-text text-muted">Gestión de periodos, fechas y configuración académica.</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'rector:periodo_list' %}" class="btn btn-outline-warning">
+                        <i class="bi bi-list me-1"></i>Ver Periodos
+                    </a>
+                    <a href="{% url 'rector:periodo_create' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-plus-circle me-1"></i>Crear Periodo
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    {{ periodos_proximos|length }} periodos próximos
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Asignación Docente y Próximos Eventos -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Asignación Docente</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2 mb-3">
+                    <a href="{% url 'rector:asignacion_docente_dashboard' %}" class="btn btn-primary">
+                        <i class="bi bi-person-badge me-1"></i>Ir al Dashboard de Asignación
+                    </a>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title text-primary">
+                                    <i class="bi bi-person-x me-1"></i>Sin Asignaturas
+                                </h6>
+                                <p class="card-text">
+                                    <span class="h3">{{ docentes_sin_asignaturas.count }}</span> docentes
+                                </p>
+                                <small class="text-muted">Requieren asignación</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title text-warning">
+                                    <i class="bi bi-book me-1"></i>Sin Docente
+                                </h6>
+                                <p class="card-text">
+                                    <span class="h3">{{ asignaturas_sin_docente.count }}</span> asignaturas
+                                </p>
+                                <small class="text-muted">Sin docente asignado</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Próximos Eventos</h5>
+                <small class="text-muted">Periodos Académicos</small>
+            </div>
+            <div class="card-body">
+                {% if periodos_proximos %}
+                <div class="list-group list-group-flush">
+                    {% for periodo in periodos_proximos %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ periodo.periodo.nombre }}</h6>
+                            <small>{{ periodo.fecha_inicio|date:"d/m/Y" }}</small>
+                        </div>
+                        <p class="mb-1 text-muted">
+                            {{ periodo.año_lectivo.sede.nombre }} - {{ periodo.año_lectivo.anho }}
+                        </p>
+                        <small>
+                            Del {{ periodo.fecha_inicio|date:"d/m/Y" }} al {{ periodo.fecha_fin|date:"d/m/Y" }}
+                        </small>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-calendar-x text-muted display-6"></i>
+                    <p class="text-muted mt-2">No hay periodos próximos programados</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'rector:periodo_list' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-calendar-event me-1"></i>Ver todos los periodos
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Colegio y Configuración -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Información del Colegio</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h4 class="text-primary">{{ colegio.nombre }}</h4>
+                        <p class="text-muted mb-2">
+                            <i class="bi bi-geo-alt me-2"></i>{{ colegio.direccion }}
+                        </p>
+                        <p class="text-muted mb-2">
+                            <i class="bi bi-file-text me-2"></i>Resolución: {{ colegio.resolucion }}
+                        </p>
+                        <p class="text-muted mb-3">
+                            <i class="bi bi-card-text me-2"></i>DANE: {{ colegio.dane }}
+                        </p>
+                        
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-primary">
+                                <i class="bi bi-check-circle me-1"></i>Activo
+                            </span>
+                            <span class="badge bg-info">
+                                <i class="bi bi-calendar me-1"></i>{{ años_lectivos|length }} años lectivos
+                            </span>
+                            <span class="badge bg-success">
+                                <i class="bi bi-buildings me-1"></i>{{ sedes_activas }} sedes
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">Configuración Actual</h6>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-2">
+                                        <i class="bi bi-calendar-check text-primary me-2"></i>
+                                        <strong>Año Actual:</strong>
+                                        {% if año_lectivo_actual %}
+                                            {{ año_lectivo_actual.anho }}
+                                        {% else %}
+                                            <span class="text-danger">No configurado</span>
+                                        {% endif %}
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="bi bi-calendar-week text-primary me-2"></i>
+                                        <strong>Periodos:</strong> {{ periodos_configurados }}
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="bi bi-people text-primary me-2"></i>
+                                        <strong>Estudiantes:</strong> {{ total_estudiantes }}
+                                    </li>
+                                    <li>
+                                        <i class="bi bi-person-badge text-primary me-2"></i>
+                                        <strong>Docentes:</strong> {{ total_docentes }}
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+// JavaScript actualizado para el dashboard institucional
+document.addEventListener('DOMContentLoaded', function() {
+    // Función para obtener el token CSRF
+    function getCsrfToken() {
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Función para mostrar notificaciones
+    function showToast(message, type = 'info') {
+        // Crear contenedor si no existe
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Crear toast
+        const toastId = 'toast-' + Date.now();
+        const toast = document.createElement('div');
+        toast.id = toastId;
+        toast.className = `toast align-items-center text-bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        
+        // Icono según el tipo
+        let icon = 'bi-info-circle';
+        if (type === 'success') icon = 'bi-check-circle';
+        if (type === 'warning') icon = 'bi-exclamation-triangle';
+        if (type === 'danger') icon = 'bi-x-circle';
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi ${icon} me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Eliminar después de que se oculte
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+    
+    // ========== AUTO-REFRESH DE ESTADÍSTICAS ==========
+    function actualizarEstadisticas() {
+        fetch('{% url "rector:ajax_estadisticas_institucionales" %}')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const stats = data.estadisticas;
+                    
+                    // Actualizar elementos en el dashboard
+                    const elementos = {
+                        'total-sedes': stats.total_sedes,
+                        'total-años-lectivos': stats.total_años_lectivos,
+                        'total-estudiantes': stats.total_estudiantes,
+                        'total-docentes-asignados': stats.total_docentes_asignados,
+                        'periodos-configurados': stats.periodos_configurados,
+                        'asignaturas-sin-docente': stats.asignaturas_sin_docente,
+                    };
+                    
+                    for (const [id, valor] of Object.entries(elementos)) {
+                        const elemento = document.getElementById(id);
+                        if (elemento) {
+                            elemento.textContent = valor;
+                        }
+                    }
+                    
+                    // Actualizar año actual
+                    const añoActualElement = document.getElementById('año-actual');
+                    if (añoActualElement && stats.año_actual) {
+                        añoActualElement.textContent = stats.año_actual;
+                    }
+                    
+                    // Mostrar alerta si hay asignaturas sin docente
+                    if (stats.asignaturas_sin_docente > 0) {
+                        const alertaElement = document.getElementById('alerta-asignaturas-sin-docente');
+                        if (alertaElement) {
+                            alertaElement.innerHTML = `
+                                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    Hay <strong>${stats.asignaturas_sin_docente}</strong> asignaturas sin docente asignado.
+                                    <a href="{% url 'rector:asignacion_docente_dashboard' %}" class="alert-link">Revisar</a>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            `;
+                        }
+                    }
+                } else {
+                    console.error('Error en estadísticas:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error al obtener estadísticas:', error);
+            });
+    }
+    
+    // Actualizar estadísticas cada 60 segundos
+    setInterval(actualizarEstadisticas, 60000);
+    
+    // Actualizar inmediatamente al cargar la página
+    actualizarEstadisticas();
+    
+    // ========== VALIDACIÓN DE SOLAPAMIENTO DE PERIODOS ==========
+    const fechaInicioInput = document.getElementById('id_fecha_inicio');
+    const fechaFinInput = document.getElementById('id_fecha_fin');
+    const añoLectivoSelect = document.getElementById('id_año_lectivo');
+    
+    if (fechaInicioInput && fechaFinInput && añoLectivoSelect) {
+        const checkSolapamiento = function() {
+            if (fechaInicioInput.value && fechaFinInput.value && añoLectivoSelect.value) {
+                const data = {
+                    año_lectivo_id: añoLectivoSelect.value,
+                    fecha_inicio: fechaInicioInput.value,
+                    fecha_fin: fechaFinInput.value,
+                    periodo_id: {% if form.instance.id %}'{{ form.instance.id }}'{% else %}null{% endif %}
+                };
+                
+                fetch('{% url "rector:ajax_check_solapamiento" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.hay_solapamiento) {
+                        let mensaje = '¡Atención! Este periodo se solapa con:\n\n';
+                        data.periodos_solapados.forEach(p => {
+                            mensaje += `• ${p.nombre} (${p.fecha_inicio} al ${p.fecha_fin})\n`;
+                        });
+                        mensaje += '\n¿Desea continuar de todas formas?';
+                        
+                        if (!confirm(mensaje)) {
+                            fechaInicioInput.value = '';
+                            fechaFinInput.value = '';
+                            fechaInicioInput.focus();
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al verificar solapamiento:', error);
+                });
+            }
+        };
+        
+        fechaInicioInput.addEventListener('change', checkSolapamiento);
+        fechaFinInput.addEventListener('change', checkSolapamiento);
+    }
+    
+    // ========== TOGGLE ESTADO AÑO LECTIVO ==========
+    document.querySelectorAll('.toggle-año-estado').forEach(button => {
+        button.addEventListener('click', function() {
+            const añoId = this.dataset.añoId;
+            const estadoActual = this.dataset.estado === 'true';
+            
+            if (!confirm(`¿Está seguro de ${estadoActual ? 'desactivar' : 'activar'} este año lectivo?`)) {
+                return;
+            }
+            
+            fetch('{% url "rector:ajax_toggle_año_estado" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({ año_lectivo_id: añoId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar botón
+                    const nuevoEstado = data.nuevo_estado;
+                    this.dataset.estado = nuevoEstado;
+                    this.innerHTML = nuevoEstado ? 
+                        '<i class="bi bi-toggle-on"></i> Activo' : 
+                        '<i class="bi bi-toggle-off"></i> Inactivo';
+                    this.className = nuevoEstado ? 
+                        'btn btn-sm btn-success toggle-año-estado' : 
+                        'btn btn-sm btn-danger toggle-año-estado';
+                    
+                    // Actualizar badge de estado
+                    const estadoBadge = document.getElementById(`estado-badge-${añoId}`);
+                    if (estadoBadge) {
+                        estadoBadge.textContent = nuevoEstado ? 'Activo' : 'Inactivo';
+                        estadoBadge.className = nuevoEstado ? 'badge bg-success' : 'badge bg-danger';
+                    }
+                    
+                    showToast(data.mensaje, 'success');
+                } else {
+                    showToast('Error: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                showToast('Error en la solicitud', 'danger');
+                console.error('Error:', error);
+            });
+        });
+    });
+    
+    // ========== TOGGLE ESTADO PERIODO ==========
+    document.querySelectorAll('.toggle-periodo-estado').forEach(button => {
+        button.addEventListener('click', function() {
+            const periodoId = this.dataset.periodoId;
+            const estadoActual = this.dataset.estado === 'true';
+            
+            if (!confirm(`¿Está seguro de ${estadoActual ? 'desactivar' : 'activar'} este periodo?`)) {
+                return;
+            }
+            
+            fetch('{% url "rector:ajax_toggle_periodo_estado" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({ periodo_id: periodoId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar botón
+                    const nuevoEstado = data.nuevo_estado;
+                    this.dataset.estado = nuevoEstado;
+                    this.innerHTML = nuevoEstado ? 
+                        '<i class="bi bi-toggle-on"></i> Activo' : 
+                        '<i class="bi bi-toggle-off"></i> Inactivo';
+                    this.className = nuevoEstado ? 
+                        'btn btn-sm btn-success toggle-periodo-estado' : 
+                        'btn btn-sm btn-danger toggle-periodo-estado';
+                    
+                    // Actualizar badge de estado
+                    const estadoBadge = document.getElementById(`estado-periodo-${periodoId}`);
+                    if (estadoBadge) {
+                        estadoBadge.textContent = nuevoEstado ? 'Activo' : 'Inactivo';
+                        estadoBadge.className = nuevoEstado ? 'badge bg-success' : 'badge bg-danger';
+                    }
+                    
+                    showToast(data.mensaje, 'success');
+                } else {
+                    showToast('Error: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                showToast('Error en la solicitud', 'danger');
+                console.error('Error:', error);
+            });
+        });
+    });
+    
+    // ========== CARGA DE AÑOS LECTIVOS POR SEDE ==========
+    const sedeSelect = document.getElementById('filtro-sede');
+    if (sedeSelect) {
+        sedeSelect.addEventListener('change', function() {
+            const sedeId = this.value;
+            const añoSelect = document.getElementById('filtro-año-lectivo');
+            
+            if (sedeId && añoSelect) {
+                // Limpiar opciones actuales
+                añoSelect.innerHTML = '<option value="">Cargando...</option>';
+                añoSelect.disabled = true;
+                
+                fetch(`{% url "rector:ajax_años_por_sede" %}?sede_id=${sedeId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            añoSelect.innerHTML = '<option value="">Todos los años</option>';
+                            data.años_lectivos.forEach(año => {
+                                const option = document.createElement('option');
+                                option.value = año.id;
+                                option.textContent = año.anho;
+                                if (año.fecha_inicio) {
+                                    option.textContent += ` (${new Date(año.fecha_inicio).toLocaleDateString()})`;
+                                }
+                                añoSelect.appendChild(option);
+                            });
+                            añoSelect.disabled = false;
+                        } else {
+                            añoSelect.innerHTML = '<option value="">Error al cargar</option>';
+                        }
+                    })
+                    .catch(error => {
+                        añoSelect.innerHTML = '<option value="">Error de conexión</option>';
+                        console.error('Error:', error);
+                    });
+            }
+        });
+    }
+    
+    // ========== VISTA PREVIA DE PERIODO ==========
+    const periodoForm = document.querySelector('form[action*="periodo"]');
+    if (periodoForm) {
+        const inputs = periodoForm.querySelectorAll('select, input[type="date"]');
+        
+        function actualizarVistaPrevia() {
+            const añoLectivoId = document.getElementById('id_año_lectivo')?.value;
+            const periodoId = document.getElementById('id_periodo')?.value;
+            const fechaInicio = document.getElementById('id_fecha_inicio')?.value;
+            const fechaFin = document.getElementById('id_fecha_fin')?.value;
+            
+            const preview = document.getElementById('periodo-preview');
+            if (preview) {
+                let contenido = '';
+                
+                if (añoLectivoId && periodoId && fechaInicio && fechaFin) {
+                    const inicioDate = new Date(fechaInicio);
+                    const finDate = new Date(fechaFin);
+                    const diffTime = Math.abs(finDate - inicioDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    contenido = `
+                        <div class="alert alert-info">
+                            <h6 class="mb-2"><i class="bi bi-calendar-week me-2"></i>Vista Previa</h6>
+                            <p class="mb-1"><strong>Duración:</strong> ${diffDays} días</p>
+                            <p class="mb-1"><strong>Fechas:</strong> ${inicioDate.toLocaleDateString()} al ${finDate.toLocaleDateString()}</p>
+                            <p class="mb-0"><small class="text-muted">El periodo abarcará ${diffDays} días lectivos.</small></p>
+                        </div>
+                    `;
+                }
+                
+                preview.innerHTML = contenido;
+            }
+        }
+        
+        inputs.forEach(input => {
+            input.addEventListener('change', actualizarVistaPrevia);
+        });
+        
+        // Inicializar vista previa
+        actualizarVistaPrevia();
+    }
+    
+    // ========== VALIDACIÓN DE FECHAS ==========
+    if (fechaInicioInput && fechaFinInput) {
+        fechaInicioInput.addEventListener('change', function() {
+            if (fechaFinInput.value && new Date(this.value) > new Date(fechaFinInput.value)) {
+                alert('La fecha de inicio no puede ser posterior a la fecha de fin');
+                this.value = '';
+            }
+        });
+        
+        fechaFinInput.addEventListener('change', function() {
+            if (fechaInicioInput.value && new Date(this.value) < new Date(fechaInicioInput.value)) {
+                alert('La fecha de fin no puede ser anterior a la fecha de inicio');
+                this.value = '';
+            }
+        });
+    }
+});
+</script>
+{% endblock  %}

@@ -1,0 +1,411 @@
+<!-- rector/templates/rector/dashboard.html -->
+{% extends 'rector/base_rector.html' %}
+{% load static seguimiento_filters %}
+
+{% block title %}Dashboard - Rector{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.8;
+    }
+    .badge-lg {
+        font-size: 0.9em;
+        padding: 0.5em 0.8em;
+    }
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: -2.1rem;
+        top: 0.25rem;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        background: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-speedometer2 me-2"></i>Dashboard de Rectoría
+                </h1>
+                <div>
+                    <span class="badge bg-primary">
+                        <i class="bi bi-calendar me-1"></i>
+                        {{ fecha_actual|date:"d/m/Y" }}
+                    </span>
+                    {% if año_lectivo_actual %}
+                    <span class="badge bg-success ms-2">
+                        {{ año_lectivo_actual.anho }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            <p class="text-muted">Bienvenido, {{ request.user.get_full_name }}. Aquí tienes un resumen completo del colegio.</p>
+        </div>
+    </div>
+
+    <!-- Alertas -->
+    {% if alertas %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5 class="alert-heading">
+                    <i class="bi bi-bell-fill me-2"></i>Alertas del Sistema
+                </h5>
+                <div class="row mt-3">
+                    {% for alerta in alertas %}
+                    <div class="col-md-6 mb-2">
+                        <div class="alert alert-{{ alerta.tipo }} alert-card mb-0">
+                            <i class="bi {{ alerta.icono }} me-2"></i>
+                            {{ alerta.mensaje }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Estadísticas principales -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-3">
+                <i class="bi bi-bar-chart-fill me-2"></i>Estadísticas Principales
+            </h4>
+        </div>
+        
+        <!-- Tarjetas de estadísticas -->
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card stat-card border-primary">
+                <div class="card-body text-center">
+                    <h2 class="display-6 text-primary">{{ estadisticas_principales.total_estudiantes }}</h2>
+                    <p class="card-text text-muted">Estudiantes Totales</p>
+                    <div class="small">
+                        <i class="bi bi-person-fill text-primary"></i>
+                        {{ estadisticas_principales.estudiantes_activos }} activos
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card stat-card border-success">
+                <div class="card-body text-center">
+                    <h2 class="display-6 text-success">{{ estadisticas_principales.total_docentes }}</h2>
+                    <p class="card-text text-muted">Docentes</p>
+                    <div class="small">
+                        <i class="bi bi-person-badge text-success"></i>
+                        {{ total_docentes_activos }} activos
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card stat-card border-info">
+                <div class="card-body text-center">
+                    <h2 class="display-6 text-info">{{ estadisticas_principales.total_sedes }}</h2>
+                    <p class="card-text text-muted">Sedes</p>
+                    <div class="small">
+                        <i class="bi bi-building text-info"></i>
+                        En operación
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card stat-card border-warning">
+                <div class="card-body text-center">
+                    <h2 class="display-6 text-warning">{{ porcentaje_asistencia|default:"0" }}%</h2>
+                    <p class="card-text text-muted">Asistencia</p>
+                    <div class="small">
+                        <i class="bi bi-calendar-check text-warning"></i>
+                        Últimos 30 días
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card stat-card border-danger">
+                <div class="card-body text-center">
+                    <h2 class="display-6 text-danger">{{ estadisticas_rendimiento.promedio_general|default:"0.0" }}</h2>
+                    <p class="card-text text-muted">Promedio General</p>
+                    <div class="small">
+                        <i class="bi bi-journal-text text-danger"></i>
+                        Rendimiento
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card stat-card border-secondary">
+                <div class="card-body text-center">
+                    <h2 class="display-6 text-secondary">{{ estadisticas_principales.total_grados }}</h2>
+                    <p class="card-text text-muted">Grados</p>
+                    <div class="small">
+                        <i class="bi bi-layers text-secondary"></i>
+                        Niveles escolares
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribución de estudiantes por grado -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pie-chart-fill me-2"></i>Distribución por Grado
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if matriculas_por_grado %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Grado</th>
+                                    <th class="text-end">Estudiantes</th>
+                                    <th class="text-end">Porcentaje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in matriculas_por_grado %}
+                                <tr>
+                                    <td>{{ item.grado_año_lectivo__grado__nombre }}</td>
+                                    <td class="text-end">{{ item.total }}</td>
+                                    <td class="text-end">
+                                        {% widthratio item.total estadisticas_principales.estudiantes_activos 100 as percentage %}
+                                        {{ percentage|floatformat:1 }}%
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center my-5">No hay datos disponibles</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Últimos comportamientos -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-activity me-2"></i>Últimos Comportamientos
+                    </h5>
+                    <a href="#" class="btn btn-sm btn-outline-primary">Ver todos</a>
+                </div>
+                <div class="card-body">
+                    {% if ultimos_comportamientos %}
+                    <div class="list-group list-group-flush">
+                        {% for comportamiento in ultimos_comportamientos %}
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">
+                                        {{ comportamiento.estudiante.usuario.get_full_name }}
+                                        <span class="badge bg-{% if comportamiento.tipo == 'Positivo' %}success{% else %}danger{% endif %} ms-2">
+                                            {{ comportamiento.get_tipo_display }}
+                                        </span>
+                                    </h6>
+                                    <p class="mb-1 small">{{ comportamiento.descripcion|truncatechars:80 }}</p>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        {{ comportamiento.fecha|date:"d/m/Y" }}
+                                        <i class="bi bi-person ms-3 me-1"></i>
+                                        {{ comportamiento.docente.usuario.get_full_name|default:"Sin docente" }}
+                                    </small>
+                                </div>
+                                <span class="badge bg-light text-dark">
+                                    {{ comportamiento.get_categoria_display }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center my-5">No hay comportamientos registrados recientemente</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sedes y última actividad -->
+    <div class="row">
+        <!-- Sedes -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-buildings me-2"></i>Sedes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if sedes %}
+                    <div class="row">
+                        {% for sede in sedes %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ sede.nombre }}</h6>
+                                    <p class="card-text small text-muted">
+                                        <i class="bi bi-geo-alt me-1"></i>{{ sede.direccion|truncatechars:30 }}
+                                    </p>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="badge bg-info">
+                                            <i class="bi bi-people me-1"></i>{{ sede.total_estudiantes|default:0 }}
+                                        </span>
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-person-badge me-1"></i>{{ sede.total_docentes|default:0 }}
+                                        </span>
+                                    </div>
+                                    {% if sede.director %}
+                                    <div class="mt-2 small">
+                                        <i class="bi bi-person-circle me-1"></i>
+                                        Director: {{ sede.director.get_full_name }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center my-5">No hay sedes registradas</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Últimas actividades -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history me-2"></i>Últimas Actividades
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if ultimas_actividades %}
+                    <div class="timeline">
+                        {% for actividad in ultimas_actividades %}
+                        <div class="timeline-item mb-3">
+                            <div class="timeline-marker bg-{% if actividad.accion == 'creacion' %}success{% elif actividad.accion == 'modificacion' %}warning{% elif actividad.accion == 'eliminacion' %}danger{% else %}info{% endif %}"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">
+                                    {{ actividad.usuario.get_full_name|default:"Sistema" }}
+                                    <small class="text-muted ms-2">{{ actividad.get_accion_display }}</small>
+                                </h6>
+                                <p class="mb-1 small">{{ actividad.descripcion }}</p>
+                                <small class="text-muted">
+                                    <i class="bi bi-clock me-1"></i>
+                                    {{ actividad.created_at|timesince }} ago
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center my-5">No hay actividades registradas</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones rápidas -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning-charge me-2"></i>Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{% url 'rector:academico_dashboard' %}" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-journal-text me-2"></i>Gestión Académica
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{% url 'rector:docente_list' %}" class="btn btn-outline-success w-100">
+                                <i class="bi bi-person-badge me-2"></i>Gestión Institucional
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{% url 'rector:sedes' %}" class="btn btn-outline-info w-100">
+                                <i class="bi bi-buildings me-2"></i>Gestión Sedes
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{% url 'rector:reportes' %}" class="btn btn-outline-warning w-100">
+                                <i class="bi bi-file-earmark-text me-2"></i>Generar Reportes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Scripts específicos para el dashboard del rector
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-refresh cada 5 minutos
+        setTimeout(() => {
+            window.location.reload();
+        }, 300000);
+        
+        // Inicializar tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,248 @@
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+
+{% block title %}{{ logro.tema }} - Detalle{% endblock %}
+
+{% block extra_css %}
+<style>
+    .logro-header {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-radius: 15px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+    }
+    .nivel-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+    .nivel-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .nivel-card.superior { border-left: 4px solid #28a745; }
+    .nivel-card.alto { border-left: 4px solid #007bff; }
+    .nivel-card.basico { border-left: 4px solid #ffc107; }
+    .nivel-card.bajo { border-left: 4px solid #dc3545; }
+    .nivel-badge {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+    .info-item {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #eee;
+    }
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    .descripcion-content {
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header del logro -->
+    <div class="logro-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 mb-3">{{ logro.tema }}</h1>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-book me-1"></i>{{ logro.asignatura.nombre }}
+                    </span>
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-layers me-1"></i>{{ logro.grado.nombre }}
+                    </span>
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-calendar-week me-1"></i>{{ logro.periodo_academico.periodo.nombre }}
+                    </span>
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-building me-1"></i>{{ logro.periodo_academico.año_lectivo.anho }}
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="d-flex gap-2 justify-content-end">
+                    <a href="{% url 'rector:logro_edit' logro.pk %}" class="btn btn-light">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                    </a>
+                    <a href="{% url 'rector:logro_list' %}" class="btn btn-light">
+                        <i class="bi bi-arrow-left me-1"></i>Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información principal -->
+    <div class="row">
+        <!-- Columna izquierda - Niveles de desempeño -->
+        <div class="col-lg-8">
+            <h4 class="mb-4">
+                <i class="bi bi-bar-chart-steps me-2"></i>Niveles de Desempeño
+            </h4>
+            
+            <!-- Nivel Superior -->
+            {% if logro.descripcion_superior %}
+            <div class="card nivel-card superior">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title text-success">
+                            <i class="bi bi-star-fill me-2"></i>Superior
+                        </h5>
+                        <span class="badge nivel-badge bg-success">Nivel Avanzado</span>
+                    </div>
+                    <div class="descripcion-content">
+                        {{ logro.descripcion_superior }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Nivel Alto -->
+            {% if logro.descripcion_alto %}
+            <div class="card nivel-card alto">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title text-primary">
+                            <i class="bi bi-check-circle-fill me-2"></i>Alto
+                        </h5>
+                        <span class="badge nivel-badge bg-primary">Nivel Esperado</span>
+                    </div>
+                    <div class="descripcion-content">
+                        {{ logro.descripcion_alto }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Nivel Básico -->
+            {% if logro.descripcion_basico %}
+            <div class="card nivel-card basico">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title text-warning">
+                            <i class="bi bi-exclamation-circle-fill me-2"></i>Básico
+                        </h5>
+                        <span class="badge nivel-badge bg-warning">Nivel Mínimo</span>
+                    </div>
+                    <div class="descripcion-content">
+                        {{ logro.descripcion_basico }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Nivel Bajo -->
+            {% if logro.descripcion_bajo %}
+            <div class="card nivel-card bajo">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title text-danger">
+                            <i class="bi bi-x-circle-fill me-2"></i>Bajo
+                        </h5>
+                        <span class="badge nivel-badge bg-danger">Por Debajo</span>
+                    </div>
+                    <div class="descripcion-content">
+                        {{ logro.descripcion_bajo }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Si no hay descripciones -->
+            {% if not logro.descripcion_superior and not logro.descripcion_alto and not logro.descripcion_basico and not logro.descripcion_bajo %}
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Este logro no tiene descripciones de niveles de desempeño definidas.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna derecha - Información adicional -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Información del Logro
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="info-item">
+                        <strong class="d-block text-muted mb-1">Asignatura</strong>
+                        <span>{{ logro.asignatura.nombre }}</span>
+                    </div>
+                    <div class="info-item">
+                        <strong class="d-block text-muted mb-1">Grado</strong>
+                        <span>{{ logro.grado.nombre }}</span>
+                    </div>
+                    <div class="info-item">
+                        <strong class="d-block text-muted mb-1">Período Académico</strong>
+                        <span>{{ logro.periodo_academico.periodo.nombre }}</span>
+                    </div>
+                    <div class="info-item">
+                        <strong class="d-block text-muted mb-1">Año Lectivo</strong>
+                        <span>{{ logro.periodo_academico.año_lectivo.anho }}</span>
+                    </div>
+                    <div class="info-item">
+                        <strong class="d-block text-muted mb-1">Fecha de Creación</strong>
+                        <span>{{ logro.created_at|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <strong class="d-block text-muted mb-1">Última Actualización</strong>
+                        <span>{{ logro.updated_at|date:"d/m/Y H:i" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up me-2"></i>Estadísticas Relacionadas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Las estadísticas de aplicación de este logro se mostrarán aquí cuando haya datos disponibles.
+                    </p>
+                    <div class="text-center mt-3">
+                        <a href="#" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-bar-chart me-1"></i>Ver Estadísticas
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones rápidas -->
+            <div class="card mt-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning-charge me-2"></i>Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'rector:logro_edit' logro.pk %}" class="btn btn-warning">
+                            <i class="bi bi-pencil me-1"></i>Editar Logro
+                        </a>
+                        <a href="{% url 'rector:logros_por_asignatura' %}?asignatura={{ logro.asignatura.id }}" 
+                           class="btn btn-outline-info">
+                            <i class="bi bi-list-ul me-1"></i>Ver Logros de {{ logro.asignatura.nombre }}
+                        </a>
+                        <a href="{% url 'rector:asignatura_detail' logro.asignatura.pk %}" 
+                           class="btn btn-outline-primary">
+                            <i class="bi bi-book me-1"></i>Ir a Asignatura
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

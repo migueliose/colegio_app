@@ -30,6 +30,9 @@ urlpatterns = [
     # Administrador
     path('administrador/', include('administrador.urls')),
 
+    # Rector
+    path('rector/', include('rector.urls')),
+
     # admin
     path('admin/', admin.site.urls),
 

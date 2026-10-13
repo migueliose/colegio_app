@@ -1,0 +1,96 @@
+<!-- rector/templates/rector/academico/acudiente_confirm_delete.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Eliminar Acudiente{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-person-x me-2"></i>Eliminar Acudiente
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Confirmar Eliminación
+                        </h5>
+                        <p class="mb-0">
+                            ¿Está seguro de que desea eliminar este acudiente del estudiante?
+                            Esta acción solo elimina la relación, no el usuario del sistema.
+                        </p>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6>Detalles:</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Estudiante:</th>
+                                    <td>{{ estudiante.usuario.get_full_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Acudiente:</th>
+                                    <td>{{ object.acudiente.get_full_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Parentesco:</th>
+                                    <td>{{ object.parentesco }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Documento:</th>
+                                    <td>{{ object.acudiente.numero_documento }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Teléfono:</th>
+                                    <td>{{ object.acudiente.telefono|default:"No registrado" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Email:</th>
+                                    <td>{{ object.acudiente.email|default:"No registrado" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="confirm_delete" required>
+                            <label class="form-check-label" for="confirm_delete">
+                                Confirmo que deseo eliminar este acudiente del estudiante.
+                            </label>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'rector:estudiante_detail' estudiante.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger" id="btn-delete" disabled>
+                                <i class="bi bi-trash me-1"></i>Eliminar Relación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmCheckbox = document.getElementById('confirm_delete');
+    const deleteButton = document.getElementById('btn-delete');
+    
+    confirmCheckbox.addEventListener('change', function() {
+        deleteButton.disabled = !this.checked;
+    });
+});
+</script>
+{% endblock %}

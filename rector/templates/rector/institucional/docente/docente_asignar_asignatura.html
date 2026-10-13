@@ -1,0 +1,609 @@
+<!-- rector/templates/rector/academico/docente/docente_asignar_asignatura.html -->
+{% extends 'rector/base_rector2.html' %}
+{% load static %}
+
+{% block title %}Asignar Asignatura - {{ docente.usuario.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-header-custom {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-bottom: none;
+    }
+    .info-card {
+        border-left: 4px solid #4e54c8;
+    }
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    .form-step {
+        display: none;
+    }
+    .form-step.active {
+        display: block;
+        animation: fadeIn 0.5s;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+    }
+    .step {
+        text-align: center;
+        flex: 1;
+        position: relative;
+    }
+    .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 10px;
+        font-weight: bold;
+        color: #6c757d;
+        border: 3px solid #e9ecef;
+        transition: all 0.3s;
+    }
+    .step.active .step-number {
+        background: #4e54c8;
+        color: white;
+        border-color: #4e54c8;
+    }
+    .step.completed .step-number {
+        background: #28a745;
+        color: white;
+        border-color: #28a745;
+    }
+    .step-title {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .step.active .step-title {
+        color: #4e54c8;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'rector:docente_list' %}">Docentes</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'rector:docente_detail' docente.pk %}">{{ docente.usuario.get_full_name }}</a></li>
+                    <li class="breadcrumb-item active">Asignar Asignatura</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-book me-2 text-primary"></i>Asignar Asignatura
+                </h1>
+                <a href="{% url 'rector:docente_detail' docente.pk %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Volver
+                </a>
+            </div>
+            <p class="text-muted mb-0">
+                Asignar asignatura al docente: <strong>{{ docente.usuario.get_full_name }}</strong>
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulario -->
+        <div class="col-lg-8">
+            <div class="card border-primary">
+                <div class="card-header card-header-custom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-plus-circle me-2"></i>Asignar Nueva Asignatura
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Indicador de pasos -->
+                    <div class="step-indicator">
+                        <div class="step active" id="step-1">
+                            <div class="step-number">1</div>
+                            <div class="step-title">Seleccionar Sede</div>
+                        </div>
+                        <div class="step" id="step-2">
+                            <div class="step-number">2</div>
+                            <div class="step-title">Seleccionar Grado</div>
+                        </div>
+                        <div class="step" id="step-3">
+                            <div class="step-number">3</div>
+                            <div class="step-title">Seleccionar Asignatura</div>
+                        </div>
+                    </div>
+                    
+                    <form method="post" novalidate id="asignaturaForm">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Por favor corrija los errores a continuación.
+                            {% if form.non_field_errors %}
+                            <ul class="mb-0 mt-2">
+                                {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Paso 1: Sede -->
+                        <div class="form-step active" id="step1-content">
+                            <div class="mb-3">
+                                <label for="{{ form.sede.id_for_label }}" class="form-label required-field">
+                                    Sede donde dictará la asignatura
+                                </label>
+                                {{ form.sede }}
+                                {% if form.sede.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.sede.errors }}
+                                </div>
+                                {% endif %}
+                                <small class="text-muted">
+                                    Seleccione la sede donde el docente está asignado para el año lectivo actual.
+                                </small>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="nextStep(2)">
+                                    Siguiente <i class="bi bi-arrow-right ms-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Paso 2: Grado -->
+                        <div class="form-step" id="step2-content">
+                            <div class="mb-3">
+                                <label for="{{ form.grado.id_for_label }}" class="form-label required-field">
+                                    Grado/Nivel
+                                </label>
+                                {{ form.grado }}
+                                {% if form.grado.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.grado.errors }}
+                                </div>
+                                {% endif %}
+                                <small class="text-muted">
+                                    Seleccione el grado para el cual se asignará la asignatura.
+                                </small>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Solo se muestran grados que existen en la sede seleccionada para el año lectivo actual.
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-secondary" onclick="prevStep(1)">
+                                    <i class="bi bi-arrow-left me-1"></i>Anterior
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="nextStep(3)">
+                                    Siguiente <i class="bi bi-arrow-right ms-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Paso 3: Asignatura -->
+                        <div class="form-step" id="step3-content">
+                            <div class="mb-3">
+                                <label for="{{ form.asignatura.id_for_label }}" class="form-label required-field">
+                                    Asignatura
+                                </label>
+                                {{ form.asignatura }}
+                                {% if form.asignatura.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.asignatura.errors }}
+                                </div>
+                                {% endif %}
+                                <small class="text-muted">
+                                    Seleccione la asignatura a asignar. Solo se muestran asignaturas disponibles para el grado seleccionado.
+                                </small>
+                            </div>
+                            
+                            <div id="asignatura-info" class="card border-info mb-3" style="display: none;">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-2" id="asignatura-nombre"></h6>
+                                    <p class="card-text small mb-1" id="asignatura-area"></p>
+                                    <p class="card-text small mb-0" id="asignatura-nivel"></p>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <strong>Verificación automática:</strong> El sistema verificará que la asignatura no esté ya asignada a otro docente.
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-secondary" onclick="prevStep(2)">
+                                    <i class="bi bi-arrow-left me-1"></i>Anterior
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-circle me-1"></i>Asignar Asignatura
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información lateral -->
+        <div class="col-lg-4">
+            <!-- Información del docente -->
+            <div class="card info-card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person me-2"></i>Información del Docente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        {% if docente.foto %}
+                        <img src="{{ docente.foto.url }}" alt="Foto" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
+                        {% else %}
+                        <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center" 
+                             style="width: 100px; height: 100px;">
+                            <i class="bi bi-person-fill text-primary" style="font-size: 2.5rem;"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h5 class="text-center">{{ docente.usuario.get_full_name }}</h5>
+                    
+                    <div class="mt-3">
+                        <p class="mb-1">
+                            <i class="bi bi-person-badge me-2 text-muted"></i>
+                            <strong>Documento:</strong> {{ docente.usuario.numero_documento }}
+                        </p>
+                        <p class="mb-1">
+                            <i class="bi bi-award me-2 text-muted"></i>
+                            <strong>Estado:</strong>
+                            <span class="badge bg-{% if docente.estado %}success{% else %}danger{% endif %}">
+                                {% if docente.estado %}Activo{% else %}Inactivo{% endif %}
+                            </span>
+                        </p>
+                        {% if año_lectivo_actual %}
+                        <p class="mb-1">
+                            <i class="bi bi-calendar me-2 text-muted"></i>
+                            <strong>Año Lectivo:</strong> {{ año_lectivo_actual.anho }}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sedes del docente -->
+            {% if sedes_docente %}
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-buildings me-2"></i>Sedes del Docente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        El docente está asignado a las siguientes sedes para el año lectivo actual:
+                    </p>
+                    <div class="list-group list-group-flush">
+                        {% for sede_asignada in sedes_docente %}
+                        <div class="list-group-item px-0">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-building text-info me-2"></i>
+                                <div>
+                                    <strong>{{ sede_asignada.sede.nombre }}</strong>
+                                    <div class="small text-muted">
+                                        Asignado el {{ sede_asignada.fecha_asignacion|date:"d/m/Y" }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Variables globales
+let currentStep = 1;
+const totalSteps = 3;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar selects
+    const sedeSelect = document.getElementById('{{ form.sede.id_for_label }}');
+    const gradoSelect = document.getElementById('{{ form.grado.id_for_label }}');
+    const asignaturaSelect = document.getElementById('{{ form.asignatura.id_for_label }}');
+    
+    // Cargar grados cuando se selecciona una sede
+    if (sedeSelect) {
+        sedeSelect.addEventListener('change', function() {
+            const sedeId = this.value;
+            if (sedeId) {
+                loadGrados(sedeId);
+                resetGradoYAsignatura();
+            } else {
+                resetGradoYAsignatura();
+            }
+        });
+    }
+    
+    // Cargar asignaturas cuando se selecciona un grado
+    if (gradoSelect) {
+        gradoSelect.addEventListener('change', function() {
+            const gradoId = this.value;
+            if (gradoId) {
+                loadAsignaturas(gradoId);
+                showAsignaturaInfo(gradoId);
+            } else {
+                hideAsignaturaInfo();
+            }
+        });
+    }
+    
+    // Mostrar info de asignatura cuando se selecciona
+    if (asignaturaSelect) {
+        asignaturaSelect.addEventListener('change', function() {
+            const asignaturaId = this.value;
+            if (asignaturaId) {
+                updateAsignaturaInfo(asignaturaId);
+            }
+        });
+    }
+    
+    // Validar formulario al enviar
+    const form = document.getElementById('asignaturaForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+                showValidationErrors();
+            }
+        });
+    }
+    
+    // Cargar grados si ya hay sede seleccionada
+    if (sedeSelect && sedeSelect.value) {
+        loadGrados(sedeSelect.value);
+    }
+});
+
+// Funciones de navegación de pasos
+function nextStep(step) {
+    if (validateStep(currentStep)) {
+        // Ocultar paso actual
+        document.getElementById(`step${currentStep}-content`).classList.remove('active');
+        document.getElementById(`step-${currentStep}`).classList.remove('active');
+        
+        // Mostrar siguiente paso
+        currentStep = step;
+        document.getElementById(`step${currentStep}-content`).classList.add('active');
+        document.getElementById(`step-${currentStep}`).classList.add('active');
+        
+        // Marcar paso anterior como completado
+        document.getElementById(`step-${step-1}`).classList.add('completed');
+        
+        // Scroll al inicio del formulario
+        document.getElementById(`step${currentStep}-content`).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function prevStep(step) {
+    // Ocultar paso actual
+    document.getElementById(`step${currentStep}-content`).classList.remove('active');
+    document.getElementById(`step-${currentStep}`).classList.remove('active');
+    
+    // Mostrar paso anterior
+    currentStep = step;
+    document.getElementById(`step${currentStep}-content`).classList.add('active');
+    document.getElementById(`step-${currentStep}`).classList.add('active');
+    
+    // Remover completado del paso que abandonamos
+    document.getElementById(`step-${step+1}`).classList.remove('completed');
+}
+
+// Cargar grados por sede
+function loadGrados(sedeId) {
+    const gradoSelect = document.getElementById('{{ form.grado.id_for_label }}');
+    const añoId = '{{ año_lectivo_actual.id|default:"" }}';
+    
+    if (!añoId) {
+        alert('No hay año lectivo activo');
+        return;
+    }
+    
+    // Mostrar loading
+    gradoSelect.innerHTML = '<option value="">Cargando grados...</option>';
+    gradoSelect.disabled = true;
+    
+    fetch(`/rector/ajax/grados-por-sede-anho/?sede_id=${sedeId}&año_id=${añoId}`)
+        .then(response => response.json())
+        .then(data => {
+            gradoSelect.innerHTML = '<option value="">Seleccione un grado</option>';
+            
+            if (data.success && data.grados.length > 0) {
+                data.grados.forEach(grado => {
+                    const option = document.createElement('option');
+                    option.value = grado.id;
+                    option.textContent = `${grado.nombre} - ${grado.nivel}`;
+                    gradoSelect.appendChild(option);
+                });
+                gradoSelect.disabled = false;
+            } else {
+                gradoSelect.innerHTML = '<option value="">No hay grados disponibles</option>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            gradoSelect.innerHTML = '<option value="">Error al cargar grados</option>';
+        });
+}
+
+// Cargar asignaturas por grado
+function loadAsignaturas(gradoId) {
+    const asignaturaSelect = document.getElementById('{{ form.asignatura.id_for_label }}');
+    const docenteId = '{{ docente.id }}';
+    
+    // Mostrar loading
+    asignaturaSelect.innerHTML = '<option value="">Cargando asignaturas...</option>';
+    asignaturaSelect.disabled = true;
+    
+    fetch(`/rector/ajax/asignaturas-por-grado-docente/?grado_id=${gradoId}&docente_id=${docenteId}`)
+        .then(response => response.json())
+        .then(data => {
+            asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option>';
+            
+            if (data.success && data.asignaturas.length > 0) {
+                data.asignaturas.forEach(asignatura => {
+                    const option = document.createElement('option');
+                    option.value = asignatura.id;
+                    option.textContent = `${asignatura.nombre} - ${asignatura.area}`;
+                    option.dataset.area = asignatura.area;
+                    option.dataset.nivel = asignatura.nivel;
+                    asignaturaSelect.appendChild(option);
+                });
+                asignaturaSelect.disabled = false;
+            } else {
+                asignaturaSelect.innerHTML = '<option value="">No hay asignaturas disponibles</option>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            asignaturaSelect.innerHTML = '<option value="">Error al cargar asignaturas</option>';
+        });
+}
+
+// Mostrar información del nivel del grado
+function showAsignaturaInfo(gradoId) {
+    fetch(`/rector/ajax/grado-info/${gradoId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('asignatura-info').style.display = 'block';
+                document.getElementById('asignatura-nivel').textContent = 
+                    `Nivel: ${data.grado.nivel}`;
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+// Actualizar información de la asignatura seleccionada
+function updateAsignaturaInfo(asignaturaId) {
+    const asignaturaSelect = document.getElementById('{{ form.asignatura.id_for_label }}');
+    const selectedOption = asignaturaSelect.options[asignaturaSelect.selectedIndex];
+    
+    if (selectedOption && selectedOption.dataset.area) {
+        document.getElementById('asignatura-info').style.display = 'block';
+        document.getElementById('asignatura-nombre').textContent = selectedOption.text;
+        document.getElementById('asignatura-area').textContent = 
+            `Área: ${selectedOption.dataset.area}`;
+        document.getElementById('asignatura-nivel').textContent = 
+            `Nivel: ${selectedOption.dataset.nivel}`;
+    }
+}
+
+function hideAsignaturaInfo() {
+    document.getElementById('asignatura-info').style.display = 'none';
+}
+
+function resetGradoYAsignatura() {
+    const gradoSelect = document.getElementById('{{ form.grado.id_for_label }}');
+    const asignaturaSelect = document.getElementById('{{ form.asignatura.id_for_label }}');
+    
+    gradoSelect.innerHTML = '<option value="">Seleccione primero una sede</option>';
+    gradoSelect.disabled = true;
+    
+    asignaturaSelect.innerHTML = '<option value="">Seleccione primero un grado</option>';
+    asignaturaSelect.disabled = true;
+    
+    hideAsignaturaInfo();
+}
+
+// Validaciones
+function validateStep(step) {
+    switch(step) {
+        case 1:
+            const sede = document.getElementById('{{ form.sede.id_for_label }}').value;
+            if (!sede) {
+                alert('Por favor seleccione una sede');
+                return false;
+            }
+            return true;
+            
+        case 2:
+            const grado = document.getElementById('{{ form.grado.id_for_label }}').value;
+            if (!grado) {
+                alert('Por favor seleccione un grado');
+                return false;
+            }
+            return true;
+            
+        default:
+            return true;
+    }
+}
+
+function validateForm() {
+    const sede = document.getElementById('{{ form.sede.id_for_label }}').value;
+    const grado = document.getElementById('{{ form.grado.id_for_label }}').value;
+    const asignatura = document.getElementById('{{ form.asignatura.id_for_label }}').value;
+    
+    if (!sede || !grado || !asignatura) {
+        alert('Por favor complete todos los campos requeridos');
+        return false;
+    }
+    
+    return true;
+}
+
+function showValidationErrors() {
+    const requiredFields = [
+        { id: '{{ form.sede.id_for_label }}', name: 'Sede' },
+        { id: '{{ form.grado.id_for_label }}', name: 'Grado' },
+        { id: '{{ form.asignatura.id_for_label }}', name: 'Asignatura' }
+    ];
+    
+    let errors = [];
+    
+    requiredFields.forEach(field => {
+        const element = document.getElementById(field.id);
+        if (!element.value) {
+            errors.push(field.name);
+            element.classList.add('is-invalid');
+        } else {
+            element.classList.remove('is-invalid');
+        }
+    });
+    
+    if (errors.length > 0) {
+        // Ir al primer error
+        document.getElementById(errors[0].toLowerCase()).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+</script>
+{% endblock %}

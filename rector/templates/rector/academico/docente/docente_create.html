@@ -1,0 +1,516 @@
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Nuevo Docente - Rector{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .section-title {
+        color: #4e54c8;
+        border-bottom: 2px solid #4e54c8;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 1.25rem;
+    }
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+    .preview-section {
+        border: 2px dashed #dee2e6;
+        border-radius: 10px;
+        padding: 1.5rem;
+        background: white;
+    }
+    .preview-item {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #eee;
+    }
+    .preview-item:last-child {
+        border-bottom: none;
+    }
+    .alert-guide {
+        border-left: 4px solid #4e54c8;
+        padding-left: 1rem;
+    }
+    .info-badge {
+        background: #e9ecef;
+        color: #495057;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-12">
+            <div class="card shadow form-container">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="bi bi-person-plus me-2"></i>Nuevo Docente
+                        </h4>
+                        <a href="{% url 'rector:docente_list' %}" class="btn btn-light btn-sm">
+                            <i class="bi bi-arrow-left me-1"></i>Volver
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Guía de creación -->
+                    <div class="alert alert-info alert-guide mb-4">
+                        <h6 class="alert-heading"><i class="bi bi-info-circle me-2"></i>Instrucciones</h6>
+                        <ul class="mb-0">
+                            <li>Complete todos los campos obligatorios (*) para crear el docente.</li>
+                            <li>El sistema generará automáticamente un usuario y contraseña temporal.</li>
+                            <li>La sede es opcional, puede asignarse después en el perfil del docente.</li>
+                            <li>Revise la previsualización antes de guardar.</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post" enctype="multipart/form-data" novalidate id="docenteForm">
+                        {% csrf_token %}
+                        
+                        <!-- Sección 1: Información Personal -->
+                        <div class="form-section">
+                            <h5 class="section-title">
+                                <i class="bi bi-person-badge me-2"></i>Información Personal
+                            </h5>
+                            
+                            <div class="row">
+                                <!-- Tipo y Número de Documento -->
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.tipo_documento.id_for_label }}" class="form-label required">
+                                        <i class="bi bi-card-text me-1"></i>Tipo de Documento
+                                    </label>
+                                    {% render_field form.tipo_documento class="form-select" %}
+                                    {% if form.tipo_documento.errors %}
+                                    <div class="text-danger small">{{ form.tipo_documento.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-8 mb-3">
+                                    <label for="{{ form.numero_documento.id_for_label }}" class="form-label required">
+                                        <i class="bi bi-123 me-1"></i>Número de Documento
+                                    </label>
+                                    {% render_field form.numero_documento class="form-control" placeholder="Ingrese número de documento" %}
+                                    {% if form.numero_documento.errors %}
+                                    <div class="text-danger small">{{ form.numero_documento.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">Será usado como usuario y contraseña inicial</div>
+                                </div>
+                                
+                                <!-- Nombres y Apellidos -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.nombres.id_for_label }}" class="form-label required">
+                                        <i class="bi bi-person me-1"></i>Nombres
+                                    </label>
+                                    {% render_field form.nombres class="form-control" placeholder="Nombres completos" %}
+                                    {% if form.nombres.errors %}
+                                    <div class="text-danger small">{{ form.nombres.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.apellidos.id_for_label }}" class="form-label required">
+                                        <i class="bi bi-person me-1"></i>Apellidos
+                                    </label>
+                                    {% render_field form.apellidos class="form-control" placeholder="Apellidos completos" %}
+                                    {% if form.apellidos.errors %}
+                                    <div class="text-danger small">{{ form.apellidos.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Información de Contacto -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                                        <i class="bi bi-envelope me-1"></i>Correo Electrónico
+                                    </label>
+                                    {% render_field form.email class="form-control" placeholder="correo@ejemplo.com" %}
+                                    {% if form.email.errors %}
+                                    <div class="text-danger small">{{ form.email.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.telefono.id_for_label }}" class="form-label">
+                                        <i class="bi bi-telephone me-1"></i>Teléfono
+                                    </label>
+                                    {% render_field form.telefono class="form-control" placeholder="Teléfono de contacto" %}
+                                    {% if form.telefono.errors %}
+                                    <div class="text-danger small">{{ form.telefono.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Dirección -->
+                                <div class="col-md-12 mb-3">
+                                    <label for="{{ form.direccion.id_for_label }}" class="form-label">
+                                        <i class="bi bi-geo-alt me-1"></i>Dirección
+                                    </label>
+                                    {% render_field form.direccion class="form-control" placeholder="Dirección completa" %}
+                                    {% if form.direccion.errors %}
+                                    <div class="text-danger small">{{ form.direccion.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Fecha Nacimiento y Sexo -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">
+                                        <i class="bi bi-calendar me-1"></i>Fecha de Nacimiento
+                                    </label>
+                                    {% render_field form.fecha_nacimiento class="form-control" type="date" %}
+                                    {% if form.fecha_nacimiento.errors %}
+                                    <div class="text-danger small">{{ form.fecha_nacimiento.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.sexo.id_for_label }}" class="form-label">
+                                        <i class="bi bi-gender-ambiguous me-1"></i>Sexo
+                                    </label>
+                                    {% render_field form.sexo class="form-select" %}
+                                    {% if form.sexo.errors %}
+                                    <div class="text-danger small">{{ form.sexo.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sección 2: Información del Docente -->
+                        <div class="form-section">
+                            <h5 class="section-title">
+                                <i class="bi bi-file-earmark-person me-2"></i>Información del Docente
+                            </h5>
+                            
+                            <div class="row">
+                                <!-- Foto -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.foto.id_for_label }}" class="form-label">
+                                        <i class="bi bi-camera me-1"></i>Foto del Docente
+                                    </label>
+                                    {% render_field form.foto class="form-control" %}
+                                    {% if form.foto.errors %}
+                                    <div class="text-danger small">{{ form.foto.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Tamaño recomendado: 300x300 px. Formatos: JPG, PNG, GIF.
+                                    </div>
+                                </div>
+                                
+                                <!-- Hoja de Vida -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.hdv.id_for_label }}" class="form-label">
+                                        <i class="bi bi-file-earmark-text me-1"></i>Hoja de Vida (PDF)
+                                    </label>
+                                    {% render_field form.hdv class="form-control" %}
+                                    {% if form.hdv.errors %}
+                                    <div class="text-danger small">{{ form.hdv.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">Documento PDF con la hoja de vida del docente</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sección 3: Asignación Inicial (Opcional) -->
+                        <div class="form-section">
+                            <h5 class="section-title">
+                                <i class="bi bi-building me-2"></i>Asignación Inicial (Opcional)
+                            </h5>
+                            <p class="text-muted mb-3">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Puede asignar una sede al docente ahora o hacerlo después desde su perfil.
+                            </p>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.sede_inicial.id_for_label }}" class="form-label">
+                                        <i class="bi bi-building me-1"></i>Sede
+                                    </label>
+                                    {% render_field form.sede_inicial class="form-select" %}
+                                    {% if form.sede_inicial.errors %}
+                                    <div class="text-danger small">{{ form.sede_inicial.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.año_lectivo_sede.id_for_label }}" class="form-label">
+                                        <i class="bi bi-calendar me-1"></i>Año Lectivo
+                                    </label>
+                                    {% render_field form.año_lectivo_sede class="form-select" %}
+                                    {% if form.año_lectivo_sede.errors %}
+                                    <div class="text-danger small">{{ form.año_lectivo_sede.errors }}</div>
+                                    {% endif %}
+                                    {% if año_lectivo_actual %}
+                                    <div class="form-text">Año actual: {{ año_lectivo_actual.anho }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sección 4: Previsualización -->
+                        <div class="form-section">
+                            <h5 class="section-title">
+                                <i class="bi bi-eye me-2"></i>Previsualización
+                            </h5>
+                            <div class="preview-section">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="preview-item">
+                                            <strong>Documento:</strong><br>
+                                            <span id="preview-documento" class="text-muted">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="preview-item">
+                                            <strong>Nombre Completo:</strong><br>
+                                            <span id="preview-nombre" class="text-muted">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="preview-item">
+                                            <strong>Correo:</strong><br>
+                                            <span id="preview-email" class="text-muted">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="preview-item">
+                                            <strong>Teléfono:</strong><br>
+                                            <span id="preview-telefono" class="text-muted">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="preview-item">
+                                            <strong>Sede Asignada:</strong><br>
+                                            <span id="preview-sede" class="text-muted">No asignada</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="preview-item">
+                                            <strong>Usuario Temporal:</strong><br>
+                                            <span id="preview-usuario" class="text-muted">Se generará automáticamente</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sección 5: Botones -->
+                        <div class="d-flex justify-content-between border-top pt-4 mt-4">
+                            <div>
+                                <a href="{% url 'rector:docente_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                                </a>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="reset" class="btn btn-outline-warning" id="resetBtn">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Limpiar
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i>Crear Docente
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elementos del formulario
+    const form = document.getElementById('docenteForm');
+    const tipoDocumento = document.getElementById('id_tipo_documento');
+    const numeroDocumento = document.getElementById('id_numero_documento');
+    const nombres = document.getElementById('id_nombres');
+    const apellidos = document.getElementById('id_apellidos');
+    const email = document.getElementById('id_email');
+    const telefono = document.getElementById('id_telefono');
+    const sedeInicial = document.getElementById('id_sede_inicial');
+    
+    // Elementos de previsualización
+    const previewDocumento = document.getElementById('preview-documento');
+    const previewNombre = document.getElementById('preview-nombre');
+    const previewEmail = document.getElementById('preview-email');
+    const previewTelefono = document.getElementById('preview-telefono');
+    const previewSede = document.getElementById('preview-sede');
+    const previewUsuario = document.getElementById('preview-usuario');
+    
+    // Función para actualizar previsualización
+    function updatePreview() {
+        // Documento
+        const tipoDoc = tipoDocumento.options[tipoDocumento.selectedIndex]?.text || '';
+        const numDoc = numeroDocumento.value;
+        previewDocumento.textContent = tipoDoc && numDoc ? `${tipoDoc}: ${numDoc}` : '-';
+        
+        // Nombre completo
+        const nombreCompleto = nombres.value && apellidos.value 
+            ? `${nombres.value} ${apellidos.value}`
+            : '-';
+        previewNombre.textContent = nombreCompleto;
+        
+        // Email
+        previewEmail.textContent = email.value || 'No especificado';
+        
+        // Teléfono
+        previewTelefono.textContent = telefono.value || 'No especificado';
+        
+        // Sede
+        const sedeText = sedeInicial.options[sedeInicial.selectedIndex]?.text || 'No asignada';
+        previewSede.textContent = sedeText;
+        
+        // Usuario (generado automáticamente)
+        if (numDoc) {
+            previewUsuario.textContent = `doc_${numDoc} (contraseña: ${numDoc})`;
+        } else {
+            previewUsuario.textContent = 'Se generará automáticamente';
+        }
+    }
+    
+    // Función para validar formulario
+    function validateForm() {
+        let isValid = true;
+        const requiredFields = ['tipo_documento', 'numero_documento', 'nombres', 'apellidos'];
+        
+        requiredFields.forEach(fieldName => {
+            const field = document.getElementById(`id_${fieldName}`);
+            if (field && !field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else if (field) {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        // Validar número de documento único
+        if (numeroDocumento.value) {
+            // Aquí podrías hacer una petición AJAX para verificar si el documento ya existe
+            // Por ahora solo validamos que tenga al menos 5 caracteres
+            if (numeroDocumento.value.length < 5) {
+                numeroDocumento.classList.add('is-invalid');
+                isValid = false;
+            }
+        }
+        
+        return isValid;
+    }
+    
+    // Event listeners para actualizar previsualización
+    [tipoDocumento, numeroDocumento, nombres, apellidos, email, telefono, sedeInicial].forEach(field => {
+        if (field) {
+            field.addEventListener('input', updatePreview);
+            field.addEventListener('change', updatePreview);
+        }
+    });
+    
+    // Botón limpiar
+    const resetBtn = document.getElementById('resetBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            setTimeout(updatePreview, 100);
+        });
+    }
+    
+    // Validar al enviar
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+                alert('Por favor, complete los campos obligatorios correctamente.');
+                return false;
+            }
+            
+            // Mostrar confirmación
+            const confirmCreate = confirm(
+                '¿Está seguro de crear este docente?\n\n' +
+                'Se creará un usuario con:\n' +
+                `• Usuario: doc_${numeroDocumento.value}\n` +
+                `• Contraseña: ${numeroDocumento.value}\n\n` +
+                'Recomiende al docente cambiar su contraseña al primer inicio de sesión.'
+            );
+            
+            if (!confirmCreate) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Mostrar mensaje de carga
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Creando...';
+            }
+            
+            return true;
+        });
+    }
+    
+    // Inicializar previsualización
+    updatePreview();
+    
+    // Cargar imagen seleccionada
+    const fotoInput = document.getElementById('id_foto');
+    if (fotoInput) {
+        fotoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Aquí podrías mostrar una previsualización de la imagen
+                    console.log('Imagen seleccionada:', file.name);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Validar número de documento en tiempo real
+    if (numeroDocumento) {
+        numeroDocumento.addEventListener('blur', function() {
+            if (this.value.length >= 5) {
+                // Simular verificación de existencia
+                setTimeout(() => {
+                    // En una implementación real, aquí harías una petición AJAX
+                    const isAvailable = true; // Simulación
+                    
+                    if (!isAvailable) {
+                        this.classList.add('is-invalid');
+                        this.nextElementSibling.textContent = 'Este número de documento ya está registrado.';
+                    } else {
+                        this.classList.remove('is-invalid');
+                    }
+                }, 500);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

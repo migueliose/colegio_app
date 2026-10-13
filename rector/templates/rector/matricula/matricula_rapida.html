@@ -1,0 +1,1364 @@
+<!-- rector/templates/rector/matricula/matricula_rapida.html -->
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Matrícula Rápida{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .section-title {
+        color: #4e54c8;
+        border-bottom: 2px solid #4e54c8;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+    .tab-content {
+        border: 1px solid #dee2e6;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        padding: 1.5rem;
+    }
+    .search-result-item {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    .search-result-item:hover {
+        background-color: #f8f9fa;
+        border-left-color: #4e54c8;
+        transform: translateX(5px);
+    }
+    .search-result-item.selected {
+        background-color: #e3f2fd;
+        border-left-color: #2196f3;
+    }
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        border-radius: 8px;
+    }
+    .estudiante-avatar {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+    }
+    .acudiente-item {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .matricula-badge {
+        font-size: 0.75rem;
+    }
+    .alert-custom {
+        border-left: 4px solid;
+    }
+    .alert-success-custom {
+        border-left-color: #28a745;
+        background-color: #f8fff9;
+    }
+    .alert-warning-custom {
+        border-left-color: #ffc107;
+        background-color: #fffcf3;
+    }
+    .alert-info-custom {
+        border-left-color: #17a2b8;
+        background-color: #f8feff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-12">
+            <div class="card shadow form-container">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-clipboard-plus me-2"></i>Matrícula Rápida
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Información general -->
+                    <div class="alert alert-info mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-info-circle me-3" style="font-size: 2rem;"></i>
+                            <div>
+                                <h5 class="alert-heading mb-2">Sistema de Matrícula Rápida</h5>
+                                <p class="mb-0">
+                                    Use este sistema para matricular estudiantes nuevos o existentes. 
+                                    Puede buscar estudiantes ya registrados o crear nuevos estudiantes 
+                                    y asignarles matrícula en un solo paso.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estadísticas actuales -->
+                    {% if estadisticas_matriculas %}
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <h2 class="mb-1">{{ estadisticas_matriculas.total }}</h2>
+                                    <p class="mb-0">Total Matrículas</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h2 class="mb-1">{{ estadisticas_matriculas.activas }}</h2>
+                                    <p class="mb-0">Activas</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <h2 class="mb-1">{{ estadisticas_matriculas.pendientes }}</h2>
+                                    <p class="mb-0">Pendientes</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h2 class="mb-1">{{ estadisticas_matriculas.pre_matriculas }}</h2>
+                                    <p class="mb-0">Pre-Matrículas</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Pestañas para selección -->
+                    <nav>
+                        <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                            <button class="nav-link active" id="nav-existente-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#nav-existente" type="button">
+                                <i class="bi bi-search me-1"></i>Buscar Estudiante Existente
+                            </button>
+                            <button class="nav-link" id="nav-nuevo-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#nav-nuevo" type="button">
+                                <i class="bi bi-person-plus me-1"></i>Crear Nuevo Estudiante
+                            </button>
+                        </div>
+                    </nav>
+
+                    <div class="tab-content" id="nav-tabContent">
+                        <!-- Pestaña 1: Buscar estudiante existente -->
+                        <div class="tab-pane fade show active" id="nav-existente">
+                            <div class="mb-4">
+                                <p class="text-muted mb-3">
+                                    Busque un estudiante ya registrado en el sistema para matricularlo en el año lectivo actual.
+                                </p>
+                                
+                                <!-- Formulario de búsqueda -->
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <label for="buscar-documento" class="form-label">Número de Documento</label>
+                                        <input type="text" id="buscar-documento" class="form-control" 
+                                               placeholder="Ingrese número de documento">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="buscar-nombre" class="form-label">Nombre</label>
+                                        <input type="text" id="buscar-nombre" class="form-control" 
+                                               placeholder="Ingrese nombre o apellido">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <button type="button" id="btn-buscar-estudiante" class="btn btn-primary">
+                                            <i class="bi bi-search me-1"></i>Buscar Estudiantes
+                                        </button>
+                                        <button type="button" id="btn-limpiar-busqueda" class="btn btn-outline-secondary">
+                                            <i class="bi bi-x-circle me-1"></i>Limpiar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Resultados de búsqueda -->
+                                <div id="resultados-busqueda" class="d-none">
+                                    <h6 class="mb-3">
+                                        <i class="bi bi-list-check me-1"></i>Resultados de la búsqueda:
+                                        <span id="total-resultados" class="badge bg-info ms-2">0</span>
+                                    </h6>
+                                    <div id="lista-estudiantes" class="list-group mb-4" style="max-height: 400px; overflow-y: auto;"></div>
+                                    
+                                    <!-- Información del estudiante seleccionado -->
+                                    <div id="info-estudiante-seleccionado" class="d-none">
+                                        <h6 class="mb-3">
+                                            <i class="bi bi-person-check me-1"></i>Estudiante Seleccionado
+                                        </h6>
+                                        <div class="card border-primary">
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-8">
+                                                        <div class="d-flex align-items-start mb-3">
+                                                            <div id="estudiante-foto" class="me-3"></div>
+                                                            <div>
+                                                                <h5 id="estudiante-nombre" class="mb-2"></h5>
+                                                                <p id="estudiante-documento" class="mb-1"></p>
+                                                                <p id="estudiante-contacto" class="mb-1"></p>
+                                                                <p id="estudiante-edad" class="mb-1"></p>
+                                                                <div id="estudiante-matriculas" class="mt-2"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="alert alert-custom alert-warning-custom mb-3">
+                                                            <i class="bi bi-info-circle me-1"></i>
+                                                            <small>Complete los datos de matrícula para este estudiante.</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Formulario de matrícula -->
+                                                <div class="form-section mt-3">
+                                                    <h6 class="section-title">
+                                                        <i class="bi bi-clipboard-check me-2"></i>Datos de la Matrícula
+                                                    </h6>
+                                                    
+                                                    <div class="row">
+                                                        <div class="col-md-4 mb-3">
+                                                            <label for="matricula-año" class="form-label required">
+                                                                <i class="bi bi-calendar-check me-1"></i>Año Lectivo
+                                                            </label>
+                                                            <select id="matricula-año" class="form-select" required>
+                                                                <option value="">Seleccione año</option>
+                                                                {% if año_lectivo_actual %}
+                                                                <option value="{{ año_lectivo_actual.id }}" selected>
+                                                                    {{ año_lectivo_actual.anho }} - {{ año_lectivo_actual.sede.nombre }}
+                                                                </option>
+                                                                {% endif %}
+                                                            </select>
+                                                        </div>
+                                                        
+                                                        <div class="col-md-4 mb-3">
+                                                            <label for="matricula-sede" class="form-label required">
+                                                                <i class="bi bi-building me-1"></i>Sede
+                                                            </label>
+                                                            <select id="matricula-sede" class="form-select" required onchange="filtrarGradosMatricula()">
+                                                                <option value="">Seleccione sede</option>
+                                                                {% for sede in sedes %}
+                                                                <option value="{{ sede.id }}">{{ sede.nombre }}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                        
+                                                        <div class="col-md-4 mb-3">
+                                                            <label for="matricula-nivel" class="form-label">
+                                                                <i class="bi bi-diagram-3 me-1"></i>Nivel Escolar
+                                                            </label>
+                                                            <select id="matricula-nivel" class="form-select" onchange="filtrarGradosMatricula()">
+                                                                <option value="">Seleccione nivel</option>
+                                                                {% for nivel in niveles %}
+                                                                <option value="{{ nivel.id }}">{{ nivel.nombre }}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="row">
+                                                        <div class="col-md-6 mb-3">
+                                                            <label for="matricula-grado" class="form-label required">
+                                                                <i class="bi bi-mortarboard me-1"></i>Grado
+                                                            </label>
+                                                            <select id="matricula-grado" class="form-select" required>
+                                                                <option value="">Primero seleccione sede y nivel</option>
+                                                            </select>
+                                                            <div id="grado-loading-matricula" class="d-none mt-2">
+                                                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                                                    <span class="visually-hidden">Cargando...</span>
+                                                                </div>
+                                                                <span class="ms-2">Cargando grados...</span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="col-md-6 mb-3">
+                                                            <label for="matricula-estado" class="form-label required">
+                                                                <i class="bi bi-toggle-on me-1"></i>Estado de Matrícula
+                                                            </label>
+                                                            <select id="matricula-estado" class="form-select" required>
+                                                                <option value="PRE">Pre-Matrícula</option>
+                                                                <option value="PEN" selected>Pendiente</option>
+                                                                <option value="ACT">Activa</option>
+                                                                <option value="INA">Inactiva</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label for="matricula-observaciones" class="form-label">
+                                                            <i class="bi bi-chat-text me-1"></i>Observaciones
+                                                        </label>
+                                                        <textarea id="matricula-observaciones" class="form-control" rows="2" 
+                                                                  placeholder="Observaciones adicionales (opcional)"></textarea>
+                                                    </div>
+                                                    
+                                                    <div class="alert alert-custom alert-info-custom mb-3">
+                                                        <i class="bi bi-lightbulb me-1"></i>
+                                                        <small>La matrícula generará automáticamente un código único y registrará la fecha actual.</small>
+                                                    </div>
+                                                    
+                                                    <div class="d-flex justify-content-between">
+                                                        <button type="button" id="btn-cambiar-estudiante" class="btn btn-outline-secondary">
+                                                            <i class="bi bi-arrow-left me-1"></i>Cambiar Estudiante
+                                                        </button>
+                                                        <button type="button" id="btn-matricular-existente" class="btn btn-success">
+                                                            <i class="bi bi-check-circle me-1"></i>Confirmar Matrícula
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <input type="hidden" id="estudiante-id">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Mensaje cuando no hay resultados -->
+                                <div id="sin-resultados" class="text-center py-5 d-none">
+                                    <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+                                    <p class="mt-3">No se encontraron estudiantes con los criterios de búsqueda</p>
+                                    <p class="text-muted small">Intente con otros términos o cree un nuevo estudiante</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pestaña 2: Crear nuevo estudiante -->
+                        <div class="tab-pane fade" id="nav-nuevo">
+                            <div class="alert alert-success">
+                                <i class="bi bi-person-plus me-2"></i>
+                                Complete el formulario para crear un nuevo estudiante y matricularlo. 
+                                El sistema verificará automáticamente si el documento ya existe.
+                            </div>
+                            
+                            <!-- Verificación rápida de documento -->
+                            <div class="row mb-4">
+                                <div class="col-md-8">
+                                    <label for="verificar-documento-nuevo" class="form-label">
+                                        <i class="bi bi-card-checklist me-1"></i>Verificar Documento
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" id="verificar-documento-nuevo" class="form-control" 
+                                               placeholder="Ingrese número de documento para verificar">
+                                        <button type="button" id="btn-verificar-documento-nuevo" class="btn btn-outline-primary">
+                                            <i class="bi bi-check-circle me-1"></i>Verificar
+                                        </button>
+                                    </div>
+                                    <div class="form-text">
+                                        Verifique si el documento ya está registrado en el sistema
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Resultado de verificación -->
+                            <div id="resultado-verificacion-nuevo" class="d-none mb-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 id="verificacion-titulo-nuevo" class="mb-2"></h6>
+                                        <p id="verificacion-mensaje-nuevo" class="mb-0"></p>
+                                        <div id="verificacion-detalles-nuevo" class="mt-2"></div>
+                                        <button type="button" id="btn-usar-existente-nuevo" class="btn btn-sm btn-outline-primary mt-2 d-none">
+                                            <i class="bi bi-person-check me-1"></i>Usar este estudiante
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Formulario de creación -->
+                            <form method="post" novalidate id="form-crear-estudiante">
+                                {% csrf_token %}
+                                
+                                <!-- Información del estudiante -->
+                                <div class="form-section">
+                                    <h5 class="section-title">
+                                        <i class="bi bi-person-circle me-2"></i>Información del Estudiante
+                                    </h5>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="estudiante-nombres" class="form-label required">
+                                                <i class="bi bi-person me-1"></i>Nombres
+                                            </label>
+                                            <input type="text" id="estudiante-nombres" class="form-control" 
+                                                   placeholder="Ingrese los nombres" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="estudiante-apellidos" class="form-label required">
+                                                <i class="bi bi-person me-1"></i>Apellidos
+                                            </label>
+                                            <input type="text" id="estudiante-apellidos" class="form-control" 
+                                                   placeholder="Ingrese los apellidos" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label for="estudiante-tipo-documento" class="form-label required">
+                                                <i class="bi bi-card-text me-1"></i>Tipo de Documento
+                                            </label>
+                                            <select id="estudiante-tipo-documento" class="form-select" required>
+                                                <option value="">Seleccione tipo</option>
+                                                {% for tipo in form_estudiante.fields.tipo_documento.queryset %}
+                                                <option value="{{ tipo.id }}">{{ tipo.nombre }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="estudiante-numero-documento" class="form-label required">
+                                                <i class="bi bi-123 me-1"></i>Número de Documento
+                                            </label>
+                                            <input type="text" id="estudiante-numero-documento" class="form-control" 
+                                                   placeholder="Ingrese número de documento" required>
+                                            <div class="form-text">
+                                                Este será el usuario para acceder al sistema
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="estudiante-sexo" class="form-label">
+                                                <i class="bi bi-gender-ambiguous me-1"></i>Sexo
+                                            </label>
+                                            <select id="estudiante-sexo" class="form-select">
+                                                <option value="">Seleccione</option>
+                                                <option value="M">Masculino</option>
+                                                <option value="F">Femenino</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label for="estudiante-fecha-nacimiento" class="form-label">
+                                                <i class="bi bi-calendar-date me-1"></i>Fecha de Nacimiento
+                                            </label>
+                                            <input type="date" id="estudiante-fecha-nacimiento" class="form-control">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="estudiante-email" class="form-label">
+                                                <i class="bi bi-envelope me-1"></i>Email
+                                            </label>
+                                            <input type="email" id="estudiante-email" class="form-control" 
+                                                   placeholder="ejemplo@email.com">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="estudiante-telefono" class="form-label">
+                                                <i class="bi bi-phone me-1"></i>Teléfono
+                                            </label>
+                                            <input type="text" id="estudiante-telefono" class="form-control" 
+                                                   placeholder="Ingrese número telefónico">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-12 mb-3">
+                                            <label for="estudiante-direccion" class="form-label">
+                                                <i class="bi bi-geo-alt me-1"></i>Dirección
+                                            </label>
+                                            <textarea id="estudiante-direccion" class="form-control" rows="2" 
+                                                      placeholder="Ingrese dirección completa"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Matrícula del nuevo estudiante -->
+                                <div class="form-section">
+                                    <h5 class="section-title">
+                                        <i class="bi bi-clipboard-check me-2"></i>Datos de la Matrícula
+                                    </h5>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label for="nueva-matricula-año" class="form-label required">
+                                                <i class="bi bi-calendar-check me-1"></i>Año Lectivo
+                                            </label>
+                                            <select id="nueva-matricula-año" class="form-select" required>
+                                                <option value="">Seleccione año</option>
+                                                {% if año_lectivo_actual %}
+                                                <option value="{{ año_lectivo_actual.id }}" selected>
+                                                    {{ año_lectivo_actual.anho }} - {{ año_lectivo_actual.sede.nombre }}
+                                                </option>
+                                                {% endif %}
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-4 mb-3">
+                                            <label for="nueva-matricula-sede" class="form-label required">
+                                                <i class="bi bi-building me-1"></i>Sede
+                                            </label>
+                                            <select id="nueva-matricula-sede" class="form-select" required onchange="filtrarGradosNuevo()">
+                                                <option value="">Seleccione sede</option>
+                                                {% for sede in sedes %}
+                                                <option value="{{ sede.id }}">{{ sede.nombre }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-4 mb-3">
+                                            <label for="nueva-matricula-nivel" class="form-label">
+                                                <i class="bi bi-diagram-3 me-1"></i>Nivel Escolar
+                                            </label>
+                                            <select id="nueva-matricula-nivel" class="form-select" onchange="filtrarGradosNuevo()">
+                                                <option value="">Seleccione nivel</option>
+                                                {% for nivel in niveles %}
+                                                <option value="{{ nivel.id }}">{{ nivel.nombre }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="nueva-matricula-grado" class="form-label required">
+                                                <i class="bi bi-mortarboard me-1"></i>Grado
+                                            </label>
+                                            <select id="nueva-matricula-grado" class="form-select" required>
+                                                <option value="">Primero seleccione sede y nivel</option>
+                                            </select>
+                                            <div id="grado-loading-nuevo" class="d-none mt-2">
+                                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                                    <span class="visually-hidden">Cargando...</span>
+                                                </div>
+                                                <span class="ms-2">Cargando grados...</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6 mb-3">
+                                            <label for="nueva-matricula-estado" class="form-label required">
+                                                <i class="bi bi-toggle-on me-1"></i>Estado de Matrícula
+                                            </label>
+                                            <select id="nueva-matricula-estado" class="form-select" required>
+                                                <option value="PRE">Pre-Matrícula</option>
+                                                <option value="PEN" selected>Pendiente</option>
+                                                <option value="ACT">Activa</option>
+                                                <option value="INA">Inactiva</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="nueva-matricula-observaciones" class="form-label">
+                                            <i class="bi bi-chat-text me-1"></i>Observaciones
+                                        </label>
+                                        <textarea id="nueva-matricula-observaciones" class="form-control" rows="2" 
+                                                  placeholder="Observaciones adicionales (opcional)"></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Acudientes (opcional) -->
+                                <div class="form-section">
+                                    <h5 class="section-title">
+                                        <i class="bi bi-people me-2"></i>Acudientes (Opcional)
+                                    </h5>
+                                    <div id="acudientes-container">
+                                        <!-- Los acudientes se agregarán dinámicamente aquí -->
+                                    </div>
+                                    <button type="button" id="btn-agregar-acudiente" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-person-plus me-1"></i>Agregar Acudiente
+                                    </button>
+                                </div>
+
+                                <!-- Botones -->
+                                <div class="d-flex justify-content-between border-top pt-4 mt-4">
+                                    <div>
+                                        <a href="{% url 'rector:matricula_list' %}" class="btn btn-outline-secondary">
+                                            <i class="bi bi-x-circle me-1"></i>Cancelar
+                                        </a>
+                                        <button type="button" class="btn btn-outline-primary" id="btn-volver-buscar-nuevo">
+                                            <i class="bi bi-search me-1"></i>Buscar Existente
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <button type="button" id="btn-crear-matricular" class="btn btn-primary">
+                                            <i class="bi bi-check-circle me-1"></i>Crear y Matricular
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" class="loading-overlay d-none">
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Procesando...</p>
+    </div>
+</div>
+
+<!-- Template para acudientes -->
+<template id="template-acudiente">
+    <div class="acudiente-item">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <h6 class="mb-0">Acudiente <span class="acudiente-numero"></span></h6>
+            <button type="button" class="btn-close btn-close-acudiente" aria-label="Eliminar"></button>
+        </div>
+        <div class="row g-2">
+            <div class="col-md-4">
+                <label class="form-label small">Nombres</label>
+                <input type="text" class="form-control form-control-sm acudiente-nombres" placeholder="Nombres" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small">Apellidos</label>
+                <input type="text" class="form-control form-control-sm acudiente-apellidos" placeholder="Apellidos" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small">Parentesco</label>
+                <select class="form-select form-select-sm acudiente-parentesco" required>
+                    <option value="">Seleccione</option>
+                    <option value="Padre">Padre</option>
+                    <option value="Madre">Madre</option>
+                    <option value="Tutor Legal">Tutor Legal</option>
+                    <option value="Abuelo(a)">Abuelo(a)</option>
+                    <option value="Tío(a)">Tío(a)</option>
+                    <option value="Hermano(a)">Hermano(a)</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small">Documento</label>
+                <input type="text" class="form-control form-control-sm acudiente-documento" placeholder="Número" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small">Teléfono</label>
+                <input type="text" class="form-control form-control-sm acudiente-telefono" placeholder="Teléfono">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small">Email</label>
+                <input type="email" class="form-control form-control-sm acudiente-email" placeholder="Email">
+            </div>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let estudianteSeleccionado = null;
+    let acudienteCount = 0;
+    
+    // Elementos DOM
+    const existenteTab = document.getElementById('nav-existente-tab');
+    const nuevoTab = document.getElementById('nav-nuevo-tab');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    
+    // Elementos de la pestaña 1 (existente)
+    const buscarDocumento = document.getElementById('buscar-documento');
+    const buscarNombre = document.getElementById('buscar-nombre');
+    const btnBuscar = document.getElementById('btn-buscar-estudiante');
+    const btnLimpiar = document.getElementById('btn-limpiar-busqueda');
+    const resultadosDiv = document.getElementById('resultados-busqueda');
+    const sinResultadosDiv = document.getElementById('sin-resultados');
+    const listaEstudiantes = document.getElementById('lista-estudiantes');
+    const infoEstudianteDiv = document.getElementById('info-estudiante-seleccionado');
+    
+    // Elementos de la pestaña 2 (nuevo)
+    const verificarDocumentoNuevo = document.getElementById('verificar-documento-nuevo');
+    const btnVerificarNuevo = document.getElementById('btn-verificar-documento-nuevo');
+    const resultadoVerificacionNuevo = document.getElementById('resultado-verificacion-nuevo');
+    const btnUsarExistenteNuevo = document.getElementById('btn-usar-existente-nuevo');
+    const btnVolverBuscarNuevo = document.getElementById('btn-volver-buscar-nuevo');
+    const btnAgregarAcudiente = document.getElementById('btn-agregar-acudiente');
+    const acudientesContainer = document.getElementById('acudientes-container');
+    const btnCrearMatricular = document.getElementById('btn-crear-matricular');
+    
+    // Campos del formulario nuevo
+    const camposEstudiante = [
+        'nombres', 'apellidos', 'tipo-documento', 'numero-documento', 
+        'sexo', 'fecha-nacimiento', 'email', 'telefono', 'direccion'
+    ].reduce((obj, campo) => {
+        obj[campo] = document.getElementById(`estudiante-${campo}`);
+        return obj;
+    }, {});
+    
+    // Campos de matrícula para ambos casos
+    const matriculaExistente = {
+        'año': document.getElementById('matricula-año'),
+        'sede': document.getElementById('matricula-sede'),
+        'nivel': document.getElementById('matricula-nivel'),
+        'grado': document.getElementById('matricula-grado'),
+        'estado': document.getElementById('matricula-estado'),
+        'observaciones': document.getElementById('matricula-observaciones')
+    };
+    
+    const matriculaNuevo = {
+        'año': document.getElementById('nueva-matricula-año'),
+        'sede': document.getElementById('nueva-matricula-sede'),
+        'nivel': document.getElementById('nueva-matricula-nivel'),
+        'grado': document.getElementById('nueva-matricula-grado'),
+        'estado': document.getElementById('nueva-matricula-estado'),
+        'observaciones': document.getElementById('nueva-matricula-observaciones')
+    };
+    
+    // ================== FUNCIONES AUXILIARES ==================
+    
+    function mostrarLoading() {
+        loadingOverlay.classList.remove('d-none');
+    }
+    
+    function ocultarLoading() {
+        loadingOverlay.classList.add('d-none');
+    }
+    
+    function mostrarError(mensaje) {
+        alert('Error: ' + mensaje);
+    }
+    
+    function mostrarExito(mensaje) {
+        alert('Éxito: ' + mensaje);
+    }
+    
+    function validarCamposRequeridos(campos) {
+        let valido = true;
+        campos.forEach(campo => {
+            if (!campo.value.trim()) {
+                campo.classList.add('is-invalid');
+                valido = false;
+            } else {
+                campo.classList.remove('is-invalid');
+            }
+        });
+        return valido;
+    }
+    
+    // ================== PESTAÑA 1: BUSCAR ESTUDIANTE EXISTENTE ==================
+    
+    function buscarEstudiantes() {
+        const documento = buscarDocumento.value.trim();
+        const nombre = buscarNombre.value.trim();
+        
+        // Validar que haya al menos un criterio
+        if (!documento && !nombre) {
+            alert('Ingrese al menos un criterio de búsqueda');
+            return;
+        }
+        
+        mostrarLoading();
+        
+        // Construir URL de búsqueda
+        let url = `/rector/ajax/matricula/buscar-estudiantes/?`;
+        if (documento) url += `&documento=${encodeURIComponent(documento)}`;
+        if (nombre) url += `&nombre=${encodeURIComponent(nombre)}`;
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                ocultarLoading();
+                
+                if (data.success) {
+                    mostrarResultadosBusqueda(data.estudiantes);
+                } else {
+                    mostrarError(data.error || 'Error en la búsqueda');
+                }
+            })
+            .catch(error => {
+                ocultarLoading();
+                mostrarError('Error de conexión: ' + error.message);
+            });
+    }
+    
+    function mostrarResultadosBusqueda(estudiantes) {
+        listaEstudiantes.innerHTML = '';
+        
+        if (estudiantes.length === 0) {
+            resultadosDiv.classList.add('d-none');
+            sinResultadosDiv.classList.remove('d-none');
+            return;
+        }
+        
+        sinResultadosDiv.classList.add('d-none');
+        resultadosDiv.classList.remove('d-none');
+        document.getElementById('total-resultados').textContent = estudiantes.length;
+        
+        estudiantes.forEach(estudiante => {
+            const item = document.createElement('div');
+            item.className = 'list-group-item search-result-item';
+            item.dataset.id = estudiante.id;
+            
+            // Determinar clase si ya tiene matrícula actual
+            if (estudiante.tiene_matricula_actual) {
+                item.classList.add('selected');
+            }
+            
+            item.innerHTML = `
+                <div class="d-flex w-100 justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">
+                            ${estudiante.nombre_completo}
+                            ${estudiante.tiene_matricula_actual ? 
+                                '<span class="badge bg-success matricula-badge ms-2">Ya matriculado este año</span>' : ''}
+                        </h6>
+                        <p class="mb-1">
+                            <small class="text-muted">
+                                <i class="bi bi-card-text me-1"></i>${estudiante.tipo_documento}: ${estudiante.numero_documento}
+                            </small>
+                        </p>
+                        <p class="mb-1">
+                            <small>
+                                <i class="bi bi-envelope me-1"></i>${estudiante.email || 'Sin email'}
+                                <span class="mx-2">|</span>
+                                <i class="bi bi-phone me-1"></i>${estudiante.telefono || 'Sin teléfono'}
+                            </small>
+                        </p>
+                        ${estudiante.tiene_matricula_actual && estudiante.matricula_actual ? 
+                            `<p class="mb-0">
+                                <small class="text-warning">
+                                    <i class="bi bi-clipboard-check me-1"></i>
+                                    Matrícula actual: ${estudiante.matricula_actual.grado} - ${estudiante.matricula_actual.sede} (${estudiante.matricula_actual.estado})
+                                </small>
+                            </p>` : ''}
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-sm ${estudiante.tiene_matricula_actual ? 'btn-outline-warning' : 'btn-primary'}" 
+                                onclick="seleccionarEstudiante(${estudiante.id}, '${estudiante.nombre_completo.replace(/'/g, "\\'")}', '${estudiante.tipo_documento}', '${estudiante.numero_documento}', '${estudiante.email}', '${estudiante.telefono}', '${estudiante.edad}', '${estudiante.fecha_nacimiento}', ${estudiante.tiene_matricula_actual}, ${estudiante.matriculas_anteriores}, '${estudiante.foto_url}')">
+                            ${estudiante.tiene_matricula_actual ? 
+                                '<i class="bi bi-pencil me-1"></i>Ver/Editar' : 
+                                '<i class="bi bi-check-circle me-1"></i>Seleccionar'}
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            listaEstudiantes.appendChild(item);
+        });
+    }
+    
+    // Función global para seleccionar estudiante
+    window.seleccionarEstudiante = function(id, nombre, tipoDoc, documento, email, telefono, edad, fechaNacimiento, tieneMatricula, matriculasAnteriores, fotoUrl) {
+        estudianteSeleccionado = {
+            id: id,
+            nombre: nombre,
+            tipoDocumento: tipoDoc,
+            documento: documento,
+            email: email || 'No registrado',
+            telefono: telefono || 'No registrado',
+            edad: edad || 'N/A',
+            fechaNacimiento: fechaNacimiento || 'No registrada',
+            tieneMatricula: tieneMatricula,
+            matriculasAnteriores: matriculasAnteriores
+        };
+        
+        // Actualizar interfaz
+        document.getElementById('estudiante-nombre').textContent = nombre;
+        document.getElementById('estudiante-documento').textContent = `${tipoDoc}: ${documento}`;
+        document.getElementById('estudiante-contacto').innerHTML = `
+            <i class="bi bi-envelope me-1"></i>${email || 'Sin email'} 
+            <span class="mx-2">|</span>
+            <i class="bi bi-phone me-1"></i>${telefono || 'Sin teléfono'}
+        `;
+        document.getElementById('estudiante-edad').textContent = `Edad: ${edad || 'N/A'} años`;
+        document.getElementById('estudiante-id').value = id;
+        
+        // Mostrar foto si existe
+        const fotoDiv = document.getElementById('estudiante-foto');
+        fotoDiv.innerHTML = '';
+        if (fotoUrl) {
+            fotoDiv.innerHTML = `<img src="${fotoUrl}" alt="Foto" class="rounded-circle estudiante-avatar">`;
+        } else {
+            fotoDiv.innerHTML = `
+                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center estudiante-avatar">
+                    <i class="bi bi-person-fill text-secondary"></i>
+                </div>
+            `;
+        }
+        
+        // Mostrar historial de matrículas
+        const matriculasDiv = document.getElementById('estudiante-matriculas');
+        if (tieneMatricula) {
+            matriculasDiv.innerHTML = `
+                <div class="alert alert-warning p-2 mb-0">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    <small>Este estudiante ya tiene matrícula para el año actual. Puede crear una nueva matrícula si es necesario.</small>
+                </div>
+            `;
+        } else if (matriculasAnteriores > 0) {
+            matriculasDiv.innerHTML = `
+                <div class="alert alert-info p-2 mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    <small>El estudiante tiene ${matriculasAnteriores} matrícula(s) anterior(es).</small>
+                </div>
+            `;
+        } else {
+            matriculasDiv.innerHTML = `
+                <div class="alert alert-success p-2 mb-0">
+                    <i class="bi bi-check-circle me-1"></i>
+                    <small>Estudiante nuevo para este año lectivo.</small>
+                </div>
+            `;
+        }
+        
+        // Ocultar lista y mostrar formulario de matrícula
+        listaEstudiantes.parentElement.classList.add('d-none');
+        infoEstudianteDiv.classList.remove('d-none');
+    };
+    
+    // Matricular estudiante existente
+    document.getElementById('btn-matricular-existente').addEventListener('click', function() {
+        const camposRequeridos = [
+            matriculaExistente.año,
+            matriculaExistente.sede,
+            matriculaExistente.grado,
+            matriculaExistente.estado
+        ];
+        
+        if (!validarCamposRequeridos(camposRequeridos)) {
+            alert('Por favor complete todos los campos requeridos (*)');
+            return;
+        }
+        
+        if (!estudianteSeleccionado) {
+            alert('No hay estudiante seleccionado');
+            return;
+        }
+        
+        mostrarLoading();
+        
+        // Preparar datos para enviar
+        const data = {
+            estudiante_id: estudianteSeleccionado.id,
+            matricula: {
+                año_lectivo: matriculaExistente.año.value,
+                sede: matriculaExistente.sede.value,
+                grado_año_lectivo: matriculaExistente.grado.value,
+                estado: matriculaExistente.estado.value,
+                observaciones: matriculaExistente.observaciones.value
+            }
+        };
+        
+        fetch('/rector/ajax/matricula/matricular-existente/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            ocultarLoading();
+            
+            if (data.success) {
+                mostrarExito(data.mensaje);
+                // Redirigir a la matrícula creada
+                setTimeout(() => {
+                    window.location.href = data.matricula.url_detalle;
+                }, 1500);
+            } else {
+                mostrarError(data.error);
+            }
+        })
+        .catch(error => {
+            ocultarLoading();
+            mostrarError('Error de conexión: ' + error.message);
+        });
+    });
+    
+    // Cambiar selección
+    document.getElementById('btn-cambiar-estudiante').addEventListener('click', function() {
+        infoEstudianteDiv.classList.add('d-none');
+        listaEstudiantes.parentElement.classList.remove('d-none');
+        estudianteSeleccionado = null;
+    });
+    
+    // ================== PESTAÑA 2: CREAR NUEVO ESTUDIANTE ==================
+    
+    // Verificar documento para nuevo estudiante
+    function verificarDocumentoEstudiante() {
+        const documento = verificarDocumentoNuevo.value.trim();
+        
+        if (!documento) {
+            alert('Ingrese un número de documento');
+            return;
+        }
+        
+        mostrarLoading();
+        
+        fetch(`/rector/ajax/matricula/verificar-documento/?numero_documento=${encodeURIComponent(documento)}`)
+            .then(response => response.json())
+            .then(data => {
+                ocultarLoading();
+                mostrarResultadoVerificacionNuevo(data);
+            })
+            .catch(error => {
+                ocultarLoading();
+                mostrarError('Error de conexión: ' + error.message);
+            });
+    }
+    
+    function mostrarResultadoVerificacionNuevo(data) {
+        resultadoVerificacionNuevo.classList.remove('d-none');
+        
+        if (data.error) {
+            document.getElementById('verificacion-titulo-nuevo').textContent = 'Error';
+            document.getElementById('verificacion-mensaje-nuevo').textContent = data.error;
+            document.getElementById('verificacion-detalles-nuevo').innerHTML = '';
+            document.getElementById('btn-usar-existente-nuevo').classList.add('d-none');
+            return;
+        }
+        
+        if (data.existe) {
+            const usuario = data.usuario;
+            let titulo = '';
+            let mensaje = '';
+            
+            if (data.tipo === 'estudiante') {
+                titulo = 'Documento ya registrado como estudiante';
+                mensaje = `
+                    <strong>${usuario.nombre_completo}</strong><br>
+                    <small class="text-muted">${usuario.tipo_documento}: ${usuario.numero_documento}</small>
+                `;
+                
+                // Mostrar detalles del estudiante
+                let detallesHtml = '<div class="mt-2">';
+                
+                if (data.estudiante.matriculas && data.estudiante.matriculas.length > 0) {
+                    detallesHtml += '<p class="mb-1"><small><strong>Matrículas anteriores:</strong></small></p>';
+                    detallesHtml += '<ul class="small">';
+                    data.estudiante.matriculas.forEach(mat => {
+                        detallesHtml += `<li>${mat.año} - ${mat.grado} (${mat.sede}) - ${mat.estado}</li>`;
+                    });
+                    detallesHtml += '</ul>';
+                }
+                
+                detallesHtml += '</div>';
+                document.getElementById('verificacion-detalles-nuevo').innerHTML = detallesHtml;
+                
+                // Mostrar botón para usar existente
+                const btnUsar = document.getElementById('btn-usar-existente-nuevo');
+                btnUsar.classList.remove('d-none');
+                btnUsar.onclick = function() {
+                    // Cambiar a pestaña de búsqueda y seleccionar este estudiante
+                    existenteTab.click();
+                    
+                    // Rellenar campos de búsqueda
+                    buscarDocumento.value = usuario.numero_documento;
+                    
+                    // Ejecutar búsqueda
+                    setTimeout(() => {
+                        buscarEstudiantes();
+                        
+                        // Seleccionar automáticamente después de un momento
+                        setTimeout(() => {
+                            // Buscar el botón de selección y hacer clic
+                            const botonSeleccion = document.querySelector(`button[onclick*="${data.estudiante.id}"]`);
+                            if (botonSeleccion) {
+                                botonSeleccion.click();
+                            }
+                        }, 500);
+                    }, 300);
+                };
+                
+            } else {
+                titulo = 'Documento registrado como usuario';
+                mensaje = `
+                    <strong>${usuario.nombre_completo}</strong><br>
+                    <small class="text-muted">${usuario.tipo_documento}: ${usuario.numero_documento}</small>
+                    <br><small class="text-warning">(Usuario registrado pero no como estudiante)</small>
+                `;
+                document.getElementById('verificacion-detalles-nuevo').innerHTML = '';
+                document.getElementById('btn-usar-existente-nuevo').classList.add('d-none');
+                
+                // Autocompletar formulario con datos del usuario
+                if (usuario.nombres) camposEstudiante['nombres'].value = usuario.nombres;
+                if (usuario.apellidos) camposEstudiante['apellidos'].value = usuario.apellidos;
+                if (usuario.email) camposEstudiante['email'].value = usuario.email;
+                if (usuario.telefono) camposEstudiante['telefono'].value = usuario.telefono;
+                if (usuario.direccion) camposEstudiante['direccion'].value = usuario.direccion;
+                if (usuario.fecha_nacimiento) camposEstudiante['fecha-nacimiento'].value = usuario.fecha_nacimiento.split('/').reverse().join('-');
+            }
+            
+            document.getElementById('verificacion-titulo-nuevo').textContent = titulo;
+            document.getElementById('verificacion-mensaje-nuevo').innerHTML = mensaje;
+            
+        } else {
+            document.getElementById('verificacion-titulo-nuevo').textContent = 'Documento disponible';
+            document.getElementById('verificacion-mensaje-nuevo').textContent = 'El documento no está registrado en el sistema. Puede crear un nuevo estudiante.';
+            document.getElementById('verificacion-detalles-nuevo').innerHTML = '';
+            document.getElementById('btn-usar-existente-nuevo').classList.add('d-none');
+            
+            // Autocompletar el campo de documento en el formulario
+            camposEstudiante['numero-documento'].value = verificarDocumentoNuevo.value;
+        }
+    }
+    
+    // Agregar acudiente
+    btnAgregarAcudiente.addEventListener('click', function() {
+        acudienteCount++;
+        const template = document.getElementById('template-acudiente').content.cloneNode(true);
+        
+        // Actualizar número
+        template.querySelector('.acudiente-numero').textContent = acudienteCount;
+        
+        // Agregar evento para eliminar
+        const btnEliminar = template.querySelector('.btn-close-acudiente');
+        btnEliminar.addEventListener('click', function() {
+            this.closest('.acudiente-item').remove();
+            acudienteCount--;
+        });
+        
+        acudientesContainer.appendChild(template);
+    });
+    
+    // Crear estudiante y matricular
+    btnCrearMatricular.addEventListener('click', function() {
+        // Validar campos del estudiante
+        const camposRequeridosEstudiante = [
+            camposEstudiante['nombres'],
+            camposEstudiante['apellidos'],
+            camposEstudiante['tipo-documento'],
+            camposEstudiante['numero-documento']
+        ];
+        
+        if (!validarCamposRequeridos(camposRequeridosEstudiante)) {
+            alert('Por favor complete todos los campos obligatorios del estudiante (*)');
+            return;
+        }
+        
+        // Validar campos de matrícula
+        const camposRequeridosMatricula = [
+            matriculaNuevo.año,
+            matriculaNuevo.sede,
+            matriculaNuevo.grado,
+            matriculaNuevo.estado
+        ];
+        
+        if (!validarCamposRequeridos(camposRequeridosMatricula)) {
+            alert('Por favor complete todos los campos obligatorios de la matrícula (*)');
+            return;
+        }
+        
+        // Validar acudientes si los hay
+        const acudientesItems = document.querySelectorAll('.acudiente-item');
+        let acudientesValidos = true;
+        acudientesItems.forEach(item => {
+            const camposAcudiente = item.querySelectorAll('[required]');
+            camposAcudiente.forEach(campo => {
+                if (!campo.value.trim()) {
+                    campo.classList.add('is-invalid');
+                    acudientesValidos = false;
+                }
+            });
+        });
+        
+        if (!acudientesValidos) {
+            alert('Por favor complete todos los campos requeridos de los acudientes');
+            return;
+        }
+        
+        mostrarLoading();
+        
+        // Preparar datos del estudiante
+        const estudianteData = {
+            nombres: camposEstudiante['nombres'].value.trim(),
+            apellidos: camposEstudiante['apellidos'].value.trim(),
+            tipo_documento: camposEstudiante['tipo-documento'].value,
+            numero_documento: camposEstudiante['numero-documento'].value.trim(),
+            sexo: camposEstudiante['sexo'].value,
+            fecha_nacimiento: camposEstudiante['fecha-nacimiento'].value,
+            email: camposEstudiante['email'].value.trim(),
+            telefono: camposEstudiante['telefono'].value.trim(),
+            direccion: camposEstudiante['direccion'].value.trim()
+        };
+        
+        // Preparar datos de matrícula
+        const matriculaData = {
+            año_lectivo: matriculaNuevo.año.value,
+            sede: matriculaNuevo.sede.value,
+            grado_año_lectivo: matriculaNuevo.grado.value,
+            estado: matriculaNuevo.estado.value,
+            observaciones: matriculaNuevo.observaciones.value
+        };
+        
+        // Preparar datos de acudientes
+        const acudientesData = [];
+        acudientesItems.forEach(item => {
+            acudientesData.push({
+                nombres: item.querySelector('.acudiente-nombres').value.trim(),
+                apellidos: item.querySelector('.acudiente-apellidos').value.trim(),
+                parentesco: item.querySelector('.acudiente-parentesco').value,
+                numero_documento: item.querySelector('.acudiente-documento').value.trim(),
+                telefono: item.querySelector('.acudiente-telefono').value.trim(),
+                email: item.querySelector('.acudiente-email').value.trim()
+            });
+        });
+        
+        // Enviar datos
+        const data = {
+            usuario: estudianteData,
+            matricula: matriculaData,
+            acudientes: acudientesData
+        };
+        
+        fetch('/rector/ajax/matricula/crear-estudiante/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            ocultarLoading();
+            
+            if (data.success) {
+                mostrarExito(data.mensaje);
+                // Redirigir al estudiante creado
+                setTimeout(() => {
+                    window.location.href = data.estudiante.url_detalle;
+                }, 1500);
+            } else {
+                mostrarError(data.error);
+            }
+        })
+        .catch(error => {
+            ocultarLoading();
+            mostrarError('Error de conexión: ' + error.message);
+        });
+    });
+    
+    // ================== FUNCIONES COMPARTIDAS ==================
+    
+    // Filtrar grados (para ambos casos)
+    function filtrarGrados(añoId, sedeId, nivelId, selectGrado, loadingDiv) {
+        if (!añoId || !sedeId || !nivelId) {
+            selectGrado.innerHTML = '<option value="">Seleccione año, sede y nivel primero</option>';
+            return;
+        }
+        
+        // Mostrar loading
+        loadingDiv.classList.remove('d-none');
+        selectGrado.disabled = true;
+        
+        // Hacer petición AJAX
+        fetch(`/rector/ajax/grados-por-filtros/?año=${añoId}&sede=${sedeId}&nivel=${nivelId}`)
+            .then(response => response.json())
+            .then(data => {
+                selectGrado.innerHTML = '<option value="">Seleccione un grado</option>';
+                
+                if (data.success && data.grados && data.grados.length > 0) {
+                    data.grados.forEach(grado => {
+                        const option = document.createElement('option');
+                        option.value = grado.id;
+                        option.textContent = grado.nombre;
+                        selectGrado.appendChild(option);
+                    });
+                } else {
+                    selectGrado.innerHTML = '<option value="">No hay grados disponibles para esta combinación</option>';
+                }
+                
+                loadingDiv.classList.add('d-none');
+                selectGrado.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                selectGrado.innerHTML = '<option value="">Error al cargar grados</option>';
+                loadingDiv.classList.add('d-none');
+                selectGrado.disabled = false;
+            });
+    }
+    
+    // Función específica para matrícula existente
+    window.filtrarGradosMatricula = function() {
+        const añoId = matriculaExistente.año.value;
+        const sedeId = matriculaExistente.sede.value;
+        const nivelId = matriculaExistente.nivel.value;
+        const loadingDiv = document.getElementById('grado-loading-matricula');
+        
+        filtrarGrados(añoId, sedeId, nivelId, matriculaExistente.grado, loadingDiv);
+    };
+    
+    // Función específica para nuevo estudiante
+    window.filtrarGradosNuevo = function() {
+        const añoId = matriculaNuevo.año.value;
+        const sedeId = matriculaNuevo.sede.value;
+        const nivelId = matriculaNuevo.nivel.value;
+        const loadingDiv = document.getElementById('grado-loading-nuevo');
+        
+        filtrarGrados(añoId, sedeId, nivelId, matriculaNuevo.grado, loadingDiv);
+    };
+    
+    // ================== EVENT LISTENERS ==================
+    
+    // Búsqueda de estudiantes existentes
+    btnBuscar.addEventListener('click', buscarEstudiantes);
+    
+    btnLimpiar.addEventListener('click', function() {
+        buscarDocumento.value = '';
+        buscarNombre.value = '';
+        resultadosDiv.classList.add('d-none');
+        sinResultadosDiv.classList.add('d-none');
+    });
+    
+    // Verificación de documento para nuevo
+    btnVerificarNuevo.addEventListener('click', verificarDocumentoEstudiante);
+    
+    verificarDocumentoNuevo.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            verificarDocumentoEstudiante();
+        }
+    });
+    
+    // Auto-verificar cuando se escribe en el campo de documento
+    camposEstudiante['numero-documento'].addEventListener('blur', function() {
+        if (this.value.trim()) {
+            verificarDocumentoNuevo.value = this.value;
+            verificarDocumentoEstudiante();
+        }
+    });
+    
+    // Navegación entre pestañas
+    btnVolverBuscarNuevo.addEventListener('click', function() {
+        existenteTab.click();
+    });
+    
+    // Prevenir envío del formulario con Enter en campos de búsqueda
+    [buscarDocumento, buscarNombre].forEach(campo => {
+        campo.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                buscarEstudiantes();
+            }
+        });
+    });
+    
+    // Inicializar un acudiente por defecto
+    setTimeout(() => {
+        btnAgregarAcudiente.click();
+    }, 500);
+});
+</script>
+{% endblock %}

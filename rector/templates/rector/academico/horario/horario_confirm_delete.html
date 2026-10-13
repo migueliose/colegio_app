@@ -1,0 +1,217 @@
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+
+{% block title %}Eliminar Horario - Rector{% endblock %}
+
+{% block extra_css %}
+<style>
+    .confirm-card {
+        max-width: 600px;
+        margin: 0 auto;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 10px;
+        border-top: 4px solid #dc3545;
+    }
+    .warning-icon {
+        font-size: 4rem;
+        color: #dc3545;
+        margin-bottom: 1.5rem;
+    }
+    .info-box {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+    }
+    .info-item {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .info-item:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Card de confirmación -->
+            <div class="card confirm-card">
+                <div class="card-header bg-white text-center">
+                    <div class="warning-icon">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                    <h3 class="h4 mb-2">¿Eliminar Horario?</h3>
+                    <p class="text-muted mb-0">Esta acción no se puede deshacer</p>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Información del horario a eliminar -->
+                    <div class="info-box">
+                        <h5 class="mb-3">
+                            <i class="bi bi-calendar-week me-2"></i>Horario a eliminar
+                        </h5>
+                        
+                        <div class="info-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>Asignatura:</strong>
+                                <span>{{ object.asignatura_grado.asignatura.nombre }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>Grado:</strong>
+                                <span>{{ object.asignatura_grado.grado_año_lectivo.grado.nombre }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>Día:</strong>
+                                <span>
+                                    {% if object.dia_semana == 'LUN' %}Lunes
+                                    {% elif object.dia_semana == 'MAR' %}Martes
+                                    {% elif object.dia_semana == 'MIE' %}Miércoles
+                                    {% elif object.dia_semana == 'JUE' %}Jueves
+                                    {% elif object.dia_semana == 'VIE' %}Viernes
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>Horario:</strong>
+                                <span>{{ object.hora_inicio|time:"H:i" }} - {{ object.hora_fin|time:"H:i" }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>Salón:</strong>
+                                <span>{{ object.salon|default:"Por asignar" }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>Sede:</strong>
+                                <span>{{ object.asignatura_grado.sede.nombre }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>Docente:</strong>
+                                <span>
+                                    {% if object.asignatura_grado.docente %}
+                                        {{ object.asignatura_grado.docente.usuario.get_full_name }}
+                                    {% else %}
+                                        <span class="text-muted">Por asignar</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Advertencias -->
+                    <div class="alert alert-danger">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-exclamation-octagon me-2"></i>Advertencia
+                        </h6>
+                        <ul class="mb-0">
+                            <li>Esta acción eliminará permanentemente el horario.</li>
+                            <li>Los estudiantes y docentes ya no verán este horario.</li>
+                            <li>Se perderán los datos asociados a este horario.</li>
+                            <li>Esta acción afectará el horario completo del grado.</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Confirmación -->
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-question-circle me-2"></i>¿Está seguro?
+                        </h6>
+                        <p class="mb-0">
+                            Para confirmar la eliminación, escriba <strong>"ELIMINAR"</strong> en el campo siguiente:
+                        </p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="confirmText" class="form-label">Confirmación</label>
+                            <input type="text" class="form-control" id="confirmText" 
+                                   placeholder='Escriba "ELIMINAR"' required
+                                   pattern="ELIMINAR" title='Debe escribir exactamente "ELIMINAR"'>
+                            <div class="form-text">Debe escribir exactamente la palabra "ELIMINAR" en mayúsculas.</div>
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <div>
+                                <a href="{% url 'rector:horario_detail' object.pk %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                </a>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
+                                    <i class="bi bi-trash me-1"></i>Confirmar Eliminación
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmInput = document.getElementById('confirmText');
+    const deleteBtn = document.getElementById('deleteBtn');
+    
+    // Validar entrada en tiempo real
+    confirmInput.addEventListener('input', function() {
+        if (this.value === 'ELIMINAR') {
+            deleteBtn.disabled = false;
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+        } else {
+            deleteBtn.disabled = true;
+            this.classList.remove('is-valid');
+            this.classList.add('is-invalid');
+        }
+    });
+    
+    // Validar al enviar
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (confirmInput.value !== 'ELIMINAR') {
+                e.preventDefault();
+                alert('Debe escribir exactamente "ELIMINAR" para confirmar.');
+                confirmInput.focus();
+                confirmInput.classList.add('is-invalid');
+            }
+        });
+    }
+    
+    // Prevenir envío con Enter
+    confirmInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && deleteBtn.disabled) {
+            e.preventDefault();
+            alert('Debe escribir exactamente "ELIMINAR" para confirmar.');
+        }
+    });
+});
+</script>
+{% endblock %}

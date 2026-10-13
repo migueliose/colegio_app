@@ -1,0 +1,84 @@
+/* Agregar en rector/static/rector/css/institucional.css */
+.card.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+.card.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.action-card {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    border-radius: 10px;
+}
+
+.action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+.action-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -2.1rem;
+    top: 0.25rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: #6c757d;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.badge-lg {
+    font-size: 0.9em;
+    padding: 0.5em 0.8em;
+}
+
+.form-switch .form-check-input {
+    height: 1.5em;
+    width: 3em;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .action-card .btn {
+        font-size: 0.875rem;
+    }
+    
+    .stat-icon {
+        font-size: 2rem;
+    }
+}

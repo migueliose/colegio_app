@@ -1,0 +1,953 @@
+<!-- rector/templates/rector/seguimiento/dashboard.html -->
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+{% load seguimiento_filters   %}
+
+{% block title %}Seguimiento - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Seguimiento</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-clipboard-data text-primary me-2"></i>
+                Dashboard de Seguimiento
+                {% if periodo_nombre %}
+                <small class="text-muted fs-6">({{ periodo_nombre }})</small>
+                {% endif %}
+                {% if grado_nombre %}
+                <small class="text-muted fs-6">- {{ grado_nombre }}</small>
+                {% endif %}
+            </h1>
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown">
+                    <i class="bi bi-gear me-1"></i>Acciones
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'rector:asistencia_bulk' %}">
+                            <i class="bi bi-calendar-check me-2"></i>Asistencia Masiva
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'rector:calificacion_bulk' %}">
+                            <i class="bi bi-journal-check me-2"></i>Calificaciones Masivas
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="#exportModal" data-bs-toggle="modal">
+                            <i class="bi bi-file-earmark-pdf me-2"></i>Generar Reporte
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <p class="text-muted mb-0">Monitoreo integral de comportamiento, asistencia y calificaciones</p>
+    </div>
+</div>
+
+<!-- Alertas del sistema -->
+{% if alertas %}
+<div class="row mb-4">
+    <div class="col-12">
+        {% for alerta in alertas %}
+        <div class="alert alert-{% if alerta.tipo == 'warning' %}warning{% elif alerta.tipo == 'danger' %}danger{% else %}info{% endif %} alert-dismissible fade show d-flex align-items-center" role="alert">
+            <i class="bi {% if alerta.tipo == 'warning' %}bi-exclamation-triangle-fill{% elif alerta.tipo == 'danger' %}bi-exclamation-octagon-fill{% else %}bi-info-circle-fill{% endif %} me-2 fs-4"></i>
+            <div class="flex-grow-1">
+                {{ alerta.mensaje }}
+                {% if alerta.accion %}
+                <a href="{{ alerta.accion }}" class="alert-link ms-1">Ver detalles</a>
+                {% endif %}
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Filtros rápidos -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtros</h6>
+                {% if filtro_periodo_id or filtro_grado_id %}
+                <a href="{% url 'rector:seguimiento_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i>Limpiar filtros
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <form method="get" id="filtro-seguimiento" class="row g-3">
+                    <div class="col-md-5">
+                        <label for="{{ filtro_form.periodo_academico.id_for_label }}" class="form-label">
+                            <i class="bi bi-calendar-week me-1"></i>{{ filtro_form.periodo_academico.label }}
+                        </label>
+                        {{ filtro_form.periodo_academico }}
+                        {% if filtro_form.periodo_academico.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ filtro_form.periodo_academico.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-5">
+                        <label for="{{ filtro_form.grado.id_for_label }}" class="form-label">
+                            <i class="bi bi-mortarboard me-1"></i>{{ filtro_form.grado.label }}
+                        </label>
+                        {{ filtro_form.grado }}
+                        {% if filtro_form.grado.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ filtro_form.grado.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="d-grid gap-2 w-100">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-funnel me-1"></i>Filtrar
+                            </button>
+                            <button type="button" id="btn-actualizar" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                {% if filtro_periodo_id or filtro_grado_id %}
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Filtros aplicados:
+                        {% if filtro_periodo_id %}Periodo específico{% endif %}
+                        {% if filtro_grado_id %}Grado específico{% endif %}
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas principales -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="text-white-50 mb-1">
+                            <i class="bi bi-calendar-check me-1"></i>Asistencia
+                        </h6>
+                        <h2 class="mb-0 text-white display-6">
+                            {{ promedio_asistencia|floatformat:1 }}%
+                        </h2>
+                        <div class="mt-2">
+                            <small class="text-white-75">
+                                <i class="bi bi-people me-1"></i>{{ total_estudiantes }} estudiantes
+                            </small><br>
+                            <small class="text-white-75">
+                                <i class="bi bi-calendar-event me-1"></i>{{ asistencias_mes }} registros este mes
+                            </small>
+                        </div>
+                    </div>
+                    <div class="stat-icon-wrapper">
+                        <i class="bi bi-calendar-check stat-icon"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-white" role="progressbar" 
+                             style="width: {{ promedio_asistencia|default:0 }}%"
+                             aria-valuenow="{{ promedio_asistencia|default:0 }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent py-2 border-top-0">
+                <a href="{% url 'rector:asistencia_list' %}{% if filtro_periodo_id %}?periodo_academico={{ filtro_periodo_id }}{% endif %}" 
+                   class="text-white text-decoration-none d-flex align-items-center justify-content-between">
+                    <span>Ver detalles</span>
+                    <i class="bi bi-arrow-right-short"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card h-100" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="text-white-50 mb-1">
+                            <i class="bi bi-person-check me-1"></i>Comportamiento
+                        </h6>
+                        <h2 class="mb-0 text-white display-6">
+                            {{ comportamientos_mes }}
+                        </h2>
+                        <div class="mt-2">
+                            <small class="text-white-75">
+                                <i class="bi bi-emoji-smile me-1"></i>{{ comportamientos_positivos }} positivos
+                            </small><br>
+                            <small class="text-white-75">
+                                <i class="bi bi-emoji-frown me-1"></i>{{ comportamientos_negativos }} negativos
+                            </small>
+                        </div>
+                    </div>
+                    <div class="stat-icon-wrapper">
+                        <i class="bi bi-person-check stat-icon"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-white" role="progressbar" 
+                             style="width: {{ porcentaje_positivos|default:0 }}%"
+                             aria-valuenow="{{ porcentaje_positivos|default:0 }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent py-2 border-top-0">
+                <a href="{% url 'rector:comportamiento_list' %}{% if filtro_periodo_id %}?periodo_academico={{ filtro_periodo_id }}{% endif %}" 
+                   class="text-white text-decoration-none d-flex align-items-center justify-content-between">
+                    <span>Ver detalles</span>
+                    <i class="bi bi-arrow-right-short"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card h-100" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="text-white-50 mb-1">
+                            <i class="bi bi-journal-check me-1"></i>Calificaciones
+                        </h6>
+                        <h2 class="mb-0 text-white display-6">
+                            {{ promedio_calificaciones|floatformat:1 }}
+                        </h2>
+                        <div class="mt-2">
+                            <small class="text-white-75">
+                                <i class="bi bi-journal-text me-1"></i>{{ calificaciones_periodo }} registros
+                            </small><br>
+                            <small class="text-white-75">
+                                {% if periodo_seleccionado %}
+                                <i class="bi bi-calendar-week me-1"></i>{{ periodo_seleccionado.periodo.nombre }}
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="stat-icon-wrapper">
+                        <i class="bi bi-journal-check stat-icon"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-white" role="progressbar" 
+                             style="width: {{ promedio_calificaciones|multiply:20}}%"
+                             aria-valuenow="{{ promedio_calificaciones|multiply:20}}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent py-2 border-top-0">
+                <a href="{% url 'rector:calificacion_list' %}{% if filtro_periodo_id %}?periodo_academico={{ filtro_periodo_id }}{% endif %}" 
+                   class="text-white text-decoration-none d-flex align-items-center justify-content-between">
+                    <span>Ver detalles</span>
+                    <i class="bi bi-arrow-right-short"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card h-100" style="background: linear-gradient(135deg, #ff6b6b 0%, #ffa8a8 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="text-white-50 mb-1">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Inconsistencias
+                        </h6>
+                        <h2 class="mb-0 text-white display-6">
+                            {{ inconsistencias_activas }}
+                        </h2>
+                        <div class="mt-2">
+                            <small class="text-white-75">
+                                <i class="bi bi-clock-history me-1"></i>Últimos 30 días
+                            </small><br>
+                            <small class="text-white-75">
+                                {% if inconsistencias_activas > 0 %}
+                                <i class="bi bi-exclamation-circle me-1"></i>Requieren atención
+                                {% else %}
+                                <i class="bi bi-check-circle me-1"></i>Sin incidencias
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="stat-icon-wrapper">
+                        <i class="bi bi-exclamation-triangle stat-icon"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-white" role="progressbar" 
+                             style="width: {% widthratio inconsistencias_activas 50 100 %}%"
+                             aria-valuenow="{{ inconsistencias_activas }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="50">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent py-2 border-top-0">
+                <a href="{% url 'rector:inconsistencia_list' %}" 
+                   class="text-white text-decoration-none d-flex align-items-center justify-content-between">
+                    <span>Ver detalles</span>
+                    <i class="bi bi-arrow-right-short"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos y Distribución -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart me-2"></i>Distribución de Comportamiento
+                </h5>
+                <small class="text-muted">Este mes</small>
+            </div>
+            <div class="card-body">
+                {% if comportamientos_mes > 0 %}
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div id="grafico-comportamiento" style="height: 200px;"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex flex-column">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-success">
+                                        <i class="bi bi-emoji-smile me-1"></i>Positivos
+                                    </span>
+                                    <span class="fw-bold">{{ comportamientos_positivos }} ({{ porcentaje_positivos|floatformat:1 }}%)</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ porcentaje_positivos|default:0 }}%"
+                                         aria-valuenow="{{ porcentaje_positivos|default:0 }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-danger">
+                                        <i class="bi bi-emoji-frown me-1"></i>Negativos
+                                    </span>
+                                    <span class="fw-bold">{{ comportamientos_negativos }} ({{ porcentaje_negativos|floatformat:1 }}%)</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-danger" role="progressbar" 
+                                         style="width: {{ porcentaje_negativos|default:0 }}%"
+                                         aria-valuenow="{{ porcentaje_negativos|default:0 }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-pie-chart text-muted display-6"></i>
+                    <p class="text-muted mt-3">No hay datos de comportamiento este mes</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-trophy me-2"></i>Top Comportamiento Positivo
+                </h5>
+                <a href="{% url 'rector:comportamiento_list' %}{% if filtro_periodo_id %}?periodo_academico={{ filtro_periodo_id }}&tipo=Positivo{% endif %}" 
+                   class="btn btn-sm btn-outline-primary">
+                    Ver todos
+                </a>
+            </div>
+            <div class="card-body">
+                {% if top_comportamiento %}
+                <div class="list-group list-group-flush">
+                    {% for item in top_comportamiento %}
+                    <div class="list-group-item border-0 px-0">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="avatar-sm bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center" 
+                                     style="width: 40px; height: 40px;">
+                                    <i class="bi bi-emoji-smile"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">{{ item.estudiante__usuario__nombres }} {{ item.estudiante__usuario__apellidos }}</h6>
+                                <small class="text-muted">{{ item.total }} comportamientos positivos</small>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <span class="badge bg-success rounded-pill fs-6">{{ item.total }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-emoji-smile text-muted display-6"></i>
+                    <p class="text-muted mt-3">No hay datos de comportamiento positivo</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Asignaturas con mejor desempeño -->
+{% if top_asignaturas %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Asignaturas con Mejor Desempeño
+                </h5>
+                <small class="text-muted">Periodo actual</small>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Asignatura</th>
+                                <th>Promedio</th>
+                                <th>Rendimiento</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in top_asignaturas %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            <i class="bi bi-journal-text text-primary fs-5"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6 class="mb-0">{{ item.asignatura_grado_año_lectivo__asignatura__nombre }}</h6>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success fs-6">{{ item.promedio_formateado }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-grow-1 me-3">
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-success" role="progressbar" 
+                                                     style="width: {{ item.porcentaje }}%"
+                                                     aria-valuenow="{{ item.porcentaje }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex-shrink-0">
+                                            <small class="text-muted">{{ item.porcentaje|floatformat:0 }}%</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if item.promedio >= 4.0 %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle me-1"></i>Excelente
+                                    </span>
+                                    {% elif item.promedio >= 3.0 %}
+                                    <span class="badge bg-warning">
+                                        <i class="bi bi-dash-circle me-1"></i>Aceptable
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-exclamation-circle me-1"></i>Necesita mejorar
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal para exportar reportes -->
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportModalLabel">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>Generar Reporte
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-exportar">
+                    <div class="mb-3">
+                        <label for="tipo_reporte" class="form-label">Tipo de Reporte</label>
+                        <select class="form-select" id="tipo_reporte" name="tipo_reporte">
+                            <option value="general">Reporte General</option>
+                            <option value="asistencia">Reporte de Asistencia</option>
+                            <option value="comportamiento">Reporte de Comportamiento</option>
+                            <option value="calificaciones">Reporte de Calificaciones</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="formato" class="form-label">Formato</label>
+                        <select class="form-select" id="formato" name="formato">
+                            <option value="pdf">PDF</option>
+                            <option value="excel">Excel</option>
+                            <option value="csv">CSV</option>
+                        </select>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="incluir_filtros" name="incluir_filtros" checked>
+                        <label class="form-check-label" for="incluir_filtros">
+                            Incluir filtros actuales
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-generar-reporte">
+                    <i class="bi bi-download me-1"></i>Generar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.stat-card {
+    border: none;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    transition: transform 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    opacity: 0.7;
+}
+
+.stat-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+}
+
+.action-card {
+    border: 1px solid #dee2e6;
+    transition: all 0.3s;
+}
+
+.action-card:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.action-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.avatar-sm {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Estilos para los filtros */
+.select2-container--bootstrap-5 .select2-selection {
+    min-height: 38px;
+    border: 1px solid #ced4da;
+}
+
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+    line-height: 36px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// JavaScript para el dashboard de seguimiento
+document.addEventListener('DOMContentLoaded', function() {
+    // ========== INICIALIZAR SELECT2 ==========
+    if ($ && $.fn.select2) {
+        $('#id_periodo_academico, #id_grado').select2({
+            theme: 'bootstrap-5',
+            placeholder: function(element) {
+                return $(element).data('placeholder');
+            },
+            width: '100%'
+        });
+    }
+    
+    // ========== GRÁFICO DE COMPORTAMIENTO ==========
+    function renderGraficoComportamiento() {
+        const ctx = document.getElementById('grafico-comportamiento');
+        if (!ctx) return;
+        
+        // Si ya existe un gráfico, destruirlo
+        if (window.comportamientoChart instanceof Chart) {
+            window.comportamientoChart.destroy();
+        }
+        
+        // Datos del gráfico
+        const positivos = {{ comportamientos_positivos|default:0 }};
+        const negativos = {{ comportamientos_negativos|default:0 }};
+        
+        if (positivos === 0 && negativos === 0) {
+            ctx.innerHTML = '<div class="text-center text-muted py-5"><i class="bi bi-pie-chart display-6"></i><p class="mt-2">No hay datos</p></div>';
+            return;
+        }
+        
+        // Crear nuevo gráfico
+        window.comportamientoChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Positivos', 'Negativos'],
+                datasets: [{
+                    data: [positivos, negativos],
+                    backgroundColor: [
+                        'rgba(67, 233, 123, 0.9)',
+                        'rgba(255, 107, 107, 0.9)'
+                    ],
+                    borderColor: [
+                        'rgba(67, 233, 123, 1)',
+                        'rgba(255, 107, 107, 1)'
+                    ],
+                    borderWidth: 2,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                label += value + ' (' + percentage + '%)';
+                                return label;
+                            }
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+    }
+    
+    // Renderizar gráfico inicial
+    renderGraficoComportamiento();
+    
+    // ========== ACTUALIZACIÓN AUTOMÁTICA ==========
+    let autoUpdateInterval = null;
+    
+    function iniciarAutoUpdate() {
+        // Limpiar intervalo anterior si existe
+        if (autoUpdateInterval) {
+            clearInterval(autoUpdateInterval);
+        }
+        
+        // Establecer nuevo intervalo (cada 60 segundos)
+        autoUpdateInterval = setInterval(actualizarEstadisticas, 60000);
+    }
+    
+    function detenerAutoUpdate() {
+        if (autoUpdateInterval) {
+            clearInterval(autoUpdateInterval);
+            autoUpdateInterval = null;
+        }
+    }
+    
+    // ========== ACTUALIZAR ESTADÍSTICAS VÍA AJAX ==========
+    function actualizarEstadisticas() {
+        const formData = new FormData(document.getElementById('filtro-seguimiento'));
+        const params = new URLSearchParams(formData).toString();
+        
+        fetch(`{% url "rector:ajax_estadisticas_seguimiento" %}?${params}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    actualizarUI(data.estadisticas);
+                    showToast('Estadísticas actualizadas', 'success');
+                } else {
+                    console.error('Error en estadísticas:', data.error);
+                    showToast('Error al actualizar estadísticas', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error de conexión', 'danger');
+            });
+    }
+    
+    function actualizarUI(estadisticas) {
+        // Actualizar elementos principales
+        const elementos = {
+            'stat-asistencia': estadisticas.promedio_asistencia ? 
+                estadisticas.promedio_asistencia.toFixed(1) + '%' : '0%',
+            'stat-comportamiento': estadisticas.total_comportamientos || 0,
+            'stat-calificaciones': estadisticas.promedio_calificaciones ? 
+                estadisticas.promedio_calificaciones.toFixed(1) : '0.0',
+            'stat-inconsistencias': estadisticas.inconsistencias_recientes || 0,
+        };
+        
+        // Actualizar textos
+        for (const [id, valor] of Object.entries(elementos)) {
+            const elemento = document.getElementById(id);
+            if (elemento) {
+                elemento.textContent = valor;
+            }
+        }
+        
+        // Actualizar barras de progreso
+        const progresos = {
+            'progress-asistencia': estadisticas.promedio_asistencia || 0,
+            'progress-comportamiento-positivo': estadisticas.porcentaje_positivos || 0,
+            'progress-comportamiento-negativo': estadisticas.porcentaje_negativos || 0,
+            'progress-calificaciones': estadisticas.promedio_calificaciones ? estadisticas.promedio_calificaciones * 20 : 0,
+            'progress-inconsistencias': estadisticas.inconsistencias_recientes ? 
+                (estadisticas.inconsistencias_recientes / 50 * 100) : 0
+        };
+        
+        for (const [selector, valor] of Object.entries(progresos)) {
+            const elemento = document.querySelector(`[aria-valuenow="${selector}"]`);
+            if (elemento) {
+                elemento.style.width = valor + '%';
+                elemento.setAttribute('aria-valuenow', valor);
+            }
+        }
+        
+        // Actualizar gráfico
+        if (window.comportamientoChart && estadisticas.comportamientos_positivos !== undefined) {
+            window.comportamientoChart.data.datasets[0].data = [
+                estadisticas.comportamientos_positivos,
+                estadisticas.comportamientos_negativos
+            ];
+            window.comportamientoChart.update();
+        }
+    }
+    
+    // ========== BOTÓN DE ACTUALIZACIÓN MANUAL ==========
+    const btnActualizar = document.getElementById('btn-actualizar');
+    if (btnActualizar) {
+        btnActualizar.addEventListener('click', function() {
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+            
+            actualizarEstadisticas();
+            
+            // Restaurar botón después de 2 segundos
+            setTimeout(() => {
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+            }, 2000);
+        });
+    }
+    
+    // ========== FORMULARIO DE FILTRO ==========
+    const filtroForm = document.getElementById('filtro-seguimiento');
+    if (filtroForm) {
+        // Detener auto-update cuando el usuario interactúa con el formulario
+        const inputs = filtroForm.querySelectorAll('select, input');
+        inputs.forEach(input => {
+            input.addEventListener('focus', detenerAutoUpdate);
+            input.addEventListener('blur', iniciarAutoUpdate);
+        });
+        
+        // Reiniciar auto-update después de enviar el formulario
+        filtroForm.addEventListener('submit', function() {
+            setTimeout(iniciarAutoUpdate, 1000);
+        });
+    }
+    
+    // ========== GENERAR REPORTE ==========
+    const btnGenerarReporte = document.getElementById('btn-generar-reporte');
+    if (btnGenerarReporte) {
+        btnGenerarReporte.addEventListener('click', function() {
+            const formData = new FormData(document.getElementById('form-exportar'));
+            const filtros = new FormData(document.getElementById('filtro-seguimiento'));
+            
+            // Combinar datos
+            const data = {
+                tipo_reporte: formData.get('tipo_reporte'),
+                formato: formData.get('formato'),
+                incluir_filtros: formData.get('incluir_filtros') === 'on',
+                filtros: {}
+            };
+            
+            // Agregar filtros si están seleccionados
+            if (data.incluir_filtros) {
+                for (const [key, value] of filtros.entries()) {
+                    if (value) {
+                        data.filtros[key] = value;
+                    }
+                }
+            }
+            
+            // Mostrar carga
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Generando...';
+            
+            fetch('{% url "rector:ajax_exportar_reporte_seguimiento" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Descargar el reporte
+                    window.open(data.url, '_blank');
+                    showToast('Reporte generado exitosamente', 'success');
+                    
+                    // Cerrar modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('exportModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                } else {
+                    showToast('Error: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                showToast('Error al generar reporte', 'danger');
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                // Restaurar botón
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-download me-1"></i>Generar';
+            });
+        });
+    }
+    
+    // ========== FUNCIONES UTILITARIAS ==========
+    function getCsrfToken() {
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    function showToast(message, type = 'info') {
+        // Implementación de toast notifications
+        // Puedes usar Bootstrap Toast o una implementación personalizada
+        console.log(`[${type.toUpperCase()}] ${message}`);
+        // Aquí implementarías tu sistema de notificaciones
+    }
+    
+    // ========== INICIALIZAR ==========
+    // Iniciar auto-update al cargar la página
+    iniciarAutoUpdate();
+    
+    // Detener auto-update cuando la página pierde el foco
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            detenerAutoUpdate();
+        } else {
+            iniciarAutoUpdate();
+        }
+    });
+});
+</script>
+{% endblock %}

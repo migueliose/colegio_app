@@ -2069,7 +2069,7 @@ class ReporteNotasPDFView(View):
 
     def _crear_titulo_reporte(self, styles, periodo):
         if periodo:
-            return [Paragraph(f"CERTIFICADO ACADÉMICO DE NOTAS - {periodo.periodo.nombre.upper()}", styles["TituloDocumento"])]
+            return [Paragraph(f"CERTIFICADO ACADÉMICO DE NOTAS", styles["TituloDocumento"])]
         return [Paragraph("CERTIFICADO ACADÉMICO DE NOTAS", styles["TituloDocumento"])]
 
     def _crear_titulo_boletin_final(self, styles, año_lectivo):
@@ -2175,7 +2175,7 @@ class ReporteNotasPDFView(View):
                     desempenos['Sin calificar'] += 1
 
             texto_resumen = (
-                f"<b>RESUMEN ACADÉMICO - {periodo_nombre.upper()} PERIODO</b><br/><br/>"
+                f"<b>RESUMEN ACADÉMICO - PERIODO: {periodo_nombre.upper()} </b><br/><br/>"
                 f"<b>Total de asignaturas:</b> {total_asignaturas}<br/>"
                 f"<b>Asignaturas evaluadas:</b> {asignaturas_evaluadas}<br/>"
                 f"<b>Promedio general:</b> <font color='{self._color_promedio(promedio)}'>{promedio:.2f}</font><br/>"

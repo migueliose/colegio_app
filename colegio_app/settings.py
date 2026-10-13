@@ -22,33 +22,30 @@ DEBUG = config('DEBUG', cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 
 # Configuración SSL solo en producción
-if not DEBUG:
-    # ======================
+#if not DEBUG:
+#    # ======================
     # SEGURIDAD PRODUCCIÓN
     # ======================
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'DENY'
+#    SECURE_BROWSER_XSS_FILTER = True
+#    SECURE_CONTENT_TYPE_NOSNIFF = True
+#    X_FRAME_OPTIONS = 'DENY'
     
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = True
-
-    # HSTS: obliga al navegador a usar siempre HTTPS.
-    # Empiece con un valor bajo y súbalo (p. ej. 31536000 = 1 año) cuando confirme que todo funciona.
-    SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=3600, cast=int)
+#    CSRF_COOKIE_SECURE = True
+#    SESSION_COOKIE_SECURE = True
+#    SECURE_SSL_REDIRECT = True
     
-    CSRF_TRUSTED_ORIGINS = [
-        'https://colegiocrishadai.edu.co',
-        'https://www.colegiocrishadai.edu.co',
-    ]
+#    CSRF_TRUSTED_ORIGINS = [
+#        'https://colegiocrishadai.edu.co',
+#        'https://www.colegiocrishadai.edu.co',
+#    ]
     
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-else:
+#    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+#else:
     # Configuración para desarrollo
-    SECURE_SSL_REDIRECT = False
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
-    SECURE_PROXY_SSL_HEADER = None
+#    SECURE_SSL_REDIRECT = False
+#    SESSION_COOKIE_SECURE = False
+#    CSRF_COOKIE_SECURE = False
+#    SECURE_PROXY_SSL_HEADER = None
     
 # ===============================
 # APPLICATIONS
@@ -77,6 +74,7 @@ INSTALLED_APPS = [
     'acudiente',
     'docentes',
     'administrador',
+    'rector'
 ]
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
@@ -177,8 +175,7 @@ USE_TZ = True
 # ===============================
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-# Carpeta opcional de estáticos globales (solo si existe)
-STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').is_dir() else []
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

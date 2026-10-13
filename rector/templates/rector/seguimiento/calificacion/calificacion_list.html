@@ -1,0 +1,506 @@
+<!-- rector/templates/rector/seguimiento/calificacion/calificacion_list.html -->
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Gestión de Calificaciones - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:seguimiento_dashboard' %}">Seguimiento</a></li>
+        <li class="breadcrumb-item active">Calificaciones</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Encabezado con estadísticas -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-0">
+                            <i class="bi bi-journal-bookmark me-2"></i>Gestión de Calificaciones
+                        </h5>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <a href="{% url 'rector:calificacion_create' %}" class="btn btn-light btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i>Nueva Calificación
+                        </a>
+                        <a href="{% url 'rector:calificacion_bulk' %}" class="btn btn-success btn-sm ms-2">
+                            <i class="bi bi-collection me-1"></i>Registro Masivo
+                        </a>
+                        <a href="#filtros" data-bs-toggle="collapse" class="btn btn-outline-light btn-sm ms-2">
+                            <i class="bi bi-funnel me-1"></i>Filtros
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 col-6">
+                        <div class="border rounded p-3 text-center">
+                            <h6 class="text-muted mb-1">Total Registros</h6>
+                            <h3 class="mb-0">{{ total_registros }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="border rounded p-3 text-center">
+                            <h6 class="text-muted mb-1">Promedio General</h6>
+                            <h3 class="mb-0 {% if promedio_general >= 3.0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ promedio_general|floatformat:1 }}
+                            </h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="border rounded p-3 text-center">
+                            <h6 class="text-muted mb-1">Calificación Máxima</h6>
+                            <h3 class="mb-0 text-success">
+                                {{ maxima_calificacion|floatformat:1 }}
+                            </h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="border rounded p-3 text-center">
+                            <h6 class="text-muted mb-1">Calificación Mínima</h6>
+                            <h3 class="mb-0 text-danger">
+                                {{ minima_calificacion|floatformat:1 }}
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros (colapsable) -->
+        <div class="card mb-4 collapse" id="filtros">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtros de Búsqueda</h6>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <!-- Estudiante -->
+                    <div class="col-md-3">
+                        <label for="{{ filtro_form.estudiante.id_for_label }}" class="form-label">Estudiante</label>
+                        {% render_field filtro_form.estudiante class="form-control" %}
+                    </div>
+                    
+                    <!-- Periodo Académico -->
+                    <div class="col-md-3">
+                        <label for="{{ filtro_form.periodo_academico.id_for_label }}" class="form-label">Periodo</label>
+                        {% render_field filtro_form.periodo_academico class="form-control" %}
+                    </div>
+                    
+                    <!-- Asignatura -->
+                    <div class="col-md-2">
+                        <label for="{{ filtro_form.asignatura.id_for_label }}" class="form-label">Asignatura</label>
+                        {% render_field filtro_form.asignatura class="form-control" %}
+                    </div>
+                    
+                    <!-- Grado -->
+                    <div class="col-md-2">
+                        <label for="{{ filtro_form.grado.id_for_label }}" class="form-label">Grado</label>
+                        {% render_field filtro_form.grado class="form-control" %}
+                    </div>
+                    
+                    <!-- Calificación Mínima -->
+                    <div class="col-md-2">
+                        <label for="{{ filtro_form.calificacion_min.id_for_label }}" class="form-label">Calif. Mínima</label>
+                        {% render_field filtro_form.calificacion_min class="form-control" %}
+                    </div>
+                    
+                    <!-- Calificación Máxima -->
+                    <div class="col-md-2">
+                        <label for="{{ filtro_form.calificacion_max.id_for_label }}" class="form-label">Calif. Máxima</label>
+                        {% render_field filtro_form.calificacion_max class="form-control" %}
+                    </div>
+                    
+                    <!-- Botones -->
+                    <div class="col-12">
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search me-1"></i>Buscar
+                            </button>
+                            <a href="{% url 'rector:calificacion_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de calificaciones -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-list-check me-2"></i>Registros de Calificaciones
+                    <span class="badge bg-secondary ms-2">{{ page_obj.paginator.count }}</span>
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="5%">ID</th>
+                                <th width="20%">Estudiante</th>
+                                <th width="15%">Asignatura</th>
+                                <th width="10%">Periodo</th>
+                                <th width="10%">Calificación</th>
+                                <th width="10%">Nivel</th>
+                                <th width="15%">Observaciones</th>
+                                <th width="10%">Fecha</th>
+                                <th width="10%">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for nota in object_list %}
+                            <tr data-nota-id="{{ nota.id }}">
+                                <td>
+                                    <span class="badge bg-secondary">#{{ nota.id }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            <i class="bi bi-person"></i>
+                                        </div>
+                                        <div>
+                                            <a href="{% url 'rector:estudiante_detail' nota.estudiante.pk %}" 
+                                               class="text-decoration-none">
+                                                {{ nota.estudiante.usuario.get_full_name|truncatechars:25 }}
+                                            </a>
+                                            <br>
+                                            <small class="text-muted">
+                                                {{ nota.estudiante.usuario.numero_documento }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {{ nota.asignatura_grado_año_lectivo.asignatura.nombre|truncatechars:25 }}<br>
+                                    <small class="text-muted">
+                                        {{ nota.asignatura_grado_año_lectivo.grado_año_lectivo.grado.nombre }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {{ nota.periodo_academico.periodo.nombre }}<br>
+                                    <small class="text-muted">
+                                        {{ nota.periodo_academico.año_lectivo.anho }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge {% if nota.calificacion >= 4.0 %}bg-success{% elif nota.calificacion >= 3.0 %}bg-warning{% else %}bg-danger{% endif %} fs-6">
+                                        {{ nota.calificacion|floatformat:1 }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if nota.calificacion >= 4.6 %}
+                                    <span class="badge bg-success">Superior</span>
+                                    {% elif nota.calificacion >= 4.0 %}
+                                    <span class="badge bg-info">Alto</span>
+                                    {% elif nota.calificacion >= 3.0 %}
+                                    <span class="badge bg-warning">Básico</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Bajo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if nota.observaciones %}
+                                    <span class="text-truncate d-inline-block" style="max-width: 150px;" 
+                                          title="{{ nota.observaciones }}">
+                                        {{ nota.observaciones|truncatechars:30 }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">Sin observaciones</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ nota.created_at|date:"d/m/Y" }}<br>
+                                    <small class="text-muted">
+                                        {{ nota.created_at|date:"H:i" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'rector:calificacion_estudiante_reporte' nota.estudiante.pk %}" 
+                                           class="btn btn-sm btn-outline-info" title="Ver Reporte">
+                                            <i class="bi bi-graph-up"></i>
+                                        </a>
+                                        <a href="{% url 'rector:calificacion_detail' nota.pk %}" 
+                                           class="btn btn-sm btn-outline-primary" title="Ver Detalle">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'rector:calificacion_edit' nota.pk %}" 
+                                           class="btn btn-sm btn-outline-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'rector:calificacion_delete' nota.pk %}" 
+                                           class="btn btn-sm btn-outline-danger" title="Eliminar"
+                                           onclick="return confirm('¿Está seguro de eliminar esta calificación?');">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="bi bi-journal-x display-6 d-block mb-2"></i>
+                                        No se encontraron registros de calificaciones
+                                    </div>
+                                    {% if filtro_form.is_bound %}
+                                    <a href="{% url 'rector:calificacion_list' %}" class="btn btn-sm btn-outline-primary mt-2">
+                                        Limpiar filtros
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'rector:calificacion_create' %}" class="btn btn-sm btn-primary mt-2">
+                                        <i class="bi bi-plus-circle me-1"></i>Registrar primera calificación
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Paginación -->
+            {% if page_obj.paginator.num_pages > 1 %}
+            <div class="card-footer">
+                <nav aria-label="Navegación de páginas">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                Anterior
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                Siguiente
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    <div class="text-center text-muted mt-2">
+                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                    </div>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Distribución por rangos -->
+{% if distribucion_rangos %}
+<div class="row mt-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-pie-chart me-2"></i>Distribución por Nivel de Desempeño
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Nivel</th>
+                                <th class="text-center">Rango</th>
+                                <th class="text-center">Cantidad</th>
+                                <th class="text-center">Porcentaje</th>
+                                <th class="text-center">Color</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rango in distribucion_rangos %}
+                            <tr>
+                                <td>
+                                    {% if rango.label == 'Superior' %}
+                                    <i class="bi bi-star-fill text-success me-1"></i>Superior
+                                    {% elif rango.label == 'Alto' %}
+                                    <i class="bi bi-star-half text-info me-1"></i>Alto
+                                    {% elif rango.label == 'Básico' %}
+                                    <i class="bi bi-check-circle text-warning me-1"></i>Básico
+                                    {% else %}
+                                    <i class="bi bi-exclamation-triangle text-danger me-1"></i>Bajo
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <small class="text-muted">
+                                        {% if rango.label == 'Superior' %}4.6 - 5.0
+                                        {% elif rango.label == 'Alto' %}4.0 - 4.5
+                                        {% elif rango.label == 'Básico' %}3.0 - 3.9
+                                        {% else %}0.0 - 2.9{% endif %}
+                                    </small>
+                                </td>
+                                <td class="text-center">
+                                    <strong>{{ rango.count }}</strong>
+                                </td>
+                                <td class="text-center">
+                                    {{ rango.porcentaje|floatformat:1 }}%
+                                </td>
+                                <td class="text-center">
+                                    {% if rango.label == 'Superior' %}
+                                    <span class="badge bg-success">●</span>
+                                    {% elif rango.label == 'Alto' %}
+                                    <span class="badge bg-info">●</span>
+                                    {% elif rango.label == 'Básico' %}
+                                    <span class="badge bg-warning">●</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">●</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Gráfico de barras simple -->
+                <div class="mt-4">
+                    <h6 class="text-muted mb-3">Distribución Visual</h6>
+                    <div class="progress" style="height: 30px;">
+                        {% for rango in distribucion_rangos %}
+                        <div class="progress-bar 
+                            {% if rango.label == 'Superior' %}bg-success
+                            {% elif rango.label == 'Alto' %}bg-info
+                            {% elif rango.label == 'Básico' %}bg-warning
+                            {% else %}bg-danger{% endif %}" 
+                            style="width: {{ rango.porcentaje }}%"
+                            title="{{ rango.label }}: {{ rango.count }} ({{ rango.porcentaje|floatformat:1 }}%)">
+                            {{ rango.porcentaje|floatformat:1 }}%
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-trophy me-2"></i>Mejores Calificaciones
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for nota in mejores_calificaciones|slice:":5" %}
+                    <div class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ nota.estudiante.usuario.get_full_name|truncatechars:20 }}</h6>
+                            <span class="badge {% if nota.calificacion >= 4.6 %}bg-success{% else %}bg-info{% endif %}">
+                                {{ nota.calificacion|floatformat:1 }}
+                            </span>
+                        </div>
+                        <small class="text-muted">
+                            {{ nota.asignatura_grado_año_lectivo.asignatura.nombre|truncatechars:25 }}
+                            • {{ nota.periodo_academico.periodo.nombre }}
+                        </small>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        No hay datos para mostrar
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.text-truncate {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.progress-bar {
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.badge.fs-6 {
+    font-size: 1em !important;
+    padding: 0.5em 1em;
+}
+
+.badge.bg-success, .badge.bg-info, .badge.bg-warning, .badge.bg-danger {
+    padding: 0.35em 0.65em;
+    font-size: 0.75em;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Colapsar/expandir filtros
+    const filtrosToggle = document.querySelector('[data-bs-target="#filtros"]');
+    if (filtrosToggle) {
+        filtrosToggle.addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            if (icon.classList.contains('bi-funnel')) {
+                icon.classList.remove('bi-funnel');
+                icon.classList.add('bi-funnel-fill');
+            } else {
+                icon.classList.remove('bi-funnel-fill');
+                icon.classList.add('bi-funnel');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

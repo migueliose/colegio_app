@@ -1,0 +1,223 @@
+<!-- rector/templates/rector/institucional/periodo_list.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Periodos Académicos - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:institucional_dashboard' %}">Institucional</a></li>
+        <li class="breadcrumb-item active">Periodos Académicos</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-calendar-week text-primary me-2"></i>
+                Periodos Académicos
+            </h1>
+            <a href="{% url 'rector:periodo_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Nuevo Periodo
+            </a>
+        </div>
+        <p class="text-muted mb-0">Gestión de periodos académicos por año lectivo</p>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Año Lectivo</label>
+                <select name="año_lectivo" class="form-select" onchange="this.form.submit()">
+                    <option value="">Todos los años</option>
+                    {% for año in años_lectivos %}
+                    <option value="{{ año.id }}" {% if request.GET.año_lectivo == año.id|stringformat:"s" %}selected{% endif %}>
+                        {{ año.anho }} - {{ año.sede.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Estado</label>
+                <select name="estado" class="form-select" onchange="this.form.submit()">
+                    <option value="">Todos</option>
+                    <option value="1" {% if request.GET.estado == "1" %}selected{% endif %}>Activos</option>
+                    <option value="0" {% if request.GET.estado == "0" %}selected{% endif %}>Inactivos</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-outline-primary flex-grow-1">
+                        <i class="bi bi-funnel me-1"></i>Filtrar
+                    </button>
+                    <a href="{% url 'rector:periodo_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de periodos -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Lista de Periodos Académicos</h5>
+        {% if año_lectivo_seleccionado %}
+        <span class="badge bg-primary">
+            Año: {{ año_lectivo_seleccionado.anho }} - {{ año_lectivo_seleccionado.sede.nombre }}
+        </span>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Periodo</th>
+                        <th>Año Lectivo</th>
+                        <th>Sede</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
+                        <th>Duración</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for periodo in periodos %}
+                    <tr>
+                        <td>
+                            <strong>{{ periodo.periodo.nombre }}</strong>
+                            {% if periodo.estado_periodo == 'en_curso' %}
+                            <span class="badge bg-success ms-2">En Curso</span>
+                            {% elif periodo.estado_periodo == 'finalizado' %}
+                            <span class="badge bg-secondary ms-2">Finalizado</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ periodo.año_lectivo.anho }}</td>
+                        <td>{{ periodo.año_lectivo.sede.nombre }}</td>
+                        <td>{{ periodo.fecha_inicio|date:"d/m/Y" }}</td>
+                        <td>{{ periodo.fecha_fin|date:"d/m/Y" }}</td>
+                        <td>
+                            <span class="badge bg-info">
+                                {{ periodo.fecha_fin|timeuntil:periodo.fecha_inicio }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if periodo.estado %}
+                                <span class="badge bg-success">Activo</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                        type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-gear"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="bi bi-eye me-2"></i>Ver Detalles
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'rector:periodo_edit' periodo.id %}">
+                                            <i class="bi bi-pencil me-2"></i>Editar
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post" action="{% url 'rector:periodo_delete' periodo.id %}" 
+                                              onsubmit="return confirm('¿Está seguro de eliminar este periodo académico?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="bi bi-trash me-2"></i>Eliminar
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <i class="bi bi-calendar-x text-muted display-6"></i>
+                            <p class="text-muted mt-2">No hay periodos académicos registrados</p>
+                            {% if not año_lectivo_seleccionado %}
+                            <p class="text-muted small">Seleccione un año lectivo para ver sus periodos</p>
+                            {% endif %}
+                            <a href="{% url 'rector:periodo_create' %}" class="btn btn-primary mt-2">
+                                <i class="bi bi-plus-circle me-1"></i>Crear primer periodo
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Información de periodos -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Periodos por Estado</h5>
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h2 class="text-primary">{{ periodos|length }}</h2>
+                        <small class="text-muted">Total</small>
+                    </div>
+                    <div class="col-4">
+                        <h2 class="text-success">{{ periodos_activos }}</h2>
+                        <small class="text-muted">Activos</small>
+                    </div>
+                    <div class="col-4">
+                        <h2 class="text-warning">{{ periodos_en_curso }}</h2>
+                        <small class="text-muted">En Curso</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Año Lectivo Seleccionado</h5>
+                {% if año_lectivo_seleccionado %}
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-calendar-check text-primary display-6"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-0">{{ año_lectivo_seleccionado.anho }}</h4>
+                        <p class="text-muted mb-0">{{ año_lectivo_seleccionado.sede.nombre }}</p>
+                        <small class="text-muted">
+                            {{ año_lectivo_seleccionado.periodos_academicos.count }} periodos configurados
+                        </small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-calendar text-muted display-6"></i>
+                    <p class="text-muted mt-2">Seleccione un año lectivo para ver sus periodos</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

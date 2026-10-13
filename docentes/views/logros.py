@@ -316,7 +316,7 @@ class CrearLogroView(LoginRequiredMixin, DocenteRequiredMixin, CreateView):
             messages.error(self.request, 'No hay un año lectivo activo o no tiene perfil de docente.')
             return form
         
-        # Filtrar grados del docente
+        # 🔥 CORREGIDO: Filtrar grados del docente
         grados_docente = AsignaturaGradoAñoLectivo.objects.filter(
             docente=docente,
             grado_año_lectivo__año_lectivo=año_actual
@@ -324,23 +324,89 @@ class CrearLogroView(LoginRequiredMixin, DocenteRequiredMixin, CreateView):
         
         form.fields['grado'].queryset = Grado.objects.filter(id__in=grados_docente)
         
-        # Filtrar asignaturas - se cargarán dinámicamente vía AJAX
-        form.fields['asignatura'].queryset = Asignatura.objects.none()
+        # 🔥 CORREGIDO: Mostrar asignaturas según el grado seleccionado (si existe)
+        grado_id = self.request.GET.get('grado') or (self.request.POST.get('grado') if self.request.method == 'POST' else None)
+        
+        if grado_id:
+            # Obtener asignaturas que el docente dicta en ese grado
+            asignaturas_ids = AsignaturaGradoAñoLectivo.objects.filter(
+                docente=docente,
+                grado_año_lectivo__grado_id=grado_id,
+                grado_año_lectivo__año_lectivo=año_actual
+            ).values_list('asignatura_id', flat=True).distinct()
+            
+            form.fields['asignatura'].queryset = Asignatura.objects.filter(id__in=asignaturas_ids)
+        else:
+            # Si no hay grado seleccionado, mostrar queryset vacío
+            form.fields['asignatura'].queryset = Asignatura.objects.none()
         
         # Filtrar periodos académicos del año actual
         form.fields['periodo_academico'].queryset = PeriodoAcademico.objects.filter(
             año_lectivo=año_actual,
             estado=True
-        )        
+        ).select_related('periodo')
+        
+        # Personalizar labels y ayudas
+        form.fields['tema'].widget.attrs.update({'placeholder': 'Ej: Operaciones básicas con números naturales'})
+        form.fields['descripcion_superior'].widget.attrs.update({'rows': 3, 'placeholder': 'Describe lo que el estudiante debe lograr para nivel superior...'})
+        form.fields['descripcion_alto'].widget.attrs.update({'rows': 3, 'placeholder': 'Describe lo que el estudiante debe lograr para nivel alto...'})
+        form.fields['descripcion_basico'].widget.attrs.update({'rows': 3, 'placeholder': 'Describe lo que el estudiante debe lograr para nivel básico...'})
+        form.fields['descripcion_bajo'].widget.attrs.update({'rows': 3, 'placeholder': 'Describe lo que el estudiante debe lograr para nivel bajo...'})
+        
         return form
     
     def form_valid(self, form):
+        docente = self.get_docente()
+        año_actual = AñoLectivo.objects.filter(estado=True).first()
+        
+        # Verificar que el docente tenga permiso para esta combinación
+        asignatura = form.cleaned_data.get('asignatura')
+        grado = form.cleaned_data.get('grado')
+        periodo = form.cleaned_data.get('periodo_academico')
+        
+        if not all([asignatura, grado, periodo]):
+            messages.error(self.request, 'Todos los campos son obligatorios.')
+            return self.form_invalid(form)
+        
+        # Verificar que el periodo pertenezca al año actual
+        if periodo.año_lectivo != año_actual:
+            messages.error(self.request, 'El período seleccionado no corresponde al año lectivo actual.')
+            return self.form_invalid(form)
+        
+        # Verificar que el docente pueda dictar esta asignatura en este grado
+        tiene_permiso = AsignaturaGradoAñoLectivo.objects.filter(
+            docente=docente,
+            asignatura=asignatura,
+            grado_año_lectivo__grado=grado,
+            grado_año_lectivo__año_lectivo=año_actual
+        ).exists()
+        
+        if not tiene_permiso:
+            messages.error(self.request, 'No tiene permiso para crear logros en esta combinación grado-asignatura.')
+            return self.form_invalid(form)
+        
+        # Verificar que no exista un logro duplicado
+        existe = Logro.objects.filter(
+            grado=grado,
+            asignatura=asignatura,
+            periodo_academico=periodo
+        ).exists()
+        
+        if existe:
+            messages.warning(self.request, 'Ya existe un logro para esta combinación grado-asignatura-período.')
+            return self.form_invalid(form)
+        
         messages.success(self.request, 'Logro creado exitosamente.')
         return super().form_valid(form)
     
     def form_invalid(self, form):
         messages.error(self.request, 'Por favor corrija los errores en el formulario.')
         return super().form_invalid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo'] = 'Crear Logro'
+        return context
 
 class DetalleLogroView(LoginRequiredMixin, DocenteRequiredMixin, DocenteBaseView, DetailView):
     """Vista para ver detalles de un logro"""
@@ -386,6 +452,9 @@ class EditarLogroView(LoginRequiredMixin, DocenteRequiredMixin, DocenteBaseView,
     ]
     success_url = reverse_lazy('docentes:lista_logros')
     
+    def get_docente(self):
+        return get_docente_usuario(self.request.user)
+    
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         docente = self.get_docente()
@@ -403,15 +472,14 @@ class EditarLogroView(LoginRequiredMixin, DocenteRequiredMixin, DocenteBaseView,
         
         form.fields['grado'].queryset = Grado.objects.filter(id__in=grados_docente)
         
-        # Para edición, mostrar las asignaturas del grado actual
+        # 🔥 CORREGIDO: Para edición, mostrar asignaturas según el grado actual del logro
         if self.object and self.object.grado:
-            asignaturas_docente = AsignaturaGradoAñoLectivo.objects.filter(
+            asignaturas_ids = AsignaturaGradoAñoLectivo.objects.filter(
                 docente=docente,
                 grado_año_lectivo__grado=self.object.grado,
                 grado_año_lectivo__año_lectivo=año_actual
-            ).select_related('asignatura')
+            ).values_list('asignatura_id', flat=True).distinct()
             
-            asignaturas_ids = asignaturas_docente.values_list('asignatura__id', flat=True)
             form.fields['asignatura'].queryset = Asignatura.objects.filter(id__in=asignaturas_ids)
         else:
             form.fields['asignatura'].queryset = Asignatura.objects.none()
@@ -420,7 +488,7 @@ class EditarLogroView(LoginRequiredMixin, DocenteRequiredMixin, DocenteBaseView,
         form.fields['periodo_academico'].queryset = PeriodoAcademico.objects.filter(
             año_lectivo=año_actual,
             estado=True
-        )
+        ).select_related('periodo')
         
         return form
     
@@ -435,19 +503,36 @@ class EditarLogroView(LoginRequiredMixin, DocenteRequiredMixin, DocenteBaseView,
         asignaturas_docente = AsignaturaGradoAñoLectivo.objects.filter(
             docente=docente,
             grado_año_lectivo__año_lectivo=año_actual
-        ).select_related('asignatura')
+        ).values_list('asignatura_id', flat=True).distinct()
         
-        asignatura_ids = asignaturas_docente.values_list('asignatura__id', flat=True)
-        
-        if not asignatura_ids:
+        if not asignaturas_docente:
             return Logro.objects.none()
         
         return Logro.objects.filter(
-            asignatura_id__in=asignatura_ids,
+            asignatura_id__in=asignaturas_docente,
             periodo_academico__año_lectivo=año_actual
         )
     
     def form_valid(self, form):
+        # Verificar que el docente tenga permiso
+        docente = self.get_docente()
+        año_actual = AñoLectivo.objects.filter(estado=True).first()
+        
+        asignatura = form.cleaned_data.get('asignatura')
+        grado = form.cleaned_data.get('grado')
+        periodo = form.cleaned_data.get('periodo_academico')
+        
+        tiene_permiso = AsignaturaGradoAñoLectivo.objects.filter(
+            docente=docente,
+            asignatura=asignatura,
+            grado_año_lectivo__grado=grado,
+            grado_año_lectivo__año_lectivo=año_actual
+        ).exists()
+        
+        if not tiene_permiso:
+            messages.error(self.request, 'No tiene permiso para modificar este logro.')
+            return self.form_invalid(form)
+        
         messages.success(self.request, 'Logro actualizado exitosamente.')
         return super().form_valid(form)
     

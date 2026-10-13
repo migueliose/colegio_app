@@ -1,0 +1,439 @@
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+
+{% block title %}Logros Académicos - Rector{% endblock %}
+
+{% block extra_css %}
+<style>
+    .logro-card {
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 10px;
+    }
+    .logro-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    .logro-header {
+        border-left: 4px solid;
+        padding-left: 1rem;
+    }
+    .logro-description {
+        max-height: 100px;
+        overflow: hidden;
+        position: relative;
+    }
+    .logro-description::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 30px;
+        background: linear-gradient(to bottom, transparent, white);
+    }
+    .badge-nivel {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    .filter-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .stats-badge {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+    .empty-state {
+        padding: 4rem 2rem;
+        text-align: center;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+    .action-buttons .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    /* Estilos adicionales para los filtros */
+    #mainFilterForm select.form-select {
+        cursor: pointer;
+    }
+    
+    #añoLectivoSelect {
+        border-color: #4e54c8;
+    }
+    
+    #añoLectivoSelect:focus {
+        box-shadow: 0 0 0 0.25rem rgba(78, 84, 200, 0.25);
+        border-color: #4e54c8;
+    }
+    
+    #clearFiltersBtn:hover {
+        background-color: #f8f9fa;
+        border-color: #6c757d;
+    }
+    
+    /* Indicador visual para filtros activos */
+    .filter-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:academico_dashboard' %}">Académico</a></li>
+        <li class="breadcrumb-item active">Logros Académicos</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-trophy me-2"></i>Logros Académicos
+                </h1>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'rector:logro_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Nuevo Logro
+                    </a>
+                </div>
+            </div>
+            <p class="text-muted">Gestiona los logros académicos por asignatura, grado y período.</p>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-section">
+        <!-- Formulario principal con ID para referencia -->
+        <form method="get" class="row g-3" id="mainFilterForm">
+            <!-- Fila 1: Filtros principales -->
+            
+            <!-- Búsqueda -->
+            <div class="col-md-4">
+                <label class="form-label">Buscar Logro</label>
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" 
+                        placeholder="Tema o descripción" value="{{ filter_search|default:'' }}">
+                </div>
+            </div>
+            
+            <!-- Asignatura -->
+            <div class="col-md-3">
+                <label class="form-label">Asignatura</label>
+                <select name="asignatura" class="form-select">
+                    <option value="todos">Todas las asignaturas</option>
+                    {% for asignatura in asignaturas %}
+                    <option value="{{ asignatura.id }}" {% if filter_asignatura == asignatura.id|stringformat:"i" %}selected{% endif %}>
+                        {{ asignatura.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Grado -->
+            <div class="col-md-2">
+                <label class="form-label">Grado</label>
+                <select name="grado" class="form-select">
+                    <option value="todos">Todos los grados</option>
+                    {% for grado in grados %}
+                    <option value="{{ grado.id }}" {% if filter_grado == grado.id|stringformat:"i" %}selected{% endif %}>
+                        {{ grado.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Período -->
+            <div class="col-md-2">
+                <label class="form-label">Período</label>
+                <select name="periodo" class="form-select">
+                    <option value="todos">Todos los períodos</option>
+                    {% for periodo in periodos %}
+                    <option value="{{ periodo.id }}" {% if filter_periodo == periodo.id|stringformat:"i" %}selected{% endif %}>
+                        {{ periodo.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Botón de aplicar filtros -->
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100" title="Aplicar filtros">
+                    <i class="bi bi-funnel"></i>
+                </button>
+            </div>
+            
+            <!-- Fila 2: Filtros adicionales - AHORA DENTRO DEL MISMO FORM -->
+            <div class="row mt-3">
+                <div class="col-md-3">
+                    <label class="form-label">Año Lectivo</label>
+                    <select name="año" class="form-select" id="añoLectivoSelect">
+                        <option value="todos">Todos los años</option>
+                        {% for año in años_lectivos %}
+                        <option value="{{ año.id }}" {% if filter_año == año.id|stringformat:"i" %}selected{% endif %}>
+                            {{ año.anho }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-9 d-flex align-items-end justify-content-end">
+                    <a href="{% url 'rector:logro_list' %}" class="btn btn-outline-secondary" id="clearFiltersBtn">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Limpiar Filtros
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h3 class="text-primary mb-0">{{ total_logros }}</h3>
+                    <p class="text-muted mb-0">Total Logros</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3">
+                        <i class="bi bi-bar-chart me-2"></i>Logros por Asignatura (Top 5)
+                    </h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for item in logros_por_asignatura %}
+                        <span class="badge bg-info stats-badge">
+                            {{ item.asignatura__nombre }}: {{ item.total }}
+                        </span>
+                        {% empty %}
+                        <span class="text-muted">No hay datos disponibles</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de logros -->
+    {% if logros %}
+    <div class="row">
+        {% for logro in logros %}
+        <div class="col-lg-6 mb-4">
+            <div class="card logro-card h-100">
+                <div class="card-body">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="card-title mb-1">{{ logro.tema|truncatechars:60 }}</h5>
+                            <div class="d-flex gap-2 mb-2">
+                                <span class="badge bg-primary">{{ logro.asignatura.nombre }}</span>
+                                <span class="badge bg-secondary">{{ logro.grado.nombre }}</span>
+                                <span class="badge bg-info">{{ logro.periodo_academico.periodo.nombre }}</span>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'rector:logro_detail' logro.pk %}" 
+                                   class="btn btn-outline-info" title="Ver detalle">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'rector:logro_edit' logro.pk %}" 
+                                   class="btn btn-outline-warning" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'rector:logro_delete' logro.pk %}" 
+                                   class="btn btn-outline-danger" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Niveles de desempeño -->
+                    <div class="mb-3">
+                        <h6 class="small text-muted mb-2">Niveles de Desempeño:</h6>
+                        <div class="row g-2">
+                            <div class="col-3">
+                                <div class="border rounded p-2 text-center">
+                                    <small class="d-block text-success fw-bold">Superior</small>
+                                    <small class="text-muted">{% if logro.descripcion_superior %}<i class="bi bi-check-circle"></i>{% else %}<i class="bi bi-dash-circle"></i>{% endif %}</small>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="border rounded p-2 text-center">
+                                    <small class="d-block text-primary fw-bold">Alto</small>
+                                    <small class="text-muted">{% if logro.descripcion_alto %}<i class="bi bi-check-circle"></i>{% else %}<i class="bi bi-dash-circle"></i>{% endif %}</small>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="border rounded p-2 text-center">
+                                    <small class="d-block text-warning fw-bold">Básico</small>
+                                    <small class="text-muted">{% if logro.descripcion_basico %}<i class="bi bi-check-circle"></i>{% else %}<i class="bi bi-dash-circle"></i>{% endif %}</small>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="border rounded p-2 text-center">
+                                    <small class="d-block text-danger fw-bold">Bajo</small>
+                                    <small class="text-muted">{% if logro.descripcion_bajo %}<i class="bi bi-check-circle"></i>{% else %}<i class="bi bi-dash-circle"></i>{% endif %}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Descripción -->
+                    <div class="logro-description mb-3">
+                        <small class="text-muted">
+                            {% if logro.descripcion_superior %}
+                                {{ logro.descripcion_superior|truncatechars:150 }}
+                            {% elif logro.descripcion_alto %}
+                                {{ logro.descripcion_alto|truncatechars:150 }}
+                            {% elif logro.descripcion_basico %}
+                                {{ logro.descripcion_basico|truncatechars:150 }}
+                            {% elif logro.descripcion_bajo %}
+                                {{ logro.descripcion_bajo|truncatechars:150 }}
+                            {% else %}
+                                <span class="text-muted">Sin descripción disponible</span>
+                            {% endif %}
+                        </small>
+                    </div>
+                    
+                    <!-- Información adicional -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar-week me-1"></i>
+                            {{ logro.periodo_academico.año_lectivo.anho }}
+                        </small>
+                        <small class="text-muted">
+                            <i class="bi bi-clock me-1"></i>
+                            {{ logro.created_at|date:"d/m/Y" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Paginación -->
+    {% if logros.paginator.num_pages > 1 %}
+    <nav aria-label="Paginación" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if logros.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    <i class="bi bi-chevron-double-left"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ logros.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in logros.paginator.page_range %}
+                {% if logros.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > logros.number|add:'-3' and num < logros.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if logros.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ logros.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ logros.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    <i class="bi bi-chevron-double-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <!-- Estado vacío -->
+    <div class="empty-state">
+        <i class="bi bi-trophy text-muted mb-4" style="font-size: 4rem;"></i>
+        <h4 class="text-muted mb-3">No se encontraron logros</h4>
+        <p class="text-muted mb-4">
+            {% if filter_search or filter_asignatura != 'todos' or filter_grado != 'todos' or filter_periodo != 'todos' %}
+                Intenta con otros criterios de búsqueda.
+            {% else %}
+                No hay logros académicos registrados en el sistema.
+            {% endif %}
+        </p>
+        <a href="{% url 'rector:logro_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Crear Primer Logro
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Auto-submit para el filtro de año lectivo
+    const añoSelect = document.getElementById('añoLectivoSelect');
+    if (añoSelect) {
+        añoSelect.addEventListener('change', function() {
+            // Enviar el formulario principal
+            document.getElementById('mainFilterForm').submit();
+        });
+    }
+    
+    // 2. Manejar el botón "Limpiar Filtros" (evitar comportamiento por defecto del enlace)
+    const clearBtn = document.getElementById('clearFiltersBtn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevenir navegación normal
+            window.location.href = "{% url 'rector:logro_list' %}";
+        });
+    }
+    
+    // 3. Opcional: Resetear página a 1 cuando cambian los filtros (excepto búsqueda)
+    const filterForm = document.getElementById('mainFilterForm');
+    if (filterForm) {
+        // Capturar todos los cambios en selects (excepto si es una búsqueda por texto)
+        const filterSelects = filterForm.querySelectorAll('select');
+        filterSelects.forEach(select => {
+            select.addEventListener('change', function() {
+                // Si hay un campo de búsqueda con texto, mantenerlo
+                const searchField = filterForm.querySelector('input[name="search"]');
+                if (searchField && searchField.value.trim() !== '') {
+                    // Mantener la búsqueda pero resetear a página 1
+                    const urlParams = new URLSearchParams(window.location.search);
+                    urlParams.set('page', '1');
+                    window.location.search = urlParams.toString();
+                } else {
+                    // Enviar formulario normalmente
+                    filterForm.submit();
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

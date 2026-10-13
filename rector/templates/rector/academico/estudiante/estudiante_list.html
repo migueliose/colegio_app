@@ -1,0 +1,284 @@
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+
+{% block title %}Estudiantes - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:academico_dashboard' %}">Académico</a></li>
+        <li class="breadcrumb-item active"><i class="bi bi-people me-2"></i>Gestión de Estudiantes</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Año Lectivo</label>
+                    <select name="año" class="form-select">
+                        <option value="todos">Todos los años</option>
+                        {% for año in años_lectivos %}
+                        <option value="{{ año.id }}" {% if filter_año == año.id|stringformat:"i" %}selected{% endif %}>
+                            {{ año.anho }} - {{ año.sede.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Grado</label>
+                    <select name="grado" class="form-select">
+                        <option value="todos">Todos los grados</option>
+                        {% for grado in grados %}
+                        <option value="{{ grado.id }}" {% if filter_grado == grado.id|stringformat:"i" %}selected{% endif %}>
+                            {{ grado.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Sede</label>
+                    <select name="sede" class="form-select">
+                        <option value="todos">Todas las sedes</option>
+                        {% for sede in sedes %}
+                        <option value="{{ sede.id }}" {% if filter_sede == sede.id|stringformat:"i" %}selected{% endif %}>
+                            {{ sede.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Estado</label>
+                    <select name="estado" class="form-select">
+                        {% for estado in estados_estudiante %}
+                        <option value="{{ estado.0 }}" {% if filter_estado == estado.0 %}selected{% endif %}>
+                            {{ estado.1 }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Buscar</label>
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" placeholder="Nombre, apellido o documento" 
+                               value="{{ filter_search|default:'' }}">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        <a href="{% url 'rector:estudiante_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h3 class="text-primary">{{ total_estudiantes }}</h3>
+                    <p class="text-muted mb-0">Total Estudiantes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h3 class="text-success">{{ estudiantes_activos }}</h3>
+                    <p class="text-muted mb-0">Estudiantes Activos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h3 class="text-warning">{{ estudiantes_inactivos }}</h3>
+                    <p class="text-muted mb-0">Estudiantes Inactivos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h3 class="text-info">{{ estudiantes.paginator.count }}</h3>
+                    <p class="text-muted mb-0">Resultados Filtrados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de estudiantes -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Lista de Estudiantes</h5>
+            <div class="text-muted">
+                Página {{ estudiantes.number }} de {{ estudiantes.paginator.num_pages }}
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Documento</th>
+                            <th>Nombre Completo</th>
+                            <th>Grado Actual</th>
+                            <th>Sede</th>
+                            <th>Estado Estudiante</th>
+                            <th>Estado Matrícula</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for estudiante in estudiantes %}
+                        <tr>
+                            <td>{{ estudiante.usuario.numero_documento }}</td>
+                            <td>
+                                <strong>{{ estudiante.usuario.get_full_name }}</strong><br>
+                                <small class="text-muted">{{ estudiante.usuario.email|default:"Sin email" }}</small>
+                            </td>
+                            <td>
+                                {% with matricula=estudiante.matricula_actual %}
+                                    {% if matricula %}
+                                        {{ matricula.grado_año_lectivo.grado.nombre }}
+                                    {% else %}
+                                        <span class="text-muted">Sin matrícula</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                {% with matricula=estudiante.matricula_actual %}
+                                    {% if matricula %}
+                                        {{ matricula.sede.nombre }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if estudiante.estado %}success{% else %}danger{% endif %}">
+                                    {% if estudiante.estado %}Activo{% else %}Inactivo{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% with matricula=estudiante.matricula_actual %}
+                                    {% if matricula %}
+                                        <span class="badge bg-{% if matricula.estado == 'ACT' %}success{% elif matricula.estado == 'PEN' %}warning{% else %}secondary{% endif %}">
+                                            {{ matricula.get_estado_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Sin matrícula</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'rector:estudiante_detail' estudiante.pk %}" class="btn btn-outline-info" title="Ver detalle">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'rector:estudiante_edit' estudiante.pk %}" class="btn btn-outline-warning" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form method="post" action="{% url 'rector:estudiante_toggle_estado' estudiante.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-{% if estudiante.estado %}danger{% else %}success{% endif %}" 
+                                                title="{% if estudiante.estado %}Desactivar{% else %}Activar{% endif %}">
+                                            <i class="bi bi-power"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="bi bi-people display-6"></i>
+                                    <p class="mt-2">No se encontraron estudiantes</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            {% if estudiantes.paginator.num_pages > 1 %}
+            <nav aria-label="Paginación" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if estudiantes.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ estudiantes.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in estudiantes.paginator.page_range %}
+                        {% if estudiantes.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > estudiantes.number|add:'-3' and num < estudiantes.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if estudiantes.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ estudiantes.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ estudiantes.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Función para cambiar estado via AJAX
+function toggleEstudianteEstado(estudianteId) {
+    fetch(`/rector/ajax/estudiante/${estudianteId}/toggle-estado/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+}
+</script>
+{% endblock %}

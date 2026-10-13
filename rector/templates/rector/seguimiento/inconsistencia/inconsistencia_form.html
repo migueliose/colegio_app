@@ -1,0 +1,666 @@
+<!-- rector/templates/rector/seguimiento/inconsistencia/inconsistencia_form.html -->
+{% extends 'rector/base_rector.html' %}
+{% load static seguimiento_filters  %}
+
+{% block title %}{{ titulo }} - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:seguimiento_dashboard' %}">Seguimiento</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:inconsistencia_list' %}">Inconsistencias</a></li>
+        <li class="breadcrumb-item active">{{ titulo }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>{{ titulo }}
+                </h5>
+            </div>
+            
+            <div class="card-body">
+                <form method="post" id="inconsistencia-form" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                        <i class="bi bi-exclamation-circle me-2"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <!-- Estudiante -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.estudiante.id_for_label }}" class="form-label">
+                                <i class="bi bi-person me-1"></i>{{ form.estudiante.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.estudiante }}
+                            {% if form.estudiante.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.estudiante.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Seleccione el estudiante relacionado con la inconsistencia
+                            </div>
+                        </div>
+                        
+                        <!-- Tipo -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.tipo.id_for_label }}" class="form-label">
+                                <i class="bi bi-tag me-1"></i>{{ form.tipo.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.tipo }}
+                            {% if form.tipo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.tipo.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Ej: Documentación incompleta, Información inconsistente, etc.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Descripción -->
+                    <div class="mb-3">
+                        <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+                            <i class="bi bi-card-text me-1"></i>{{ form.descripcion.label }}
+                            <span class="text-danger">*</span>
+                        </label>
+                        {{ form.descripcion }}
+                        {% if form.descripcion.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.descripcion.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text d-flex justify-content-between">
+                            <span>Describa detalladamente la inconsistencia</span>
+                            <span id="contador-caracteres">0/2000 caracteres</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Estado (si el modelo lo tiene) -->
+                    {% if form.estado %}
+                    <div class="mb-3">
+                        <label for="{{ form.estado.id_for_label }}" class="form-label">
+                            <i class="bi bi-check-circle me-1"></i>Estado
+                        </label>
+                        <div class="d-flex gap-3">
+                            {% for radio in form.estado %}
+                            <div class="form-check">
+                                {{ radio.tag }}
+                                <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                    {{ radio.choice_label }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.estado.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.estado.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Fecha de resolución (si aplica) -->
+                    {% if form.fecha_resolucion %}
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.fecha_resolucion.id_for_label }}" class="form-label">
+                            <i class="bi bi-calendar-check me-1"></i>Fecha de Resolución
+                        </label>
+                        {{ form.fecha_resolucion }}
+                        {% if form.fecha_resolucion.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.fecha_resolucion.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Observaciones adicionales -->
+                    {% if form.observaciones %}
+                    <div class="mb-3">
+                        <label for="{{ form.observaciones.id_for_label }}" class="form-label">
+                            <i class="bi bi-chat-left-text me-1"></i>Observaciones
+                        </label>
+                        {{ form.observaciones }}
+                        {% if form.observaciones.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.observaciones.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Información adicional o comentarios</div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Documentos adjuntos -->
+                    {% if form.documentos %}
+                    <div class="mb-3">
+                        <label for="{{ form.documentos.id_for_label }}" class="form-label">
+                            <i class="bi bi-paperclip me-1"></i>Documentos Adjuntos
+                        </label>
+                        {{ form.documentos }}
+                        {% if form.documentos.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.documentos.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Adjunte documentos relacionados (máx. 10MB por archivo)
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Prioridad (si el modelo lo tiene) -->
+                    {% if form.prioridad %}
+                    <div class="mb-3">
+                        <label for="{{ form.prioridad.id_for_label }}" class="form-label">
+                            <i class="bi bi-flag me-1"></i>Prioridad
+                        </label>
+                        {{ form.prioridad }}
+                        {% if form.prioridad.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.prioridad.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Responsable (si el modelo lo tiene) -->
+                    {% if form.responsable %}
+                    <div class="mb-3">
+                        <label for="{{ form.responsable.id_for_label }}" class="form-label">
+                            <i class="bi bi-person-badge me-1"></i>Responsable
+                        </label>
+                        {{ form.responsable }}
+                        {% if form.responsable.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.responsable.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+            
+            <div class="card-footer bg-transparent">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <a href="{% url 'rector:inconsistencia_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Cancelar
+                        </a>
+                    </div>
+                    <div>
+                        <button type="submit" form="inconsistencia-form" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i>
+                            {% if object %}Actualizar{% else %}Guardar{% endif %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información del estudiante (se carga dinámicamente) -->
+        <div class="card mt-4" id="estudiante-info-card" style="display: none;">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Información del Estudiante
+                </h6>
+            </div>
+            <div class="card-body" id="estudiante-info-content">
+                <!-- Se carga dinámicamente -->
+            </div>
+        </div>
+        
+        <!-- Historial de inconsistencias del estudiante -->
+        <div class="card mt-4" id="historial-card" style="display: none;">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Historial de Inconsistencias
+                </h6>
+            </div>
+            <div class="card-body" id="historial-content">
+                <!-- Se carga dinámicamente -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para eliminar -->
+{% if object %}
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de eliminar esta inconsistencia?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Esta acción no se puede deshacer.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="{% url 'rector:inconsistencia_delete' object.pk %}"
+                    class="btn btn-danger me-2"
+                    onclick="return confirm('¿Está seguro de eliminar esta inconsistencia?');">
+                    <i class="bi bi-trash me-1"></i>Eliminar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+#inconsistencia-form .form-control:focus,
+#inconsistencia-form .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+#contador-caracteres {
+    font-size: 0.85em;
+    color: #6c757d;
+}
+
+#contador-caracteres.alerta {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.card-header.bg-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+}
+
+#estudiante-info-card .card-body,
+#historial-card .card-body {
+    max-height: 300px;
+    overflow-y: auto;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('inconsistencia-form');
+    const estudianteSelect = document.getElementById('{{ form.estudiante.id_for_label }}');
+    const tipoInput = document.getElementById('{{ form.tipo.id_for_label }}');
+    const descripcionTextarea = document.getElementById('{{ form.descripcion.id_for_label }}');
+    const contadorCaracteres = document.getElementById('contador-caracteres');
+    
+    // ========== INICIALIZAR SELECT2 PARA ESTUDIANTE ==========
+    if ($ && $.fn.select2 && estudianteSelect) {
+        $(estudianteSelect).select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Seleccione un estudiante...',
+            allowClear: true,
+            width: '100%',
+            ajax: {
+                url: '{% url "rector:ajax_buscar_estudiantes_activos" %}',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        q: params.term,
+                        page: params.page || 1
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data.estudiantes.map(est => ({
+                            id: est.id,
+                            text: `${est.nombre_completo} (${est.documento})`
+                        }))
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 2
+        }).on('change', function() {
+            const estudianteId = $(this).val();
+            if (estudianteId) {
+                cargarInformacionEstudiante(estudianteId);
+                cargarHistorialEstudiante(estudianteId);
+            } else {
+                ocultarInformacionEstudiante();
+            }
+        });
+        
+        // Si ya hay un estudiante seleccionado (modo edición)
+        {% if form.instance.estudiante %}
+        const estudianteId = {{ form.instance.estudiante.id }};
+        cargarInformacionEstudiante(estudianteId);
+        cargarHistorialEstudiante(estudianteId);
+        {% endif %}
+    }
+    
+    // ========== CONTADOR DE CARACTERES ==========
+    if (descripcionTextarea && contadorCaracteres) {
+        function actualizarContador() {
+            const longitud = descripcionTextarea.value.length;
+            const maxCaracteres = 2000;
+            contadorCaracteres.textContent = `${longitud}/${maxCaracteres} caracteres`;
+            
+            if (longitud > maxCaracteres * 0.9) {
+                contadorCaracteres.classList.add('alerta');
+            } else {
+                contadorCaracteres.classList.remove('alerta');
+            }
+        }
+        
+        descripcionTextarea.addEventListener('input', actualizarContador);
+        actualizarContador(); // Inicializar
+    }
+    
+    // ========== SUGERENCIAS DE TIPOS ==========
+    if (tipoInput) {
+        // Cargar tipos comunes
+        fetch('{% url "rector:ajax_tipos_comunes_inconsistencias" %}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.tipos) {
+                    const container = document.getElementById('tipos-sugerencias-container');
+                        container.innerHTML = '';
+
+                        data.tipos.forEach(tipo => {
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = 'btn btn-outline-primary btn-sm w-100 text-start mb-1';
+                            btn.innerHTML = `<i class="bi bi-tag me-2"></i>${tipo.tipo}
+                                            <span class="badge bg-secondary float-end">${tipo.frecuencia}</span>`;
+                            btn.addEventListener('click', () => seleccionarTipo(tipo.tipo));
+                            container.appendChild(btn);
+                        });
+
+                        container.style.display = 'block';
+
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar tipos:', error);
+            });
+        
+        // Auto-completar con datalist
+        fetch('{% url "rector:ajax_tipos_inconsistencias" %}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.tipos) {
+                    const datalist = document.createElement('datalist');
+                    datalist.id = 'tipos-autocomplete';
+                    
+                    data.tipos.forEach(tipo => {
+                        const option = document.createElement('option');
+                        option.value = tipo;
+                        datalist.appendChild(option);
+                    });
+                    
+                    document.body.appendChild(datalist);
+                    tipoInput.setAttribute('list', 'tipos-autocomplete');
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar autocomplete:', error);
+            });
+    }
+    
+    // ========== CARGAR INFORMACIÓN DEL ESTUDIANTE ==========
+    function cargarInformacionEstudiante(estudianteId) {
+        fetch(`{% url "rector:ajax_informacion_estudiante" %}?estudiante_id=${estudianteId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const card = document.getElementById('estudiante-info-card');
+                    const content = document.getElementById('estudiante-info-content');
+                    
+                    content.innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Nombre:</strong> ${data.estudiante.nombre_completo}</p>
+                                <p><strong>Documento:</strong> ${data.estudiante.documento}</p>
+                                <p><strong>Edad:</strong> ${data.estudiante.edad || 'N/A'} años</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Grado Actual:</strong> ${data.estudiante.grado_actual || 'N/A'}</p>
+                                <p><strong>Sede:</strong> ${data.estudiante.sede || 'N/A'}</p>
+                                <p><strong>Estado:</strong> 
+                                    <span class="badge ${data.estudiante.estado ? 'bg-success' : 'bg-danger'}">
+                                        ${data.estudiante.estado ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <a href="{% url 'rector:estudiante_detail' 0 %}".replace('0', data.estudiante.id) 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye me-1"></i>Ver perfil completo
+                            </a>
+                        </div>
+                    `;
+                    
+                    card.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar información del estudiante:', error);
+            });
+    }
+    
+    function ocultarInformacionEstudiante() {
+        document.getElementById('estudiante-info-card').style.display = 'none';
+        document.getElementById('historial-card').style.display = 'none';
+    }
+    
+    // ========== CARGAR HISTORIAL DEL ESTUDIANTE ==========
+    function cargarHistorialEstudiante(estudianteId) {
+        fetch(`{% url "rector:ajax_historial_inconsistencias_estudiante" %}?estudiante_id=${estudianteId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const card = document.getElementById('historial-card');
+                    const content = document.getElementById('historial-content');
+                    
+                    if (data.inconsistencias.length > 0) {
+                        let html = `
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Este estudiante tiene ${data.inconsistencias.length} inconsistencia(s) registrada(s).
+                            </div>
+                            <div class="list-group list-group-flush">
+                        `;
+                        
+                        data.inconsistencias.forEach((inc, index) => {
+                            html += `
+                                <div class="list-group-item border-0 px-0">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">${inc.tipo}</h6>
+                                            <p class="mb-1 text-muted small">${inc.descripcion}</p>
+                                            <small class="text-muted">${inc.fecha}</small>
+                                        </div>
+                                        <span class="badge ${inc.estado === 'pendiente' ? 'bg-warning' : 'bg-success'}">
+                                            ${inc.estado}
+                                        </span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        html += `</div>`;
+                    } else {
+                        html = `
+                            <div class="alert alert-success">
+                                <i class="bi bi-check-circle me-2"></i>
+                                Este estudiante no tiene inconsistencias registradas.
+                            </div>
+                        `;
+                    }
+                    
+                    content.innerHTML = html;
+                    card.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar historial:', error);
+            });
+    }
+    
+    // ========== VALIDACIÓN DEL FORMULARIO ==========
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            let valid = true;
+            
+            // Validar estudiante
+            if (estudianteSelect && !estudianteSelect.value) {
+                mostrarError(estudianteSelect, 'Debe seleccionar un estudiante');
+                valid = false;
+            }
+            
+            // Validar tipo
+            if (tipoInput && !tipoInput.value.trim()) {
+                mostrarError(tipoInput, 'El tipo es requerido');
+                valid = false;
+            }
+            
+            // Validar descripción
+            if (descripcionTextarea && !descripcionTextarea.value.trim()) {
+                mostrarError(descripcionTextarea, 'La descripción es requerida');
+                valid = false;
+            } else if (descripcionTextarea && descripcionTextarea.value.trim().length < 10) {
+                mostrarError(descripcionTextarea, 'La descripción debe tener al menos 10 caracteres');
+                valid = false;
+            }
+            
+            if (!valid) {
+                e.preventDefault();
+                mostrarToast('Por favor complete todos los campos requeridos correctamente', 'warning');
+            }
+        });
+    }
+    
+    // ========== FUNCIONES UTILITARIAS ==========
+    function seleccionarTipo(tipo) {
+        if (tipoInput) {
+            tipoInput.value = tipo;
+            tipoInput.focus();
+        }
+    }
+    
+    function mostrarError(elemento, mensaje) {
+        elemento.classList.add('is-invalid');
+        
+        let feedback = elemento.nextElementSibling;
+        if (!feedback || !feedback.classList.contains('invalid-feedback')) {
+            feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            elemento.parentNode.insertBefore(feedback, elemento.nextSibling);
+        }
+        feedback.textContent = mensaje;
+    }
+    
+    function mostrarToast(mensaje, tipo = 'info') {
+        // Implementar toast notification
+        alert(mensaje); // Por ahora usar alert
+    }
+    
+    // ========== GUARDADO AUTOMÁTICO (DRAFT) ==========
+    let autoSaveTimer = null;
+    
+    function guardarBorrador() {
+        if (!form.checkValidity()) return;
+        
+        const formData = new FormData(form);
+        formData.append('es_borrador', 'true');
+        
+        fetch('{% if object %}{% url "rector:inconsistencia_edit" object.pk %}{% else %}{% url "rector:inconsistencia_create" %}{% endif %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Borrador guardado');
+            }
+        })
+        .catch(error => {
+            console.error('Error al guardar borrador:', error);
+        });
+    }
+    
+    // Guardar borrador cada 30 segundos si hay cambios
+    form.addEventListener('input', function() {
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(guardarBorrador, 30000);
+    });
+    
+    // Guardar borrador al salir de la página
+    window.addEventListener('beforeunload', function(e) {
+        if (form.checkValidity()) {
+            // Preguntar si quiere guardar borrador
+            if (confirm('¿Desea guardar un borrador antes de salir?')) {
+                guardarBorrador();
+            }
+        }
+    });
+    
+    function getCsrfToken() {
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,606 @@
+<!-- rector/templates/rector/seguimiento/inconsistencia/inconsistencia_detail.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Detalle de Inconsistencia - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:seguimiento_dashboard' %}">Seguimiento</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:inconsistencia_list' %}">Inconsistencias</a></li>
+        <li class="breadcrumb-item active">Detalle</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Información principal -->
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Inconsistencia #{{ object.id }}
+                </h5>
+                <div class="btn-group">
+                    <a href="{% url 'rector:inconsistencia_edit' object.pk %}" 
+                       class="btn btn-warning btn-sm">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                    </a>
+                    <a href="{% url 'rector:inconsistencia_delete' object.pk %}"
+                        class="btn btn-danger btn-sm"
+                        onclick="return confirm('¿Está seguro de eliminar esta inconsistencia?');">
+                        <i class="bi bi-trash me-1"></i>Eliminar
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-person me-2"></i>Estudiante
+                        </h6>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="avatar-sm bg-danger bg-opacity-10 text-danger rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                 style="width: 40px; height: 40px;">
+                                <i class="bi bi-person"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0">
+                                    <a href="{% url 'rector:estudiante_detail' object.estudiante.pk %}" 
+                                       class="text-decoration-none">
+                                        {{ object.estudiante.usuario.get_full_name }}
+                                    </a>
+                                </h5>
+                                <small class="text-muted">
+                                    {{ object.estudiante.usuario.numero_documento }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-calendar me-2"></i>Fechas
+                        </h6>
+                        <div class="mb-3">
+                            <p class="mb-1">
+                                <strong>Registrada:</strong> 
+                                {{ object.created_at|date:"d/m/Y H:i" }}
+                            </p>
+                            <p class="mb-1">
+                                <strong>Actualizada:</strong> 
+                                {{ object.updated_at|date:"d/m/Y H:i" }}
+                            </p>
+                            {% if object.fecha_resolucion %}
+                            <p class="mb-0">
+                                <strong>Resuelta:</strong> 
+                                {{ object.fecha_resolucion|date:"d/m/Y" }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- Tipo y Estado -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-tag me-2"></i>Tipo
+                        </h6>
+                        <span class="badge bg-warning fs-6">{{ object.tipo }}</span>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-check-circle me-2"></i>Estado
+                        </h6>
+                        {% if object.estado == 'pendiente' %}
+                        <span class="badge bg-warning fs-6">
+                            <i class="bi bi-clock me-1"></i>Pendiente
+                        </span>
+                        {% elif object.estado == 'resuelta' %}
+                        <span class="badge bg-success fs-6">
+                            <i class="bi bi-check-circle me-1"></i>Resuelta
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary fs-6">
+                            <i class="bi bi-dash-circle me-1"></i>Sin estado
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Descripción -->
+                <div class="mb-4">
+                    <h6 class="text-muted mb-2">
+                        <i class="bi bi-card-text me-2"></i>Descripción
+                    </h6>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <p class="mb-0">{{ object.descripcion|linebreaks }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Información adicional -->
+                {% if object.observaciones %}
+                <div class="mb-4">
+                    <h6 class="text-muted mb-2">
+                        <i class="bi bi-chat-left-text me-2"></i>Observaciones
+                    </h6>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <p class="mb-0">{{ object.observaciones|linebreaks }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Prioridad y Responsable -->
+                <div class="row">
+                    {% if object.prioridad %}
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-flag me-2"></i>Prioridad
+                        </h6>
+                        {% if object.prioridad == 'alta' %}
+                        <span class="badge bg-danger">Alta</span>
+                        {% elif object.prioridad == 'media' %}
+                        <span class="badge bg-warning">Media</span>
+                        {% else %}
+                        <span class="badge bg-info">Baja</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if object.responsable %}
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-person-badge me-2"></i>Responsable
+                        </h6>
+                        <p class="mb-0">{{ object.responsable.get_full_name }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Historial de cambios -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Historial
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Creada</h6>
+                            <p class="text-muted small mb-0">
+                                {{ object.created_at|date:"d/m/Y H:i" }}
+                                por Sistema
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {% if object.updated_at != object.created_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Actualizada</h6>
+                            <p class="text-muted small mb-0">
+                                {{ object.updated_at|date:"d/m/Y H:i" }}
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if object.fecha_resolucion %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Resuelta</h6>
+                            <p class="text-muted small mb-0">
+                                {{ object.fecha_resolucion|date:"d/m/Y" }}
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Información del estudiante -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-person-badge me-2"></i>Información del Estudiante
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Grado Actual:</strong><br>
+                    {% with matricula=object.estudiante.matricula_actual %}
+                    {% if matricula %}
+                    <span class="badge bg-primary">{{ matricula.grado_año_lectivo.grado.nombre }}</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Sin matrícula</span>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Sede:</strong><br>
+                    {% with matricula=object.estudiante.matricula_actual %}
+                    {% if matricula %}
+                    {{ matricula.sede.nombre }}
+                    {% else %}
+                    <span class="text-muted">N/A</span>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Contacto:</strong><br>
+                    <small class="text-muted">
+                        {% if object.estudiante.usuario.telefono %}
+                        <i class="bi bi-telephone me-1"></i>{{ object.estudiante.usuario.telefono }}<br>
+                        {% endif %}
+                        {% if object.estudiante.usuario.email %}
+                        <i class="bi bi-envelope me-1"></i>{{ object.estudiante.usuario.email }}
+                        {% endif %}
+                    </small>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'rector:estudiante_detail' object.estudiante.pk %}" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye me-1"></i>Ver perfil completo
+                    </a>
+                    <a href="{% url 'rector:comportamiento_create' %}?estudiante={{ object.estudiante.pk }}" 
+                       class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>Agregar comportamiento
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Estadísticas del estudiante -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Estadísticas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="estadisticas-estudiante">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Acciones rápidas -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightning me-2"></i>Acciones Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if object.estado != 'resuelta' %}
+                    <button type="button" class="btn btn-success" id="btn-marcar-resuelta">
+                        <i class="bi bi-check-circle me-1"></i>Marcar como resuelta
+                    </button>
+                    {% endif %}
+                    
+                    {% if object.estado == 'resuelta' %}
+                    <button type="button" class="btn btn-warning" id="btn-marcar-pendiente">
+                        <i class="bi bi-clock me-1"></i>Marcar como pendiente
+                    </button>
+                    {% endif %}
+                    
+                    <button type="button" class="btn btn-info" id="btn-compartir">
+                        <i class="bi bi-share me-1"></i>Compartir
+                    </button>                    
+                    <button type="button" class="btn btn-outline-secondary" id="btn-imprimir">
+                        <i class="bi bi-printer me-1"></i>Imprimir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 3px #e9ecef;
+}
+
+.timeline-content {
+    padding-bottom: 10px;
+}
+
+.avatar-sm {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.badge.fs-6 {
+    font-size: 1em !important;
+    padding: 0.5em 1em;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ========== CARGAR ESTADÍSTICAS DEL ESTUDIANTE ==========
+    function cargarEstadisticasEstudiante() {
+        const estudianteId = {{ object.estudiante.id }};
+        
+        fetch(`{% url "rector:ajax_estadisticas_estudiante" %}?estudiante_id=${estudianteId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const container = document.getElementById('estadisticas-estudiante');
+                    
+                    let html = `
+                        <div class="mb-3">
+                            <strong>Total Inconsistencias:</strong>
+                            <span class="badge ${data.total_inconsistencias > 0 ? 'bg-danger' : 'bg-success'} float-end">
+                                ${data.total_inconsistencias}
+                            </span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Comportamientos:</strong>
+                            <div class="float-end">
+                                <span class="badge bg-success me-1">${data.comportamientos_positivos || 0}</span>
+                                <span class="badge bg-danger">${data.comportamientos_negativos || 0}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Asistencia (mes):</strong>
+                            <span class="badge ${data.porcentaje_asistencia >= 85 ? 'bg-success' : 'bg-warning'} float-end">
+                                ${data.porcentaje_asistencia || 0}%
+                            </span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Promedio Calificaciones:</strong>
+                            <span class="badge ${data.promedio_calificaciones >= 3.0 ? 'bg-success' : 'bg-danger'} float-end">
+                                ${data.promedio_calificaciones || 0}
+                            </span>
+                        </div>
+                    `;
+                    
+                    container.innerHTML = html;
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar estadísticas:', error);
+            });
+    }
+    
+    cargarEstadisticasEstudiante();
+    
+    // ========== MARCAR COMO RESUELTA ==========
+    const btnMarcarResuelta = document.getElementById('btn-marcar-resuelta');
+    if (btnMarcarResuelta) {
+        btnMarcarResuelta.addEventListener('click', function() {
+            if (confirm('¿Marcar esta inconsistencia como resuelta?')) {
+                fetch('{% url "rector:ajax_marcar_inconsistencia_resuelta" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({
+                        inconsistencia_id: {{ object.id }}
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Inconsistencia marcada como resuelta', 'success');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        showToast('Error: ' + data.error, 'danger');
+                    }
+                })
+                .catch(error => {
+                    showToast('Error de conexión', 'danger');
+                    console.error('Error:', error);
+                });
+            }
+        });
+    }
+    
+    // ========== MARCAR COMO PENDIENTE ==========
+    const btnMarcarPendiente = document.getElementById('btn-marcar-pendiente');
+    if (btnMarcarPendiente) {
+        btnMarcarPendiente.addEventListener('click', function() {
+            if (confirm('¿Marcar esta inconsistencia como pendiente nuevamente?')) {
+                fetch('{% url "rector:ajax_marcar_inconsistencia_pendiente" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({
+                        inconsistencia_id: {{ object.id }}
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Inconsistencia marcada como pendiente', 'warning');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        showToast('Error: ' + data.error, 'danger');
+                    }
+                })
+                .catch(error => {
+                    showToast('Error de conexión', 'danger');
+                    console.error('Error:', error);
+                });
+            }
+        });
+    }
+    
+    // ========== COMPARTIR ==========
+    const btnCompartir = document.getElementById('btn-compartir');
+    
+    if (btnCompartir) {
+        btnCompartir.addEventListener('click', function () {
+            const email = prompt('Ingrese el correo electrónico del destinatario:');
+            if (!email) return;
+
+            const mensaje = prompt('Mensaje opcional (puede dejarlo vacío):', '');
+            const incluirDatos = confirm('¿Incluir información básica del estudiante?');
+
+            fetch('{% url "rector:ajax_compartir_inconsistencia" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    inconsistencia_id: {{ object.id }},
+                    email: email,
+                    mensaje: mensaje,
+                    incluir_datos_estudiante: incluirDatos
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Inconsistencia compartida exitosamente', 'success');
+                } else {
+                    showToast('Error: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                showToast('Error de conexión', 'danger');
+                console.error(error);
+            });
+        });
+    }
+    
+    // ========== IMPRIMIR ==========
+    const btnImprimir = document.getElementById('btn-imprimir');
+    if (btnImprimir) {
+        btnImprimir.addEventListener('click', function() {
+            window.print();
+        });
+    }
+    
+    // ========== FUNCIONES UTILITARIAS ==========
+    function getCsrfToken() {
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    function showToast(message, type = 'info') {
+        // Crear contenedor si no existe
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Crear toast
+        const toastId = 'toast-' + Date.now();
+        const toast = document.createElement('div');
+        toast.id = toastId;
+        toast.className = `toast align-items-center text-bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        
+        // Icono según el tipo
+        let icon = 'bi-info-circle';
+        if (type === 'success') icon = 'bi-check-circle';
+        if (type === 'warning') icon = 'bi-exclamation-triangle';
+        if (type === 'danger') icon = 'bi-x-circle';
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi ${icon} me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Eliminar después de que se oculte
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+});
+</script>
+{% endblock %}

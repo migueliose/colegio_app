@@ -1,0 +1,890 @@
+<!-- rector/templates/rector/academico/acudiente_crear.html -->
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .section-title {
+        color: #4e54c8;
+        border-bottom: 2px solid #4e54c8;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .student-info {
+        background: #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+    .tab-content {
+        border: 1px solid #dee2e6;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        padding: 1.5rem;
+    }
+    .search-result-item {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    .search-result-item:hover {
+        background-color: #f8f9fa;
+        border-left-color: #4e54c8;
+        transform: translateX(5px);
+    }
+    .search-result-item.selected {
+        background-color: #e3f2fd;
+        border-left-color: #2196f3;
+    }
+    .acudiente-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        border-radius: 8px;
+    }
+    .documento-verificado {
+        border-color: #28a745 !important;
+        background-color: #f8fff9 !important;
+    }
+    .documento-existente {
+        border-color: #ffc107 !important;
+        background-color: #fffcf3 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-12">
+            <div class="card shadow form-container">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-person-plus me-2"></i>{{ titulo }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Información del estudiante -->
+                    <div class="student-info">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 text-center">
+                                {% if estudiante.foto %}
+                                <img src="{{ estudiante.foto.url }}" alt="Foto" class="rounded-circle" width="80" height="80">
+                                {% else %}
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" 
+                                     style="width: 80px; height: 80px;">
+                                    <i class="bi bi-person-fill text-secondary" style="font-size: 2rem;"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-10">
+                                <h5 class="mb-2">{{ estudiante.usuario.get_full_name }}</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p class="mb-1">
+                                            <strong>Documento:</strong> {{ estudiante.usuario.numero_documento }}
+                                        </p>
+                                        <p class="mb-1">
+                                            <strong>Estado:</strong> 
+                                            <span class="badge bg-{% if estudiante.estado %}success{% else %}danger{% endif %}">
+                                                {% if estudiante.estado %}Activo{% else %}Inactivo{% endif %}
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="mb-1">
+                                            <strong>Grado actual:</strong> 
+                                            {% if estudiante.matricula_actual %}
+                                                {{ estudiante.matricula_actual.grado_año_lectivo.grado.nombre }}
+                                            {% else %}
+                                                Sin matrícula
+                                            {% endif %}
+                                        </p>
+                                        <p class="mb-0">
+                                            <strong>Sede:</strong> 
+                                            {% if estudiante.matricula_actual %}
+                                                {{ estudiante.matricula_actual.sede.nombre }}
+                                            {% else %}
+                                                Sin sede
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pestañas para selección de acudiente -->
+                    <nav>
+                        <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                            <button class="nav-link active" id="nav-buscar-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#nav-buscar" type="button">
+                                <i class="bi bi-search me-1"></i>Buscar Acudiente Existente
+                            </button>
+                            <button class="nav-link" id="nav-crear-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#nav-crear" type="button">
+                                <i class="bi bi-person-plus me-1"></i>Crear Nuevo Acudiente
+                            </button>
+                        </div>
+                    </nav>
+
+                    <div class="tab-content" id="nav-tabContent">
+                        <!-- Pestaña 1: Buscar acudiente existente -->
+                        <div class="tab-pane fade show active" id="nav-buscar">
+                            <div class="mb-4">
+                                <p class="text-muted mb-3">
+                                    Busque un acudiente ya registrado en el sistema. Puede buscar por documento, nombre o email.
+                                </p>
+                                
+                                <!-- Formulario de búsqueda -->
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-4">
+                                        <label for="buscar-documento" class="form-label">Número de Documento</label>
+                                        <input type="text" id="buscar-documento" class="form-control" 
+                                               placeholder="Ingrese número de documento">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="buscar-nombre" class="form-label">Nombre</label>
+                                        <input type="text" id="buscar-nombre" class="form-control" 
+                                               placeholder="Ingrese nombre o apellido">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="buscar-email" class="form-label">Email</label>
+                                        <input type="email" id="buscar-email" class="form-control" 
+                                               placeholder="Ingrese email">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <button type="button" id="btn-buscar-acudiente" class="btn btn-primary">
+                                            <i class="bi bi-search me-1"></i>Buscar Acudientes
+                                        </button>
+                                        <button type="button" id="btn-limpiar-busqueda" class="btn btn-outline-secondary">
+                                            <i class="bi bi-x-circle me-1"></i>Limpiar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Resultados de búsqueda -->
+                                <div id="resultados-busqueda" class="d-none">
+                                    <h6 class="mb-3">
+                                        <i class="bi bi-list-check me-1"></i>Resultados de la búsqueda:
+                                        <span id="total-resultados" class="badge bg-info ms-2">0</span>
+                                    </h6>
+                                    <div id="lista-acudientes" class="list-group mb-4" style="max-height: 400px; overflow-y: auto;"></div>
+                                    
+                                    <!-- Información del acudiente seleccionado -->
+                                    <div id="info-acudiente-seleccionado" class="d-none">
+                                        <h6 class="mb-3">
+                                            <i class="bi bi-person-check me-1"></i>Acudiente Seleccionado
+                                        </h6>
+                                        <div class="card border-primary">
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-8">
+                                                        <h5 id="acudiente-nombre" class="mb-2"></h5>
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <p class="mb-1">
+                                                                    <strong>Documento:</strong> 
+                                                                    <span id="acudiente-documento"></span>
+                                                                </p>
+                                                                <p class="mb-1">
+                                                                    <strong>Email:</strong> 
+                                                                    <span id="acudiente-email"></span>
+                                                                </p>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <p class="mb-1">
+                                                                    <strong>Teléfono:</strong> 
+                                                                    <span id="acudiente-telefono"></span>
+                                                                </p>
+                                                                <p class="mb-1">
+                                                                    <strong>Dirección:</strong> 
+                                                                    <span id="acudiente-direccion"></span>
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div id="acudiente-estudiantes" class="mt-2"></div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="mb-3">
+                                                            <label for="parentesco" class="form-label required">
+                                                                <i class="bi bi-heart me-1"></i>Parentesco
+                                                            </label>
+                                                            <select id="parentesco" class="form-select" required>
+                                                                <option value="">Seleccione parentesco</option>
+                                                                <option value="Padre">Padre</option>
+                                                                <option value="Madre">Madre</option>
+                                                                <option value="Tutor Legal">Tutor Legal</option>
+                                                                <option value="Abuelo(a)">Abuelo(a)</option>
+                                                                <option value="Tío(a)">Tío(a)</option>
+                                                                <option value="Hermano(a)">Hermano(a)</option>
+                                                                <option value="Otro Familiar">Otro Familiar</option>
+                                                                <option value="Otro">Otro</option>
+                                                            </select>
+                                                        </div>
+                                                        <button type="button" id="btn-asignar-acudiente" class="btn btn-success w-100">
+                                                            <i class="bi bi-check-circle me-1"></i>Asignar como Acudiente
+                                                        </button>
+                                                        <button type="button" id="btn-cambiar-acudiente" class="btn btn-outline-secondary w-100 mt-2">
+                                                            <i class="bi bi-arrow-left me-1"></i>Cambiar Selección
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <input type="hidden" id="acudiente-id">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Mensaje cuando no hay resultados -->
+                                <div id="sin-resultados" class="text-center py-5 d-none">
+                                    <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+                                    <p class="mt-3">No se encontraron acudientes con los criterios de búsqueda</p>
+                                    <p class="text-muted small">Intente con otros términos o cree un nuevo acudiente</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pestaña 2: Crear nuevo acudiente -->
+                        <div class="tab-pane fade" id="nav-crear">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Complete el formulario para crear un nuevo acudiente. El sistema verificará automáticamente si el documento ya existe.
+                            </div>
+                            
+                            <!-- Verificación rápida de documento -->
+                            <div class="row mb-4">
+                                <div class="col-md-8">
+                                    <label for="verificar-documento" class="form-label">
+                                        <i class="bi bi-card-checklist me-1"></i>Verificar Documento
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" id="verificar-documento" class="form-control" 
+                                               placeholder="Ingrese número de documento para verificar">
+                                        <button type="button" id="btn-verificar-documento" class="btn btn-outline-primary">
+                                            <i class="bi bi-check-circle me-1"></i>Verificar
+                                        </button>
+                                    </div>
+                                    <div class="form-text">
+                                        Verifique si el documento ya está registrado como acudiente
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Resultado de verificación -->
+                            <div id="resultado-verificacion" class="d-none mb-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 id="verificacion-titulo" class="mb-2"></h6>
+                                        <p id="verificacion-mensaje" class="mb-0"></p>
+                                        <div id="verificacion-detalles" class="mt-2"></div>
+                                        <button type="button" id="btn-usar-existente" class="btn btn-sm btn-outline-primary mt-2 d-none">
+                                            <i class="bi bi-person-check me-1"></i>Usar este acudiente
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Formulario de creación -->
+                            <form method="post" novalidate id="form-crear-acudiente">
+                                {% csrf_token %}
+                                
+                                <!-- Información personal -->
+                                <div class="form-section">
+                                    <h5 class="section-title">
+                                        <i class="bi bi-person-circle me-2"></i>Información Personal
+                                    </h5>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ form.nombres.id_for_label }}" class="form-label required">
+                                                <i class="bi bi-person me-1"></i>Nombres
+                                            </label>
+                                            {% render_field form.nombres class="form-control" placeholder="Ingrese los nombres" id="id_nombres" %}
+                                            {% if form.nombres.errors %}
+                                            <div class="text-danger small">{{ form.nombres.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ form.apellidos.id_for_label }}" class="form-label required">
+                                                <i class="bi bi-person me-1"></i>Apellidos
+                                            </label>
+                                            {% render_field form.apellidos class="form-control" placeholder="Ingrese los apellidos" id="id_apellidos" %}
+                                            {% if form.apellidos.errors %}
+                                            <div class="text-danger small">{{ form.apellidos.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label for="{{ form.tipo_documento.id_for_label }}" class="form-label required">
+                                                <i class="bi bi-card-text me-1"></i>Tipo de Documento
+                                            </label>
+                                            {% render_field form.tipo_documento class="form-select" id="id_tipo_documento" %}
+                                            {% if form.tipo_documento.errors %}
+                                            <div class="text-danger small">{{ form.tipo_documento.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="{{ form.numero_documento.id_for_label }}" class="form-label required">
+                                                <i class="bi bi-123 me-1"></i>Número de Documento
+                                            </label>
+                                            {% render_field form.numero_documento class="form-control" placeholder="Ingrese número de documento" id="id_numero_documento" %}
+                                            {% if form.numero_documento.errors %}
+                                            <div class="text-danger small">{{ form.numero_documento.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                Este será el usuario para acceder al sistema
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="{{ form.parentesco.id_for_label }}" class="form-label required">
+                                                <i class="bi bi-heart me-1"></i>Parentesco
+                                            </label>
+                                            {% render_field form.parentesco class="form-control" placeholder="Ej: Padre, Madre, Tío, etc." id="id_parentesco" %}
+                                            {% if form.parentesco.errors %}
+                                            <div class="text-danger small">{{ form.parentesco.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Información de contacto -->
+                                <div class="form-section">
+                                    <h5 class="section-title">
+                                        <i class="bi bi-telephone me-2"></i>Información de Contacto
+                                    </h5>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                                <i class="bi bi-envelope me-1"></i>Email
+                                            </label>
+                                            {% render_field form.email class="form-control" type="email" placeholder="ejemplo@email.com" id="id_email" %}
+                                            {% if form.email.errors %}
+                                            <div class="text-danger small">{{ form.email.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                Para notificaciones y recuperación de contraseña
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ form.telefono.id_for_label }}" class="form-label">
+                                                <i class="bi bi-phone me-1"></i>Teléfono
+                                            </label>
+                                            {% render_field form.telefono class="form-control" placeholder="Ingrese número telefónico" id="id_telefono" %}
+                                            {% if form.telefono.errors %}
+                                            <div class="text-danger small">{{ form.telefono.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-12 mb-3">
+                                            <label for="{{ form.direccion.id_for_label }}" class="form-label">
+                                                <i class="bi bi-geo-alt me-1"></i>Dirección
+                                            </label>
+                                            {% render_field form.direccion class="form-control" rows="2" placeholder="Ingrese dirección completa" id="id_direccion" %}
+                                            {% if form.direccion.errors %}
+                                            <div class="text-danger small">{{ form.direccion.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Botones -->
+                                <div class="d-flex justify-content-between border-top pt-4 mt-4">
+                                    <div>
+                                        <a href="{% url 'rector:estudiante_detail' estudiante.pk %}" class="btn btn-outline-secondary">
+                                            <i class="bi bi-x-circle me-1"></i>Cancelar
+                                        </a>
+                                        <button type="button" class="btn btn-outline-primary" id="btn-volver-buscar">
+                                            <i class="bi bi-search me-1"></i>Buscar Existente
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-check-circle me-1"></i>Crear Acudiente
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" class="loading-overlay d-none">
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Procesando...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const estudianteId = {{ estudiante.id }};
+    let acudienteSeleccionado = null;
+    
+    // Elementos DOM
+    const buscarTab = document.getElementById('nav-buscar-tab');
+    const crearTab = document.getElementById('nav-crear-tab');
+    const resultadosDiv = document.getElementById('resultados-busqueda');
+    const sinResultadosDiv = document.getElementById('sin-resultados');
+    const listaAcudientes = document.getElementById('lista-acudientes');
+    const infoAcudienteDiv = document.getElementById('info-acudiente-seleccionado');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    
+    // Campos de búsqueda
+    const buscarDocumento = document.getElementById('buscar-documento');
+    const buscarNombre = document.getElementById('buscar-nombre');
+    const buscarEmail = document.getElementById('buscar-email');
+    const btnBuscar = document.getElementById('btn-buscar-acudiente');
+    const btnLimpiar = document.getElementById('btn-limpiar-busqueda');
+    
+    // Campos de creación
+    const verificarDocumento = document.getElementById('verificar-documento');
+    const btnVerificar = document.getElementById('btn-verificar-documento');
+    const resultadoVerificacion = document.getElementById('resultado-verificacion');
+    const formCrearAcudiente = document.getElementById('form-crear-acudiente');
+    const btnVolverBuscar = document.getElementById('btn-volver-buscar');
+    
+    // Campos del formulario
+    const campoNombres = document.getElementById('id_nombres');
+    const campoApellidos = document.getElementById('id_apellidos');
+    const campoTipoDocumento = document.getElementById('id_tipo_documento');
+    const campoNumeroDocumento = document.getElementById('id_numero_documento');
+    const campoParentesco = document.getElementById('id_parentesco');
+    const campoEmail = document.getElementById('id_email');
+    const campoTelefono = document.getElementById('id_telefono');
+    const campoDireccion = document.getElementById('id_direccion');
+    
+    // ================== FUNCIONES AUXILIARES ==================
+    
+    function mostrarLoading() {
+        loadingOverlay.classList.remove('d-none');
+    }
+    
+    function ocultarLoading() {
+        loadingOverlay.classList.add('d-none');
+    }
+    
+    function mostrarError(mensaje) {
+        alert('Error: ' + mensaje);
+    }
+    
+    // ================== BÚSQUEDA DE ACUDIENTES ==================
+    
+    function buscarAcudientes() {
+        const documento = buscarDocumento.value.trim();
+        const nombre = buscarNombre.value.trim();
+        const email = buscarEmail.value.trim();
+        
+        // Validar que haya al menos un criterio
+        if (!documento && !nombre && !email) {
+            alert('Ingrese al menos un criterio de búsqueda');
+            return;
+        }
+        
+        mostrarLoading();
+        
+        // Construir URL de búsqueda
+        let url = `/rector/ajax/buscar-acudientes/?estudiante_id=${estudianteId}`;
+        if (documento) url += `&documento=${encodeURIComponent(documento)}`;
+        if (nombre) url += `&nombre=${encodeURIComponent(nombre)}`;
+        if (email) url += `&email=${encodeURIComponent(email)}`;
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                ocultarLoading();
+                
+                if (data.success) {
+                    mostrarResultadosBusqueda(data.acudientes);
+                } else {
+                    mostrarError(data.error || 'Error en la búsqueda');
+                }
+            })
+            .catch(error => {
+                ocultarLoading();
+                mostrarError('Error de conexión: ' + error.message);
+            });
+    }
+    
+    function mostrarResultadosBusqueda(acudientes) {
+        listaAcudientes.innerHTML = '';
+        
+        if (acudientes.length === 0) {
+            resultadosDiv.classList.add('d-none');
+            sinResultadosDiv.classList.remove('d-none');
+            return;
+        }
+        
+        sinResultadosDiv.classList.add('d-none');
+        resultadosDiv.classList.remove('d-none');
+        document.getElementById('total-resultados').textContent = acudientes.length;
+        
+        acudientes.forEach(acudiente => {
+            const item = document.createElement('div');
+            item.className = 'list-group-item search-result-item';
+            item.dataset.id = acudiente.id;
+            
+            // Determinar clase si ya es acudiente de este estudiante
+            if (acudiente.estudiante_actual) {
+                item.classList.add('selected');
+            }
+            
+            item.innerHTML = `
+                <div class="d-flex w-100 justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">
+                            ${acudiente.nombre_completo}
+                            ${acudiente.estudiante_actual ? 
+                                '<span class="badge bg-success acudiente-badge ms-2">Ya asignado</span>' : ''}
+                        </h6>
+                        <p class="mb-1">
+                            <small class="text-muted">
+                                <i class="bi bi-card-text me-1"></i>${acudiente.tipo_documento}: ${acudiente.numero_documento}
+                            </small>
+                        </p>
+                        <p class="mb-1">
+                            <small>
+                                <i class="bi bi-envelope me-1"></i>${acudiente.email || 'Sin email'}
+                                <span class="mx-2">|</span>
+                                <i class="bi bi-phone me-1"></i>${acudiente.telefono || 'Sin teléfono'}
+                            </small>
+                        </p>
+                        <p class="mb-0">
+                            <small class="text-info">
+                                <i class="bi bi-people me-1"></i>${acudiente.total_estudiantes} estudiante(s) a cargo
+                            </small>
+                        </p>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-sm ${acudiente.estudiante_actual ? 'btn-outline-success' : 'btn-primary'}" 
+                                onclick="seleccionarAcudiente(${acudiente.id}, '${acudiente.nombre_completo.replace(/'/g, "\\'")}', '${acudiente.tipo_documento}', '${acudiente.numero_documento}', '${acudiente.email}', '${acudiente.telefono}', '${acudiente.direccion}')">
+                            ${acudiente.estudiante_actual ? 
+                                '<i class="bi bi-check-lg me-1"></i>Ya asignado' : 
+                                '<i class="bi bi-check-circle me-1"></i>Seleccionar'}
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            listaAcudientes.appendChild(item);
+        });
+    }
+    
+    // Función global para seleccionar acudiente
+    window.seleccionarAcudiente = function(id, nombre, tipoDoc, documento, email, telefono, direccion) {
+        acudienteSeleccionado = {
+            id: id,
+            nombre: nombre,
+            tipoDocumento: tipoDoc,
+            documento: documento,
+            email: email || 'No registrado',
+            telefono: telefono || 'No registrado',
+            direccion: direccion || 'No registrada'
+        };
+        
+        // Actualizar interfaz
+        document.getElementById('acudiente-nombre').textContent = nombre;
+        document.getElementById('acudiente-documento').textContent = `${tipoDoc}: ${documento}`;
+        document.getElementById('acudiente-email').textContent = email || 'No registrado';
+        document.getElementById('acudiente-telefono').textContent = telefono || 'No registrado';
+        document.getElementById('acudiente-direccion').textContent = direccion || 'No registrada';
+        document.getElementById('acudiente-id').value = id;
+        
+        // Ocultar lista y mostrar formulario de asignación
+        listaAcudientes.parentElement.classList.add('d-none');
+        infoAcudienteDiv.classList.remove('d-none');
+        
+        // Cargar estudiantes asociados
+        cargarEstudiantesAcudiente(id);
+    };
+    
+    function cargarEstudiantesAcudiente(acudienteId) {
+        // Esta función podría cargar los estudiantes que ya tiene a cargo
+        // Por simplicidad, por ahora solo mostramos un mensaje
+        const divEstudiantes = document.getElementById('acudiente-estudiantes');
+        divEstudiantes.innerHTML = `
+            <div class="alert alert-light">
+                <i class="bi bi-info-circle me-1"></i>
+                Al asignar este acudiente, podrá acceder al sistema para ver la información del estudiante.
+            </div>
+        `;
+    }
+    
+    // Asignar acudiente seleccionado
+    document.getElementById('btn-asignar-acudiente').addEventListener('click', function() {
+        const parentesco = document.getElementById('parentesco').value;
+        
+        if (!parentesco) {
+            alert('Por favor seleccione el parentesco');
+            return;
+        }
+        
+        if (!acudienteSeleccionado) {
+            alert('No hay acudiente seleccionado');
+            return;
+        }
+        
+        mostrarLoading();
+        
+        // Enviar datos al servidor
+        const formData = new FormData();
+        formData.append('estudiante_id', estudianteId);
+        formData.append('acudiente_id', acudienteSeleccionado.id);
+        formData.append('parentesco', parentesco);
+        
+        fetch('/rector/ajax/crear-relacion-acudiente/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            ocultarLoading();
+            
+            if (data.success) {
+                alert('Acudiente asignado exitosamente');
+                // Redirigir a la página del estudiante
+                window.location.href = `/rector/estudiantes/${estudianteId}/`;
+            } else {
+                mostrarError(data.error);
+            }
+        })
+        .catch(error => {
+            ocultarLoading();
+            mostrarError('Error de conexión: ' + error.message);
+        });
+    });
+    
+    // Cambiar selección
+    document.getElementById('btn-cambiar-acudiente').addEventListener('click', function() {
+        infoAcudienteDiv.classList.add('d-none');
+        listaAcudientes.parentElement.classList.remove('d-none');
+        acudienteSeleccionado = null;
+    });
+    
+    // ================== VERIFICACIÓN DE DOCUMENTO ==================
+    
+    function verificarDocumentoExistente() {
+        const documento = verificarDocumento.value.trim();
+        
+        if (!documento) {
+            alert('Ingrese un número de documento');
+            return;
+        }
+        
+        mostrarLoading();
+        
+        fetch(`/rector/ajax/verificar-documento-acudiente/?numero_documento=${encodeURIComponent(documento)}&estudiante_id=${estudianteId}`)
+            .then(response => response.json())
+            .then(data => {
+                ocultarLoading();
+                mostrarResultadoVerificacion(data);
+            })
+            .catch(error => {
+                ocultarLoading();
+                mostrarError('Error de conexión: ' + error.message);
+            });
+    }
+    
+    function mostrarResultadoVerificacion(data) {
+        resultadoVerificacion.classList.remove('d-none');
+        
+        if (data.error) {
+            document.getElementById('verificacion-titulo').textContent = 'Error';
+            document.getElementById('verificacion-mensaje').textContent = data.error;
+            document.getElementById('verificacion-detalles').innerHTML = '';
+            document.getElementById('btn-usar-existente').classList.add('d-none');
+            return;
+        }
+        
+        if (data.existe) {
+            const usuario = data.usuario;
+            const titulo = data.es_acudiente_actual ? 
+                'Documento ya registrado (Ya es acudiente)' : 
+                'Documento ya registrado';
+            
+            document.getElementById('verificacion-titulo').textContent = titulo;
+            document.getElementById('verificacion-mensaje').innerHTML = `
+                <strong>${usuario.nombre_completo}</strong><br>
+                <small class="text-muted">${usuario.tipo_documento}: ${usuario.numero_documento}</small>
+            `;
+            
+            // Mostrar detalles
+            let detallesHtml = '<div class="mt-2">';
+            
+            if (usuario.email) {
+                detallesHtml += `<p class="mb-1"><small><i class="bi bi-envelope me-1"></i>${usuario.email}</small></p>`;
+            }
+            
+            if (usuario.telefono) {
+                detallesHtml += `<p class="mb-1"><small><i class="bi bi-phone me-1"></i>${usuario.telefono}</small></p>`;
+            }
+            
+            if (data.estudiantes_asociados && data.estudiantes_asociados.length > 0) {
+                detallesHtml += '<p class="mb-1"><small><strong>Estudiantes a cargo:</strong></small></p>';
+                detallesHtml += '<ul class="small">';
+                data.estudiantes_asociados.forEach(est => {
+                    detallesHtml += `<li>${est.nombre} (${est.parentesco}) - Doc: ${est.documento}</li>`;
+                });
+                detallesHtml += '</ul>';
+            }
+            
+            detallesHtml += '</div>';
+            document.getElementById('verificacion-detalles').innerHTML = detallesHtml;
+            
+            // Mostrar botón para usar existente si no es ya acudiente
+            if (!data.es_acudiente_actual) {
+                const btnUsar = document.getElementById('btn-usar-existente');
+                btnUsar.classList.remove('d-none');
+                btnUsar.onclick = function() {
+                    // Cambiar a pestaña de búsqueda y seleccionar este acudiente
+                    buscarTab.click();
+                    
+                    // Rellenar campos de búsqueda
+                    buscarDocumento.value = usuario.numero_documento;
+                    
+                    // Ejecutar búsqueda
+                    setTimeout(() => {
+                        buscarAcudientes();
+                        
+                        // Seleccionar automáticamente después de un momento
+                        setTimeout(() => {
+                            // Buscar el botón de selección y hacer clic
+                            const botonSeleccion = document.querySelector(`button[onclick*="${usuario.id}"]`);
+                            if (botonSeleccion) {
+                                botonSeleccion.click();
+                            }
+                        }, 500);
+                    }, 300);
+                };
+            } else {
+                document.getElementById('btn-usar-existente').classList.add('d-none');
+            }
+            
+        } else {
+            document.getElementById('verificacion-titulo').textContent = 'Documento disponible';
+            document.getElementById('verificacion-mensaje').textContent = 'El documento no está registrado como acudiente. Puede crear uno nuevo.';
+            document.getElementById('verificacion-detalles').innerHTML = '';
+            document.getElementById('btn-usar-existente').classList.add('d-none');
+            
+            // Autocompletar el campo de documento en el formulario
+            campoNumeroDocumento.value = verificarDocumento.value;
+        }
+    }
+    
+    // ================== EVENT LISTENERS ==================
+    
+    // Búsqueda
+    btnBuscar.addEventListener('click', buscarAcudientes);
+    
+    btnLimpiar.addEventListener('click', function() {
+        buscarDocumento.value = '';
+        buscarNombre.value = '';
+        buscarEmail.value = '';
+        resultadosDiv.classList.add('d-none');
+        sinResultadosDiv.classList.add('d-none');
+    });
+    
+    // Verificación
+    btnVerificar.addEventListener('click', verificarDocumentoExistente);
+    
+    verificarDocumento.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            verificarDocumentoExistente();
+        }
+    });
+    
+    // Navegación entre pestañas
+    btnVolverBuscar.addEventListener('click', function() {
+        buscarTab.click();
+    });
+    
+    // Validación del formulario de creación
+    formCrearAcudiente.addEventListener('submit', function(e) {
+        const camposRequeridos = [
+            campoNombres,
+            campoApellidos,
+            campoTipoDocumento,
+            campoNumeroDocumento,
+            campoParentesco
+        ];
+        
+        let valido = true;
+        camposRequeridos.forEach(campo => {
+            if (!campo.value.trim()) {
+                campo.classList.add('is-invalid');
+                valido = false;
+            } else {
+                campo.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!valido) {
+            e.preventDefault();
+            alert('Por favor complete todos los campos obligatorios (*)');
+        }
+    });
+    
+    // Auto-verificar cuando se escribe en el campo de documento
+    campoNumeroDocumento.addEventListener('blur', function() {
+        if (this.value.trim()) {
+            verificarDocumento.value = this.value;
+            verificarDocumentoExistente();
+        }
+    });
+    
+    // Prevenir envío del formulario con Enter en campos de búsqueda
+    [buscarDocumento, buscarNombre, buscarEmail].forEach(campo => {
+        campo.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                buscarAcudientes();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

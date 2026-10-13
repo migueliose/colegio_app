@@ -1,0 +1,260 @@
+<!-- rector/institucional/sede_confirm_delete.html -->
+{% extends 'rector/base_rector.html' %}
+
+{% block title %}Confirmar Desactivación de Sede{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:institucional_dashboard' %}">Institucional</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:sedes' %}">Sedes</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:sede_detail' sede.pk %}">{{ sede.nombre }}</a></li>
+        <li class="breadcrumb-item active">Desactivar Sede</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Confirmar Desactivación de Sede
+                        </h4>
+                        <span class="badge bg-light text-danger">
+                            <i class="fas fa-building me-1"></i>
+                            {{ sede.nombre }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Alerta principal -->
+                    <div class="alert alert-warning border-warning">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle fa-2x text-warning"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h5 class="alert-heading">¡Atención! Esta acción es irreversible</h5>
+                                <p class="mb-0">
+                                    La sede <strong>"{{ sede.nombre }}"</strong> será desactivada del sistema.
+                                    Esta acción <strong>NO ELIMINA</strong> los datos, solo los marca como inactivos.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información resumida de la sede -->
+                    <div class="card border-info mb-4">
+                        <div class="card-header bg-info bg-opacity-10">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información de la Sede</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <th class="w-40">Nombre:</th>
+                                            <td>{{ sede.nombre }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Colegio:</th>
+                                            <td>{{ sede.colegio.nombre }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Dirección:</th>
+                                            <td>{{ sede.direccion }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <th class="w-40">Estado actual:</th>
+                                            <td>
+                                                {% if sede.estado %}
+                                                <span class="badge bg-success">Activa</span>
+                                                {% else %}
+                                                <span class="badge bg-danger">Inactiva</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Director:</th>
+                                            <td>
+                                                {% if sede.director %}
+                                                {{ sede.director.get_full_name }}
+                                                {% else %}
+                                                <span class="text-muted">No asignado</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Teléfono:</th>
+                                            <td>{{ sede.telefono|default:"No especificado" }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dependencias detectadas -->
+                    {% if dependencias_lista %}
+                    <div class="alert alert-danger">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-ban fa-2x text-danger"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h5 class="alert-heading mb-3">No se puede desactivar esta sede</h5>
+                                <p>La sede tiene las siguientes dependencias activas que deben ser resueltas:</p>
+                                <ul class="mb-3">
+                                    {% for dependencia in dependencias_lista %}
+                                    <li>{{ dependencia }}</li>
+                                    {% endfor %}
+                                </ul>
+                                
+                                <!-- Acciones recomendadas -->
+                                <div class="mt-4">
+                                    <h6 class="border-bottom pb-2">Acciones requeridas:</h6>
+                                    <ol>
+                                        {% if tiene_años_lectivos_activos %}
+                                        <li class="mb-2">
+                                            <strong>Desactivar años lectivos activos:</strong>
+                                            <div class="mt-1">
+                                                {% if años_lectivos_activos_list %}
+                                                <span class="badge bg-danger me-1">
+                                                    Años: {{ años_lectivos_activos_list|join:", " }}
+                                                </span>
+                                                {% endif %}
+                                                <a href="{% url 'rector:año_lectivo_list' %}" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-calendar-times me-1"></i>Ir a Años Lectivos
+                                                </a>
+                                            </div>
+                                        </li>
+                                        {% endif %}
+                                        
+                                        {% if tiene_matriculas_activas %}
+                                        <li class="mb-2">
+                                            <strong>Cambiar estado de matrículas activas:</strong>
+                                            <div class="mt-1">
+                                                <span class="badge bg-warning me-1">
+                                                    {{ matriculas_activas_count }} matrículas
+                                                </span>
+                                            </div>
+                                        </li>
+                                        {% endif %}
+                                        
+                                        {% if tiene_periodos_activos %}
+                                        <li class="mb-2">
+                                            <strong>Desactivar periodos académicos activos:</strong>
+                                            <div class="mt-1">
+                                                <span class="badge bg-info me-1">
+                                                    {{ periodos_activos_count }} periodos
+                                                </span>
+                                                <a href="{% url 'rector:periodo_list' %}" class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-calendar-alt me-1"></i>Ir a Periodos
+                                                </a>
+                                            </div>
+                                        </li>
+                                        {% endif %}
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Botones de acción -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <div>
+                            <a href="{% url 'rector:sede_detail' sede.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Volver al Detalle
+                            </a>
+                            <a href="{% url 'rector:sedes' %}" class="btn btn-outline-secondary ms-2">
+                                <i class="fas fa-list me-1"></i> Ver Todas las Sedes
+                            </a>
+                        </div>
+                        
+                        <!-- Solo mostrar botón de confirmación si se puede desactivar -->
+                        {% if puede_desactivar %}
+                        <div>
+                            <form method="post" id="desactivarForm">
+                                {% csrf_token %}
+                                <button type="button" class="btn btn-danger" 
+                                        data-bs-toggle="modal" data-bs-target="#confirmModal">
+                                    <i class="fas fa-toggle-off me-1"></i> Confirmar Desactivación
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación final (solo si se puede desactivar) -->
+{% if puede_desactivar %}
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirmación Final
+                </h5>
+                <button type="button" class="btn-close btn-close-white" 
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está completamente seguro de desactivar la sede <strong>"{{ sede.nombre }}"</strong>?</p>
+                <div class="alert alert-danger mt-3">
+                    <i class="fas fa-radiation-alt me-2"></i>
+                    <strong>Consecuencias:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>La sede no aparecerá en listas activas</li>
+                        <li>No se podrán crear nuevos años lectivos en esta sede</li>
+                        <li>Todos los años lectivos asociados serán desactivados</li>
+                    </ul>
+                </div>
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="confirmCheck">
+                    <label class="form-check-label" for="confirmCheck">
+                        Entiendo las consecuencias y deseo proceder
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" 
+                        data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" 
+                        id="finalConfirmBtn" disabled
+                        onclick="document.getElementById('desactivarForm').submit();">
+                    <i class="fas fa-check me-1"></i> Desactivar Sede
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para habilitar el botón de confirmación -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmCheck = document.getElementById('confirmCheck');
+        const finalConfirmBtn = document.getElementById('finalConfirmBtn');
+        
+        confirmCheck.addEventListener('change', function() {
+            finalConfirmBtn.disabled = !this.checked;
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

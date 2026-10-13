@@ -1,0 +1,459 @@
+<!-- rector/templates/rector/academico/docente_informacion_personal_form.html -->
+{% extends 'rector/base_rector2.html' %}
+
+{% block title %}{{ titulo }} - Rector{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:docente_list' %}">Docentes</a></li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'rector:docente_detail' docente.pk %}">{{ docente.usuario.get_full_name }}</a>
+        </li>
+        <li class="breadcrumb-item active">Editar Información Personal</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-lines-fill text-primary me-2"></i>
+                    {{ titulo }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" id="formInformacionPersonal">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <!-- Información básica -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.nombres.id_for_label }}" class="form-label">
+                                Nombres <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nombres }}
+                            {% if form.nombres.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.nombres.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.apellidos.id_for_label }}" class="form-label">
+                                Apellidos <span class="text-danger">*</span>
+                            </label>
+                            {{ form.apellidos }}
+                            {% if form.apellidos.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.apellidos.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Contacto -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                Email <span class="text-danger">*</span>
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.email.errors }}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Correo electrónico institucional</small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.telefono.id_for_label }}" class="form-label">
+                                Teléfono
+                            </label>
+                            {{ form.telefono }}
+                            {% if form.telefono.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.telefono.errors }}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Número de contacto personal</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Dirección -->
+                    <div class="mb-3">
+                        <label for="{{ form.direccion.id_for_label }}" class="form-label">
+                            Dirección
+                        </label>
+                        {{ form.direccion }}
+                        {% if form.direccion.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.direccion.errors }}
+                        </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Dirección de residencia completa</small>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Fecha de nacimiento -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">
+                                Fecha de Nacimiento
+                            </label>
+                            {{ form.fecha_nacimiento }}
+                            {% if form.fecha_nacimiento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.fecha_nacimiento.errors }}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                {% if docente.usuario.edad %}
+                                Edad actual: {{ docente.usuario.edad }} años
+                                {% endif %}
+                            </small>
+                        </div>
+                        
+                        <!-- Género -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.sexo.id_for_label }}" class="form-label">
+                                Género
+                            </label>
+                            {{ form.sexo }}
+                            {% if form.sexo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.sexo.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Información adicional -->
+                    <div class="alert alert-info mt-4">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Información adicional del docente:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Tipo de documento: {{ docente.usuario.tipo_documento.nombre }}</li>
+                            <li>Número de documento: {{ docente.usuario.numero_documento }}</li>
+                            <li>Nombre de usuario: {{ docente.usuario.username }}</li>
+                            <li>Tipo de usuario: {{ docente.usuario.tipo_usuario.nombre }}</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Cambios realizados -->
+                    <div class="mt-4" id="cambiosRealizados" style="display: none;">
+                        <h6 class="text-success">
+                            <i class="bi bi-check-circle me-2"></i>Cambios realizados
+                        </h6>
+                        <div class="border rounded p-3 bg-light">
+                            <ul class="mb-0" id="listaCambios">
+                                <!-- Los cambios se agregarán aquí dinámicamente -->
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-top">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'rector:docente_detail' docente.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                            </a>
+                            <div>
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="restablecerFormulario()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Restablecer
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i>Guardar Cambios
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Información del docente -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-person-vcard me-2"></i>
+                    Resumen del Docente
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th width="40%">Nombre completo:</th>
+                                    <td>{{ docente.usuario.get_full_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Documento:</th>
+                                    <td>{{ docente.usuario.tipo_documento.nombre }} {{ docente.usuario.numero_documento }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Estado:</th>
+                                    <td>
+                                        {% if docente.estado %}
+                                        <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th width="40%">Asignaturas:</th>
+                                    <td>
+                                        <span class="badge bg-primary">
+                                            {{ docente.asignaturas_dictadas.count }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Sedes asignadas:</th>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ docente.sedes_asignadas.count }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Registrado desde:</th>
+                                    <td>{{ docente.created_at|date:"d/m/Y" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación -->
+<div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar cambios</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de guardar los cambios en la información personal del docente?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Esta acción actualizará permanentemente la información del docente.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="enviarFormulario()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-control:focus, .form-select:focus {
+        border-color: #4e54c8;
+        box-shadow: 0 0 0 0.25rem rgba(78, 84, 200, 0.25);
+    }
+    .card-header {
+        background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Configurar campos de fecha
+        const fechaInput = document.getElementById('{{ form.fecha_nacimiento.id_for_label }}');
+        if (fechaInput) {
+            fechaInput.type = 'date';
+            
+            // Si hay fecha actual, formatearla para el input
+            if (fechaInput.value) {
+                const fecha = new Date(fechaInput.value);
+                const fechaFormateada = fecha.toISOString().split('T')[0];
+                fechaInput.value = fechaFormateada;
+            }
+        }
+        
+        // Detectar cambios en el formulario
+        const form = document.getElementById('formInformacionPersonal');
+        const campos = form.querySelectorAll('input, select, textarea');
+        const cambiosDiv = document.getElementById('cambiosRealizados');
+        const listaCambios = document.getElementById('listaCambios');
+        const valoresOriginales = {};
+        
+        // Guardar valores originales
+        campos.forEach(campo => {
+            valoresOriginales[campo.name] = campo.value;
+        });
+        
+        // Función para verificar cambios
+        function verificarCambios() {
+            let hayCambios = false;
+            listaCambios.innerHTML = '';
+            
+            campos.forEach(campo => {
+                if (campo.name && campo.value !== valoresOriginales[campo.name]) {
+                    hayCambios = true;
+                    
+                    // Agregar a la lista de cambios
+                    const label = form.querySelector(`label[for="${campo.id}"]`);
+                    const nombreCampo = label ? label.textContent.trim().replace('*', '') : campo.name;
+                    
+                    let cambioHtml = `<li><strong>${nombreCampo}:</strong> `;
+                    
+                    if (campo.type === 'date') {
+                        const fechaOriginal = valoresOriginales[campo.name] ? 
+                            new Date(valoresOriginales[campo.name]).toLocaleDateString('es-ES') : 'Vacío';
+                        const fechaNueva = campo.value ? 
+                            new Date(campo.value).toLocaleDateString('es-ES') : 'Vacío';
+                        cambioHtml += `De "${fechaOriginal}" a "${fechaNueva}"`;
+                    } else {
+                        cambioHtml += `De "${valoresOriginales[campo.name] || 'Vacío'}" a "${campo.value || 'Vacío'}"`;
+                    }
+                    
+                    cambioHtml += `</li>`;
+                    listaCambios.innerHTML += cambioHtml;
+                }
+            });
+            
+            // Mostrar u ocultar la sección de cambios
+            if (hayCambios) {
+                cambiosDiv.style.display = 'block';
+            } else {
+                cambiosDiv.style.display = 'none';
+            }
+            
+            return hayCambios;
+        }
+        
+        // Verificar cambios en tiempo real
+        campos.forEach(campo => {
+            campo.addEventListener('change', verificarCambios);
+            campo.addEventListener('input', verificarCambios);
+        });
+        
+        // Verificar cambios iniciales
+        verificarCambios();
+        
+        // Interceptar envío del formulario
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            if (verificarCambios()) {
+                const modal = new bootstrap.Modal(document.getElementById('modalConfirmacion'));
+                modal.show();
+            } else {
+                alert('No se han realizado cambios en el formulario.');
+            }
+        });
+    });
+    
+    // Función para enviar el formulario
+    function enviarFormulario() {
+        document.getElementById('formInformacionPersonal').submit();
+    }
+    
+    // Función para restablecer el formulario
+    function restablecerFormulario() {
+        if (confirm('¿Está seguro de restablecer todos los cambios?')) {
+            const form = document.getElementById('formInformacionPersonal');
+            const campos = form.querySelectorAll('input, select, textarea');
+            
+            // Restaurar valores originales
+            campos.forEach(campo => {
+                if (campo.name && valoresOriginales[campo.name] !== undefined) {
+                    campo.value = valoresOriginales[campo.name];
+                }
+            });
+            
+            // Actualizar la lista de cambios
+            document.getElementById('cambiosRealizados').style.display = 'none';
+            document.getElementById('listaCambios').innerHTML = '';
+            
+            // Restaurar fecha formateada
+            const fechaInput = document.getElementById('{{ form.fecha_nacimiento.id_for_label }}');
+            if (fechaInput && valoresOriginales[fechaInput.name]) {
+                const fecha = new Date(valoresOriginales[fechaInput.name]);
+                const fechaFormateada = fecha.toISOString().split('T')[0];
+                fechaInput.value = fechaFormateada;
+            }
+        }
+    }
+    
+    // Validaciones adicionales
+    function validarFormulario() {
+        let valido = true;
+        const errores = [];
+        
+        // Validar email
+        const email = document.getElementById('{{ form.email.id_for_label }}').value;
+        if (email && !email.includes('@')) {
+            errores.push('El email debe ser válido');
+            valido = false;
+        }
+        
+        // Validar fecha (no puede ser futura)
+        const fechaNacimiento = document.getElementById('{{ form.fecha_nacimiento.id_for_label }}').value;
+        if (fechaNacimiento) {
+            const fecha = new Date(fechaNacimiento);
+            const hoy = new Date();
+            if (fecha > hoy) {
+                errores.push('La fecha de nacimiento no puede ser futura');
+                valido = false;
+            }
+            
+            // Validar edad mínima (18 años)
+            const edad = hoy.getFullYear() - fecha.getFullYear();
+            const mes = hoy.getMonth() - fecha.getMonth();
+            if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) {
+                edad--;
+            }
+            
+            if (edad < 18) {
+                errores.push('El docente debe tener al menos 18 años');
+                valido = false;
+            }
+        }
+        
+        // Mostrar errores si los hay
+        if (errores.length > 0) {
+            let mensajeError = 'Por favor corrija los siguientes errores:\n\n';
+            errores.forEach(error => {
+                mensajeError += `• ${error}\n`;
+            });
+            alert(mensajeError);
+        }
+        
+        return valido;
+    }
+    
+    // Agregar validación antes de mostrar el modal
+    document.getElementById('formInformacionPersonal').addEventListener('submit', function(event) {
+        if (!validarFormulario()) {
+            event.preventDefault();
+            return false;
+        }
+    });
+</script>
+{% endblock %}

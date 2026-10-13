@@ -1,0 +1,381 @@
+{% extends 'rector/base_rector.html' %}
+{% load static %}
+
+{% block title %}Horarios de Clase - Rector{% endblock %}
+
+{% block extra_css %}
+<style>
+    .horario-card {
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 10px;
+    }
+    .horario-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    .horario-header {
+        border-left: 4px solid;
+        padding-left: 1rem;
+    }
+    .dia-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+        text-transform: uppercase;
+    }
+    .hora-display {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        color: #4e54c8;
+    }
+    .filter-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .stats-card {
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    .empty-state {
+        padding: 4rem 2rem;
+        text-align: center;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+    .action-buttons .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    .horario-info {
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'gestioncolegio:dashboard_rector' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'rector:academico_dashboard' %}">Académico</a></li>
+        <li class="breadcrumb-item active">Horarios</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-calendar-week me-2"></i>Horarios de Clase
+                </h1>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'rector:horario_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Nuevo Horario
+                    </a>
+                    <a href="{% url 'rector:horario_por_grado' %}" class="btn btn-success">
+                        <i class="bi bi-table me-1"></i>Ver por Grado
+                    </a>
+                </div>
+            </div>
+            <p class="text-muted">Gestiona los horarios de clases por asignatura, grado y sede.</p>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-section">
+        <form method="get" class="row g-3">
+            <!-- Grado -->
+            <div class="col-md-3">
+                <label class="form-label">Grado</label>
+                <select name="grado" class="form-select">
+                    <option value="todos">Todos los grados</option>
+                    {% for grado in grados %}
+                    <option value="{{ grado.id }}" {% if filter_grado == grado.id|stringformat:"i" %}selected{% endif %}>
+                        {{ grado.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Asignatura -->
+            <div class="col-md-3">
+                <label class="form-label">Asignatura</label>
+                <select name="asignatura" class="form-select">
+                    <option value="todos">Todas las asignaturas</option>
+                    {% for asignatura in asignaturas %}
+                    <option value="{{ asignatura.id }}" {% if filter_asignatura == asignatura.id|stringformat:"i" %}selected{% endif %}>
+                        {{ asignatura.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Día -->
+            <div class="col-md-2">
+                <label class="form-label">Día</label>
+                <select name="dia" class="form-select">
+                    <option value="todos">Todos los días</option>
+                    {% for dia in dias_semana %}
+                    <option value="{{ dia.0 }}" {% if filter_dia == dia.0 %}selected{% endif %}>
+                        {{ dia.1 }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Sede -->
+            <div class="col-md-2">
+                <label class="form-label">Sede</label>
+                <select name="sede" class="form-select">
+                    <option value="todos">Todas las sedes</option>
+                    {% for sede in sedes %}
+                    <option value="{{ sede.id }}" {% if filter_sede == sede.id|stringformat:"i" %}selected{% endif %}>
+                        {{ sede.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Botones -->
+            <div class="col-md-2 d-flex align-items-end">
+                <div class="d-flex gap-2 w-100">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-funnel me-1"></i>Filtrar
+                    </button>
+                    <a href="{% url 'rector:horario_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Filtro adicional por año -->
+        <div class="row mt-3">
+            <div class="col-md-3">
+                <label class="form-label">Año Lectivo</label>
+                <select name="año" class="form-select" onchange="this.form.submit()">
+                    <option value="todos">Todos los años</option>
+                    {% for año in años_lectivos %}
+                    <option value="{{ año.id }}" {% if filter_año == año.id|stringformat:"i" %}selected{% endif %}>
+                        {{ año.anho }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card border-primary">
+                <h4 class="text-primary mb-2">{{ total_horarios }}</h4>
+                <p class="text-muted mb-0">Total Horarios</p>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3">
+                        <i class="bi bi-calendar-week me-2"></i>Horarios por Día
+                    </h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for item in horarios_por_dia %}
+                        <span class="badge bg-info">
+                            {% for dia in dias_semana %}
+                                {% if dia.0 == item.dia_semana %}
+                                    {{ dia.1 }}: {{ item.total }}
+                                {% endif %}
+                            {% endfor %}
+                        </span>
+                        {% empty %}
+                        <span class="text-muted">No hay datos disponibles</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de horarios -->
+    {% if horarios %}
+    <div class="row">
+        {% for horario in horarios %}
+        <div class="col-lg-6 mb-4">
+            <div class="card horario-card h-100">
+                <div class="card-body">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="card-title mb-1">
+                                {% for dia in dias_semana %}
+                                    {% if dia.0 == horario.dia_semana %}
+                                        <span class="dia-badge bg-primary">{{ dia.1 }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </h5>
+                            <div class="d-flex gap-2 mb-2">
+                                <span class="badge bg-secondary">{{ horario.asignatura_grado.asignatura.nombre }}</span>
+                                <span class="badge bg-info">{{ horario.asignatura_grado.grado_año_lectivo.grado.nombre }}</span>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'rector:horario_detail' horario.pk %}" 
+                                   class="btn btn-outline-info" title="Ver detalle">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'rector:horario_edit' horario.pk %}" 
+                                   class="btn btn-outline-warning" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'rector:horario_delete' horario.pk %}" 
+                                   class="btn btn-outline-danger" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información del horario -->
+                    <div class="horario-info mb-3">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="mb-2">
+                                    <strong class="d-block text-muted mb-1">Horario</strong>
+                                    <span class="hora-display">
+                                        {{ horario.hora_inicio|time:"H:i" }} - {{ horario.hora_fin|time:"H:i" }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-2">
+                                    <strong class="d-block text-muted mb-1">Salón</strong>
+                                    <span>{{ horario.salon|default:"Por asignar" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="mb-2">
+                                    <strong class="d-block text-muted mb-1">Sede</strong>
+                                    <span>{{ horario.asignatura_grado.sede.nombre }}</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-2">
+                                    <strong class="d-block text-muted mb-1">Docente</strong>
+                                    <span>
+                                        {% if horario.asignatura_grado.docente %}
+                                            {{ horario.asignatura_grado.docente.usuario.get_full_name }}
+                                        {% else %}
+                                            <span class="text-muted">Por asignar</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información adicional -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar-week me-1"></i>
+                            {{ horario.asignatura_grado.grado_año_lectivo.año_lectivo.anho }}
+                        </small>
+                        <small class="text-muted">
+                            <i class="bi bi-clock-history me-1"></i>
+                            {{ horario.created_at|date:"d/m/Y" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Paginación -->
+    {% if horarios.paginator.num_pages > 1 %}
+    <nav aria-label="Paginación" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if horarios.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    <i class="bi bi-chevron-double-left"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ horarios.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in horarios.paginator.page_range %}
+                {% if horarios.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > horarios.number|add:'-3' and num < horarios.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if horarios.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ horarios.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ horarios.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    <i class="bi bi-chevron-double-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <!-- Estado vacío -->
+    <div class="empty-state">
+        <i class="bi bi-calendar-x text-muted mb-4" style="font-size: 4rem;"></i>
+        <h4 class="text-muted mb-3">No se encontraron horarios</h4>
+        <p class="text-muted mb-4">
+            {% if filter_grado != 'todos' or filter_asignatura != 'todos' or filter_dia != 'todos' or filter_sede != 'todos' %}
+                Intenta con otros criterios de búsqueda.
+            {% else %}
+                No hay horarios registrados en el sistema.
+            {% endif %}
+        </p>
+        <a href="{% url 'rector:horario_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Crear Primer Horario
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}
