@@ -71,6 +71,16 @@
                     </div>
                 </a>
             </li>
+
+            <li>
+                <a class="dropdown-item d-flex align-items-center" href="{% url 'estudiantes:estudiante_constancia_conducta_pdf' %}" target="_blank">
+                    <i class="fas fa-award text-success me-2"></i>
+                    <div>
+                        <div>Constancia de Conducta</div>
+                        <small class="text-muted">Año actual</small>
+                    </div>
+                </a>
+            </li>
             
             <!-- Link condicional para reporte de notas - SOLUCIÓN -->
             {% if periodo_actual and periodo_actual.id %}

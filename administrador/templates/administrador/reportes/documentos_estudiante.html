@@ -93,6 +93,33 @@
                             </div>
                         </div>
 
+                        <!-- Constancia de Conducta -->
+                        <div class="col-md-4">
+                            <div class="card h-100 border">
+                                <div class="card-body text-center">
+                                    <div class="text-success mb-3">
+                                        <i class="fas fa-award fa-3x"></i>
+                                    </div>
+                                    <h5 class="card-title">Constancia de Conducta</h5>
+                                    <p class="card-text small text-muted mb-3">
+                                        Excelente o buena conducta según el observador
+                                    </p>
+                                    <div class="d-grid">
+                                        <a href="{% url 'estudiantes:estudiante_constancia_conducta_año_admin' estudiante.id año_lectivo_actual.id %}" 
+                                           class="btn btn-success"
+                                           target="_blank">
+                                            <i class="fas fa-download me-1"></i> Descargar PDF
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-light py-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i> {{ año_lectivo_actual.anho }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Observador del Estudiante -->
                         <div class="col-md-4">
                             <div class="card h-100 border">
@@ -258,6 +285,40 @@
                                                 </small>
                                             </div>
 
+                                        </div>
+                                    </div>
+
+                                    <!-- Constancia de Conducta -->
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-start mb-3">
+                                                    <div class="flex-shrink-0">
+                                                        <div class="bg-success bg-opacity-10 p-2 rounded">
+                                                            <i class="fas fa-award text-success fa-2x"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1 ms-3">
+                                                        <h6 class="card-title mb-1">Constancia de Conducta</h6>
+                                                        <p class="card-text small text-muted mb-2">
+                                                            Conducta del año {{ año_lectivo.anho }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div class="d-grid">
+                                                    <a href="{% url 'estudiantes:estudiante_constancia_conducta_año_admin' estudiante.id año_lectivo.id %}" 
+                                                       class="btn btn-success btn-sm"
+                                                       target="_blank">
+                                                        <i class="fas fa-download me-1"></i> Descargar PDF
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer bg-light py-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-1"></i> {{ año_lectivo.anho }}
+                                                </small>
+                                            </div>
                                         </div>
                                     </div>
 
