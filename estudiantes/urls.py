@@ -65,6 +65,20 @@ urlpatterns = [
          name='estudiante_boletin_final_año_admin'),
 
     # ============================
+    # REPORTE DE NOTAS CON LOGROS (PDF)
+    # ============================
+    path('reporte-logros/pdf/', views.ReporteNotasLogrosPDFView.as_view(), name='estudiante_reporte_logros_pdf'),
+    path('reporte-logros/pdf/periodo/<int:periodo_id>/',
+         views.ReporteNotasLogrosPDFView.as_view(),
+         name='estudiante_reporte_logros_pdf_periodo'),
+    path('<int:estudiante_id>/reporte-logros/pdf/',
+         views.ReporteNotasLogrosPDFView.as_view(),
+         name='estudiante_reporte_logros_pdf_admin'),
+    path('<int:estudiante_id>/reporte-logros/pdf/periodo/<int:periodo_id>/',
+         views.ReporteNotasLogrosPDFView.as_view(),
+         name='estudiante_reporte_logros_pdf_periodo_admin'),
+
+    # ============================
     # OBSERVADOR / COMPORTAMIENTO
     # ============================
     path('observador/pdf/', views.ObservadorEstudiantePDFView.as_view(), name='estudiante_observador_pdf'),

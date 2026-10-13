@@ -28,6 +28,7 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from io import BytesIO
+from xml.sax.saxutils import escape
 from estudiantes.mixins import PeriodoActualMixin
 
 # =============================================
@@ -2690,7 +2691,90 @@ class ReporteNotasPDFView(View):
         ]
         now = timezone.now()
         return f"{now.day} de {meses[now.month - 1]} de {now.year}"
-    
+
+
+class ReporteNotasLogrosPDFView(LoginRequiredMixin, ReporteNotasPDFView):
+    """
+    Igual que ReporteNotasPDFView, pero la tabla de calificaciones muestra
+    el logro alcanzado en cada asignatura en lugar del docente.
+    """
+
+    def _crear_estilos(self):
+        styles = super()._crear_estilos()
+        styles.add(ParagraphStyle(name="TablaLogro", fontSize=8, alignment=0, leading=10))
+        return styles
+
+    def _crear_tabla_notas(self, datos_asignaturas, styles):
+        """Tabla de notas por asignatura con el logro correspondiente"""
+        try:
+            asignaturas_data = datos_asignaturas['asignaturas']
+
+            if not asignaturas_data:
+                return [Paragraph("No hay asignaturas registradas para este período.", styles["TextoNormal"]),
+                        Spacer(1, 20)]
+
+            encabezados = [
+                Paragraph("ASIGNATURA", styles["TablaEncabezado"]),
+                Paragraph("AREA", styles["TablaEncabezado"]),
+                Paragraph("LOGRO", styles["TablaEncabezado"]),
+                Paragraph("NOTA", styles["TablaEncabezado"]),
+                Paragraph("DESEMPEÑO", styles["TablaEncabezado"])
+            ]
+
+            datos_tabla = [encabezados]
+
+            for asignatura in asignaturas_data:
+                asignatura_cell = Paragraph(escape(asignatura['nombre']), styles["TablaAsignatura"])
+                area_cell = Paragraph(escape(asignatura['area']), styles["TablaContenido"])
+
+                # El logro es texto libre: se escapa para que caracteres como & o < no rompan el PDF
+                logro = (asignatura.get('logro') or '').strip()
+                logro_texto = escape(logro).replace('\n', '<br/>') if logro else "—"
+                logro_cell = Paragraph(logro_texto, styles["TablaLogro"])
+
+                if asignatura['tiene_nota'] and asignatura['calificacion'] is not None:
+                    nota_texto = Paragraph(f"{asignatura['calificacion']:.1f}", styles["TablaContenido"])
+                    desempeno_texto = Paragraph(asignatura['desempeno'], styles["TablaDesempeno"])
+                else:
+                    nota_texto = Paragraph("N/A", styles["TablaContenido"])
+                    desempeno_texto = Paragraph("Sin evaluar", styles["TablaDesempeno"])
+
+                datos_tabla.append([asignatura_cell, area_cell, logro_cell, nota_texto, desempeno_texto])
+
+            tabla = Table(
+                datos_tabla,
+                colWidths=[3.2 * cm, 2.7 * cm, 6.5 * cm, 1.7 * cm, 2.9 * cm],
+                repeatRows=1
+            )
+            tabla.setStyle(TableStyle([
+                # Estilo del encabezado
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0A4BA0")),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+
+                # Estilo del contenido
+                ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
+                ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+                ('ALIGN', (0, 1), (2, -1), 'LEFT'),
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor("#DDDDDD")),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8F9FA")]),
+                ('TOPPADDING', (0, 1), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+            ]))
+
+            return [Paragraph("DETALLE DE CALIFICACIONES Y LOGROS:", styles["TituloDocumento"]),
+                    Spacer(1, 10), tabla, Spacer(1, 20)]
+
+        except Exception as e:
+            print(f"Error creando tabla de notas con logros: {e}")
+            return [Paragraph("Error al cargar las calificaciones.", styles["TextoNormal"]),
+                    Spacer(1, 20)]
+
 # =============================================
 # VISTAS DE HORARIO Y ASIGNATURAS
 # =============================================
