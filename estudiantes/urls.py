@@ -40,6 +40,17 @@ urlpatterns = [
          name='estudiante_constancia_año_admin'),
 
     # ============================
+    # CONSTANCIA DE CONDUCTA
+    # ============================
+    path('constancia-conducta/pdf/', views.ConstanciaConductaPDFView.as_view(), name='estudiante_constancia_conducta_pdf'),
+    path('<int:estudiante_id>/constancia-conducta/pdf/',
+         views.ConstanciaConductaPDFView.as_view(),
+         name='estudiante_constancia_conducta_pdf_admin'),
+    path('estudiante/<int:estudiante_id>/constancia-conducta/año/<int:año_lectivo_id>/',
+         views.ConstanciaConductaPDFView.as_view(),
+         name='estudiante_constancia_conducta_año_admin'),
+
+    # ============================
     # REPORTE DE NOTAS (PDF)
     # ============================
     # Año actual

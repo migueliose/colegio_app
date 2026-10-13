@@ -17,7 +17,7 @@ import os
 from django.db.models import Q
 from django.contrib import messages
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 
 # ReportLab imports
 from reportlab.lib.pagesizes import letter
@@ -881,6 +881,162 @@ class ConstanciaEstudioPDFView(View):
         ]
         now = timezone.now()
         return f"{now.day} de {meses[now.month - 1]} de {now.year}"
+
+
+class ConstanciaConductaPDFView(LoginRequiredMixin, ConstanciaEstudioPDFView):
+    """
+    Constancia de conducta del estudiante para un año lectivo.
+    - Sin observaciones negativas en el año: EXCELENTE CONDUCTA.
+    - Con alguna observación negativa: BUENA CONDUCTA.
+    """
+
+    ROLES_PERMITIDOS = ['Administrador', 'Rector', 'Docente']
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not self._tiene_permiso(request, kwargs):
+            raise PermissionDenied("No tiene permiso para ver la constancia de este estudiante")
+        return super().dispatch(request, *args, **kwargs)
+
+    def _tiene_permiso(self, request, kwargs):
+        user = request.user
+        if user.is_superuser:
+            return True
+
+        rol = user.tipo_usuario.nombre if getattr(user, 'tipo_usuario', None) else None
+        estudiante_id = kwargs.get('estudiante_id') or request.GET.get('estudiante_id')
+
+        if rol in self.ROLES_PERMITIDOS:
+            return True
+        if rol == 'Estudiante':
+            # Solo su propia constancia
+            return not estudiante_id or Estudiante.objects.filter(id=estudiante_id, usuario=user).exists()
+        if rol == 'Acudiente':
+            return bool(estudiante_id) and Acudiente.objects.filter(
+                acudiente=user, estudiante_id=estudiante_id
+            ).exists()
+        return False
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        if response.status_code == 200:
+            response["Content-Disposition"] = response["Content-Disposition"].replace(
+                'filename="constancia_', 'filename="constancia_conducta_', 1
+            )
+        return response
+
+    # -------------------- MARCA DE AGUA --------------------
+    def _agregar_marca_agua_texto(self, canvas, doc):
+        """Marca de agua de texto como fallback"""
+        try:
+            canvas.saveState()
+            canvas.setFont("Helvetica-Bold", 50)
+            canvas.setFillAlpha(0.07)
+            canvas.rotate(45)
+            canvas.drawCentredString(doc.pagesize[0] / 2, doc.pagesize[1] / 3, "CONSTANCIA DE CONDUCTA")
+            canvas.restoreState()
+        except Exception as e:
+            print(f"Error en marca de agua de texto: {e}")
+
+    # -------------------- CONSTRUCCIÓN --------------------
+    def _construir_elementos(self, estudiante, colegio, año_lectivo, matricula_año=None, es_año_anterior=False):
+        styles = self._crear_estilos()
+        excelente = not self._tiene_observaciones_negativas(estudiante, año_lectivo)
+
+        elements = []
+        elements.extend(self._crear_encabezado(colegio, styles))
+        nivel = "EXCELENTE CONDUCTA" if excelente else "BUENA CONDUCTA"
+        elements.append(Paragraph(f"CONSTANCIA DE {nivel}", styles["TituloConstancia"]))
+        elements.extend(self._crear_contenido_conducta(
+            estudiante, colegio, styles, año_lectivo, matricula_año, es_año_anterior, excelente
+        ))
+        elements.extend(self._crear_firma_y_sello(estudiante, styles, año_lectivo))
+        elements.extend(self._crear_pie_pagina(colegio, estudiante, styles, año_lectivo))
+        return elements
+
+    def _tiene_observaciones_negativas(self, estudiante, año_lectivo):
+        """True si el estudiante tiene observaciones negativas en el año lectivo"""
+        negativas = Comportamiento.objects.filter(
+            estudiante=estudiante,
+            tipo=Comportamiento.NEGATIVO,
+            is_deleted=False,
+        )
+        if año_lectivo:
+            negativas = negativas.filter(periodo_academico__año_lectivo=año_lectivo)
+        return negativas.exists()
+
+    def _crear_contenido_conducta(self, estudiante, colegio, styles, año_lectivo,
+                                  matricula_año, es_año_anterior, excelente):
+        """Contenido principal de la constancia de conducta"""
+        usuario = estudiante.usuario
+        tipo_doc = usuario.tipo_documento.nombre if usuario.tipo_documento else "Documento"
+        nombre = escape(f"{usuario.nombres} {usuario.apellidos}")
+        documento = escape(str(usuario.numero_documento))
+        fecha = self._formatear_fecha_espanol()
+
+        grado_info = "No asignado"
+        if matricula_año and matricula_año.grado_año_lectivo:
+            grado_info = matricula_año.grado_año_lectivo.grado.nombre
+        elif estudiante.grado_actual:
+            grado_info = estudiante.grado_actual.grado.nombre
+        año_lectivo_info = str(año_lectivo.anho) if año_lectivo else "No asignado"
+
+        contenido = [
+            Paragraph(
+                f"El suscrito director(a) del <b>COLEGIO CRISTIANO EL SHADAI</b>, "
+                f"institución educativa reconocida oficialmente mediante Resolución N.º {colegio.resolucion}, "
+                f"con código DANE {colegio.dane},", styles["TextoNormal"]
+            ),
+            Spacer(1, 10),
+            Paragraph("<b>HACE CONSTAR:</b>", styles["TextoNormal"]),
+            Spacer(1, 5),
+        ]
+
+        if es_año_anterior:
+            matricula_texto = (
+                f"estuvo matriculado(a) en esta institución educativa cursando el grado "
+                f"<b>{grado_info}</b> durante el año lectivo <b>{año_lectivo_info}</b>, periodo en el cual demostró"
+            )
+        else:
+            matricula_texto = (
+                f"se encuentra matriculado(a) en esta institución educativa cursando el grado "
+                f"<b>{grado_info}</b> en el presente año lectivo <b>{año_lectivo_info}</b>, y ha demostrado"
+            )
+
+        if excelente:
+            conducta_texto = (
+                "una <b>EXCELENTE CONDUCTA</b>, cumpliendo a cabalidad con las normas establecidas en el "
+                "Manual de Convivencia y manteniendo relaciones de respeto con sus compañeros, docentes "
+                "y directivos de la institución."
+            )
+        else:
+            conducta_texto = (
+                "una <b>BUENA CONDUCTA</b>, atendiendo las normas establecidas en el Manual de "
+                "Convivencia de la institución."
+            )
+
+        texto_est = (
+            f"Que, <b>{nombre}</b>, identificado(a) con {tipo_doc} N.º <b>{documento}</b>, "
+            f"{matricula_texto} {conducta_texto}"
+        )
+
+        bloque = Table([[Paragraph(texto_est, styles["TextoNormal"])]], colWidths=[14 * cm])
+        bloque.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), colors.whitesmoke),
+            ("LEFTPADDING", (0, 0), (-1, -1), 15),
+            ("TOPPADDING", (0, 0), (-1, -1), 12),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+            ("LINEBEFORE", (0, 0), (-1, -1), 3, colors.black)
+        ]))
+        contenido.extend([bloque, Spacer(1, 15)])
+
+        contenido.append(Paragraph(
+            f"La presente constancia se expide en Valledupar, a los <b>{fecha}</b>, "
+            "para ser presentada ante las autoridades o instituciones que así lo requieran.",
+            styles["TextoNormal"]
+        ))
+        contenido.append(Spacer(1, 10))
+        return contenido
+
 
 class ObservadorEstudiantePDFView(View):
     """Genera el observador del estudiante en formato PDF filtrado por año lectivo."""
