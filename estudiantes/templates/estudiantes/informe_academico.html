@@ -48,7 +48,7 @@
                                         </a>
                                     {% else %}
                                         {% if estudiante_obj %}
-                                        <a href="{% url 'estudiantes:estudiante_informe_pdf_admin' estudiante_id=estudiante_obj.id periodo_id=periodo_detalle.id %}" 
+                                        <a href="{% url 'estudiantes:estudiante_reporte_logros_pdf_periodo_admin' estudiante_id=estudiante_obj.id periodo_id=periodo_detalle.id %}" target="_blank"
                                         class="btn btn-success">
                                             <i class="bi bi-file-pdf me-2"></i>Descargar PDF
                                         </a>
@@ -379,17 +379,17 @@
                             <div class="card border-primary h-100">
                                 <div class="card-body text-center">
                                     <i class="bi bi-file-earmark-text text-primary display-5 mb-3"></i>
-                                    <h5>Informe Académico</h5>
-                                    <p class="text-muted">PDF detallado del período</p>
+                                    <h5>Informe Académico con Logros</h5>
+                                    <p class="text-muted">Notas y logros del período</p>
                                     {% if request.user.tipo_usuario.nombre == 'Estudiante' %}
-                                        <a href="" 
-                                        class="btn btn-primary w-100">
+                                        <a href="{% url 'estudiantes:estudiante_reporte_logros_pdf_periodo' periodo_id=periodo_detalle.id %}" 
+                                        target="_blank" class="btn btn-primary w-100">
                                             Descargar PDF
                                         </a>
                                     {% else %}
                                         {% if estudiante_obj %}
-                                        <a href="" 
-                                        class="btn btn-primary w-100">
+                                        <a href="{% url 'estudiantes:estudiante_reporte_logros_pdf_periodo_admin' estudiante_id=estudiante_obj.id periodo_id=periodo_detalle.id %}" 
+                                        target="_blank" class="btn btn-primary w-100">
                                             Descargar PDF
                                         </a>
                                         {% endif %}
