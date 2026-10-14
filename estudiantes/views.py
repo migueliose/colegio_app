@@ -1852,19 +1852,8 @@ class ReporteNotasPDFView(View):
                 if periodo_id:
                     periodo = get_object_or_404(PeriodoAcademico, id=periodo_id)
                 else:
-                    # Obtener período actual del año lectivo activo
-                    año_actual = AñoLectivo.objects.filter(estado=True).first()
-                    if año_actual:
-                        periodo = PeriodoAcademico.objects.filter(
-                            año_lectivo=año_actual,
-                            estado=True
-                        ).order_by('-fecha_inicio').first()
-                    else:
-                        # Si no hay año activo, usar el último período registrado para el estudiante
-                        ultimo_periodo = PeriodoAcademico.objects.filter(
-                            año_lectivo__in=estudiante.matriculas.values_list('año_lectivo', flat=True)
-                        ).order_by('-fecha_inicio').first()
-                        periodo = ultimo_periodo
+                    # Período actual; si aún no tiene notas, se usa el anterior que sí tenga
+                    periodo = self._periodo_actual_con_notas(estudiante)
             
             # Si no se encontró período y es reporte de notas, mostrar error
             if not periodo and reporte_tipo == 'notas':
@@ -1920,6 +1909,45 @@ class ReporteNotasPDFView(View):
             print(f"Error generando reporte de notas: {e}")
             return HttpResponse("Error interno del servidor", status=500)
 
+    # -------------------- PERÍODO ACTUAL --------------------
+    def _periodo_actual_con_notas(self, estudiante):
+        """
+        Devuelve el período actual. Si el estudiante aún no tiene notas en él,
+        devuelve el período anterior más reciente del mismo año que sí tenga notas.
+        Si ninguno tiene notas, devuelve el período actual.
+        """
+        año_actual = AñoLectivo.objects.filter(estado=True).first()
+        if año_actual:
+            periodo_actual = PeriodoAcademico.objects.filter(
+                año_lectivo=año_actual,
+                estado=True
+            ).order_by('-fecha_inicio').first()
+        else:
+            # Si no hay año activo, usar el último período registrado para el estudiante
+            periodo_actual = PeriodoAcademico.objects.filter(
+                año_lectivo__in=estudiante.matriculas.values_list('año_lectivo', flat=True)
+            ).order_by('-fecha_inicio').first()
+
+        if not periodo_actual:
+            return None
+
+        candidatos = [periodo_actual]
+        if periodo_actual.fecha_inicio:
+            candidatos += list(PeriodoAcademico.objects.filter(
+                año_lectivo=periodo_actual.año_lectivo,
+                fecha_inicio__lt=periodo_actual.fecha_inicio
+            ).order_by('-fecha_inicio'))
+
+        for periodo in candidatos:
+            if Nota.objects.filter(
+                estudiante=estudiante,
+                periodo_academico=periodo,
+                calificacion__isnull=False
+            ).exists():
+                return periodo
+
+        return periodo_actual
+
     # -------------------- MARCA DE AGUA --------------------
     def _agregar_marca_agua(self, canvas, doc):
         """Agrega marca de agua institucional."""
@@ -1949,7 +1977,7 @@ class ReporteNotasPDFView(View):
                 except (ObjectDoesNotExist, AttributeError, ValueError, OSError) as e:
                     print(f"Error con recursos en marca de agua: {e}")
                     # Si hay algún error, usar marca de agua de texto
-                    
+
             self._agregar_marca_agua_texto(canvas, doc)
         except Exception as e:
             print(f"Error en marca de agua: {e}")
