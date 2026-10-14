@@ -493,7 +493,40 @@ class SeleccionarAñoLectivoView(LoginRequiredMixin, RoleRequiredMixin, Template
 # =============================================
 # VISTAS DE PDFs PARA ESTUDIANTES
 # =============================================
-class ConstanciaEstudioPDFView(View):
+class PermisoDocumentoEstudianteMixin(LoginRequiredMixin):
+    """
+    Permisos para los documentos PDF de un estudiante:
+    - Administrador, rector y docentes: cualquier estudiante.
+    - Estudiante: solo los suyos.
+    - Acudiente: solo los de sus estudiantes.
+    """
+    ROLES_PERMITIDOS = ['Administrador', 'Rector', 'Rector(a)', 'Docente']
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not self._tiene_permiso(request, kwargs):
+            raise PermissionDenied("No tiene permiso para ver los documentos de este estudiante")
+        return super().dispatch(request, *args, **kwargs)
+
+    def _tiene_permiso(self, request, kwargs):
+        user = request.user
+        if user.is_superuser:
+            return True
+
+        rol = user.tipo_usuario.nombre if getattr(user, 'tipo_usuario', None) else None
+        estudiante_id = kwargs.get('estudiante_id') or request.GET.get('estudiante_id')
+
+        if rol in self.ROLES_PERMITIDOS:
+            return True
+        if rol == 'Estudiante':
+            return not estudiante_id or Estudiante.objects.filter(id=estudiante_id, usuario=user).exists()
+        if rol == 'Acudiente':
+            return bool(estudiante_id) and Acudiente.objects.filter(
+                acudiente=user, estudiante_id=estudiante_id
+            ).exists()
+        return False
+
+
+class ConstanciaEstudioPDFView(PermisoDocumentoEstudianteMixin, View):
     """Genera la constancia de estudio en formato PDF (solo ReportLab)."""
 
     MARGINS = {
@@ -883,38 +916,12 @@ class ConstanciaEstudioPDFView(View):
         return f"{now.day} de {meses[now.month - 1]} de {now.year}"
 
 
-class ConstanciaConductaPDFView(LoginRequiredMixin, ConstanciaEstudioPDFView):
+class ConstanciaConductaPDFView(ConstanciaEstudioPDFView):
     """
     Constancia de conducta del estudiante para un año lectivo.
     - Sin observaciones negativas en el año: EXCELENTE CONDUCTA.
     - Con alguna observación negativa: BUENA CONDUCTA.
     """
-
-    ROLES_PERMITIDOS = ['Administrador', 'Rector', 'Docente']
-
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.is_authenticated and not self._tiene_permiso(request, kwargs):
-            raise PermissionDenied("No tiene permiso para ver la constancia de este estudiante")
-        return super().dispatch(request, *args, **kwargs)
-
-    def _tiene_permiso(self, request, kwargs):
-        user = request.user
-        if user.is_superuser:
-            return True
-
-        rol = user.tipo_usuario.nombre if getattr(user, 'tipo_usuario', None) else None
-        estudiante_id = kwargs.get('estudiante_id') or request.GET.get('estudiante_id')
-
-        if rol in self.ROLES_PERMITIDOS:
-            return True
-        if rol == 'Estudiante':
-            # Solo su propia constancia
-            return not estudiante_id or Estudiante.objects.filter(id=estudiante_id, usuario=user).exists()
-        if rol == 'Acudiente':
-            return bool(estudiante_id) and Acudiente.objects.filter(
-                acudiente=user, estudiante_id=estudiante_id
-            ).exists()
-        return False
 
     def get(self, request, *args, **kwargs):
         response = super().get(request, *args, **kwargs)
@@ -1038,7 +1045,7 @@ class ConstanciaConductaPDFView(LoginRequiredMixin, ConstanciaEstudioPDFView):
         return contenido
 
 
-class ObservadorEstudiantePDFView(View):
+class ObservadorEstudiantePDFView(PermisoDocumentoEstudianteMixin, View):
     """Genera el observador del estudiante en formato PDF filtrado por año lectivo."""
 
     MARGINS = {
@@ -1774,7 +1781,7 @@ class ObservadorEstudiantePDFView(View):
         now = timezone.now()
         return f"{now.day} de {meses[now.month - 1]} de {now.year}"
 
-class ReporteNotasPDFView(View):
+class ReporteNotasPDFView(PermisoDocumentoEstudianteMixin, View):
     """Genera el reporte de notas del estudiante en formato PDF (solo ReportLab)."""
 
     MARGINS = {
@@ -2877,7 +2884,7 @@ class ReporteNotasPDFView(View):
         return f"{now.day} de {meses[now.month - 1]} de {now.year}"
 
 
-class ReporteNotasLogrosPDFView(LoginRequiredMixin, ReporteNotasPDFView):
+class ReporteNotasLogrosPDFView(ReporteNotasPDFView):
     """
     Igual que ReporteNotasPDFView, pero la tabla de calificaciones muestra
     el logro alcanzado en cada asignatura en lugar del docente.

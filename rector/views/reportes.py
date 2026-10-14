@@ -57,58 +57,60 @@ class ReportesRectorView(RoleRequiredMixin, TemplateView):
 
 class DocumentosEstudianteView(RoleRequiredMixin, TemplateView):
     template_name = 'rector/reportes/documentos_estudiante.html'
-    allowed_roles = ['Administrador', 'Rector', 'Docente', 'Acudiente']
+    allowed_roles = ['Administrador', 'Rector', 'Rector(a)', 'Docente', 'Acudiente']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         estudiante = get_object_or_404(Estudiante, id=self.kwargs.get('estudiante_id'))
+
+        # Un acudiente solo puede ver los documentos de sus estudiantes
+        user = self.request.user
+        if (not user.is_superuser and user.tipo_usuario and user.tipo_usuario.nombre == 'Acudiente'
+                and not estudiante.acudientes.filter(acudiente=user).exists()):
+            raise PermissionDenied("No tiene permisos para ver los documentos de este estudiante")
+
         context['estudiante'] = estudiante
 
         # Año lectivo actual
         config = ConfiguracionGeneral.objects.first()
         año_lectivo_actual = config.año_lectivo_actual if config else None
+        if not año_lectivo_actual:
+            año_lectivo_actual = AñoLectivo.objects.filter(estado=True).first()
 
-        # Años donde el estudiante estuvo matriculado
-        años_lectivos = AñoLectivo.objects.filter(
-            anho__in=estudiante.años_matriculados
-        ).order_by('-anho')
+        # Años cursados: se toman de las matrículas del estudiante (no por el número
+        # del año, porque cada sede tiene su propio año lectivo)
+        matriculas = estudiante.matriculas.filter(
+            estado__in=['ACT', 'INA', 'RET'],
+            is_deleted=False,
+        ).select_related(
+            'año_lectivo', 'grado_año_lectivo__grado', 'sede'
+        ).order_by('-año_lectivo__anho')
 
-        # Matrículas por año lectivo
-        matriculas_por_año = {}
-
-        for año in años_lectivos:
-            matricula = estudiante.matriculas.filter(
-                año_lectivo=año
-            ).select_related(
-                'grado_año_lectivo__grado'
-            ).first()
-
-            if matricula:
-                matriculas_por_año[año.id] = matricula
-
-        # Matrícula activa (año actual)
         matricula_activa = None
-        if año_lectivo_actual:
-            matricula_activa = estudiante.matriculas.filter(
-                año_lectivo=año_lectivo_actual,
-                estado='ACT'
-            ).select_related(
-                'grado_año_lectivo__grado'
-            ).first()
+        años_anteriores = []
+        for matricula in matriculas:
+            if año_lectivo_actual and matricula.año_lectivo_id == año_lectivo_actual.id:
+                matricula_activa = matricula
+            else:
+                años_anteriores.append({
+                    'año_lectivo': matricula.año_lectivo,
+                    'matricula': matricula,
+                    'grado': matricula.grado_año_lectivo.grado.nombre if matricula.grado_año_lectivo else '',
+                })
 
         context.update({
-            'años_lectivos': años_lectivos,
             'año_lectivo_actual': año_lectivo_actual,
-            'matriculas_por_año': matriculas_por_año,
             'matricula_activa': matricula_activa,
-            'matricula_actual': estudiante.matricula_actual,  # property
+            'años_anteriores': años_anteriores,
+            'total_años': len(matriculas),
+            'matricula_actual': matricula_activa,
         })
 
         return context
 
 class RedirigirConstanciaPDFView(RoleRequiredMixin, View):
     """Redirige a la vista de constancia PDF de estudiantes"""
-    allowed_roles = ['Administrador', 'Rector', 'Docente', 'Acudiente']
+    allowed_roles = ['Administrador', 'Rector', 'Rector(a)', 'Docente', 'Acudiente']
     
     def get(self, request, *args, **kwargs):
         estudiante_id = kwargs.get('estudiante_id')
@@ -128,7 +130,7 @@ class RedirigirConstanciaPDFView(RoleRequiredMixin, View):
 
 class RedirigirObservadorPDFView(RoleRequiredMixin, View):
     """Redirige a la vista de observador PDF de estudiantes"""
-    allowed_roles = ['Administrador', 'Rector', 'Docente', 'Acudiente']
+    allowed_roles = ['Administrador', 'Rector', 'Rector(a)', 'Docente', 'Acudiente']
     
     def get(self, request, *args, **kwargs):
         estudiante_id = kwargs.get('estudiante_id')
@@ -147,7 +149,7 @@ class RedirigirObservadorPDFView(RoleRequiredMixin, View):
 
 class RedirigirReporteNotasPDFView(RoleRequiredMixin, View):
     """Redirige a la vista de reporte de notas (boletín) PDF de estudiantes"""
-    allowed_roles = ['Administrador', 'Rector', 'Docente', 'Acudiente']
+    allowed_roles = ['Administrador', 'Rector', 'Rector(a)', 'Docente', 'Acudiente']
     
     def get(self, request, *args, **kwargs):
         estudiante_id = kwargs.get('estudiante_id')

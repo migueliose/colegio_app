@@ -12,7 +12,7 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{% url 'gestioncolegio:dashboard_acudiente' %}">
+                        <a href="{% url 'gestioncolegio:dashboard' %}">
                             <i class="fas fa-home"></i> Dashboard
                         </a>
                     </li>
@@ -41,7 +41,7 @@
                         </div>
                         <div>
                             <span class="badge bg-primary">
-                                {{ años_lectivos|length }} años con matrícula
+                                {{ total_años }} año{{ total_años|pluralize }} cursado{{ total_años|pluralize }}
                             </span>
                         </div>
                     </div>
@@ -51,7 +51,7 @@
     </div>
 
     <!-- Año Lectivo Actual (si el estudiante está matriculado este año) -->
-    {% if año_lectivo_actual and estudiante.id in matriculas_activas %}
+    {% if matricula_activa %}
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
@@ -87,7 +87,7 @@
                                     <small class="text-muted">
                                         <i class="fas fa-calendar me-1"></i> {{ año_lectivo_actual.anho }}
                                         <i class="fas fa-graduation-cap ms-2 me-1"></i>
-                                        {{ matriculas_activas|get_item:estudiante.id }}
+                                        {{ matricula_activa.grado_año_lectivo.grado.nombre }}
                                     </small>
                                 </div>
                             </div>
@@ -143,7 +143,7 @@
                                     <small class="text-muted">
                                         <i class="fas fa-calendar me-1"></i> {{ año_lectivo_actual.anho }}
                                         <i class="fas fa-graduation-cap ms-2 me-1"></i>
-                                        {{ matriculas_activas|get_item:estudiante.id }}
+                                        {{ matricula_activa.grado_año_lectivo.grado.nombre }}
                                     </small>
                                 </div>
                             </div>
@@ -172,7 +172,7 @@
                                     <small class="text-muted">
                                         <i class="fas fa-calendar me-1"></i> {{ año_lectivo_actual.anho }}
                                         <i class="fas fa-graduation-cap ms-2 me-1"></i>
-                                        {{ matriculas_activas|get_item:estudiante.id }}
+                                        {{ matricula_activa.grado_año_lectivo.grado.nombre }}
                                     </small>
                                 </div>
                             </div>
@@ -212,13 +212,12 @@
                     <h5 class="mb-0">
                         <i class="fas fa-history me-2"></i>Documentos de Años Anteriores
                     </h5>
-                    <span class="badge bg-secondary">{{ años_lectivos|length }} años con matrícula</span>
+                    <span class="badge bg-secondary">{{ total_años }} año{{ total_años|pluralize }} cursado{{ total_años|pluralize }}</span>
                 </div>
                 <div class="card-body">
-                    {% if años_lectivos %}
-                        {% for año_lectivo in años_lectivos %}
-                        <!-- Excluir el año actual si está en la lista -->
-                        {% if not año_lectivo.estado or año_lectivo.id != año_lectivo_actual.id %}
+                    {% if años_anteriores %}
+                        {% for item in años_anteriores %}
+                        {% with año_lectivo=item.año_lectivo %}
                         <div class="mb-4 year-documents-section">
                             <!-- Encabezado del año -->
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -228,14 +227,14 @@
                                     </i>
                                     Año Lectivo {{ año_lectivo.anho }}
 
-                                    {% with matricula_año=matriculas_por_año.año_lectivo.id %}
-                                        {% if matricula_año %}
+                                    
+                                        {% if item.grado %}
                                             <small class="text-muted ms-2">
                                                 <i class="fas fa-graduation-cap"></i>
-                                                {{ matricula_año.grado_año_lectivo.grado.nombre }}
+                                                {{ item.grado }}
                                             </small>
                                         {% endif %}
-                                    {% endwith %}
+                                    
                                 </h5>
 
                                 <button class="btn btn-sm btn-outline-secondary toggle-documents" 
@@ -276,12 +275,12 @@
                                             <div class="card-footer bg-light py-2">
                                                 <small class="text-muted">
                                                     <i class="fas fa-calendar me-1"></i> {{ año_lectivo.anho }}
-                                                    {% with matricula_año=matriculas_por_año.año_lectivo.id %}
-                                                        {% if matricula_año %}
+                                                    
+                                                        {% if item.grado %}
                                                             <i class="fas fa-graduation-cap ms-2 me-1"></i>
-                                                            {{ matricula_año.grado_año_lectivo.grado.nombre }}
+                                                            {{ item.grado }}
                                                         {% endif %}
-                                                    {% endwith %}
+                                                    
                                                 </small>
                                             </div>
 
@@ -351,12 +350,12 @@
                                             <div class="card-footer bg-light py-2">
                                                 <small class="text-muted">
                                                     <i class="fas fa-calendar me-1"></i> {{ año_lectivo.anho }}
-                                                    {% with matricula_año=matriculas_por_año.año_lectivo.id %}
-                                                    {% if matricula_año %}
+                                                    
+                                                    {% if item.grado %}
                                                     <i class="fas fa-graduation-cap ms-2 me-1"></i>
-                                                    {{ matricula_año.grado_año_lectivo.grado.nombre }}
+                                                    {{ item.grado }}
                                                     {% endif %}
-                                                    {% endwith %}
+                                                    
                                                 </small>
                                             </div>
                                         </div>
@@ -391,12 +390,12 @@
                                             <div class="card-footer bg-light py-2">
                                                 <small class="text-muted">
                                                     <i class="fas fa-calendar me-1"></i> {{ año_lectivo.anho }}
-                                                    {% with matricula_año=matriculas_por_año.año_lectivo.id %}
-                                                    {% if matricula_año %}
+                                                    
+                                                    {% if item.grado %}
                                                     <i class="fas fa-graduation-cap ms-2 me-1"></i>
-                                                    {{ matricula_año.grado_año_lectivo.grado.nombre }}
+                                                    {{ item.grado }}
                                                     {% endif %}
-                                                    {% endwith %}
+                                                    
                                                 </small>
                                             </div>
                                         </div>
@@ -414,7 +413,7 @@
                             <hr class="my-3">
                             {% endif %}
                         </div>
-                        {% endif %}
+                        {% endwith %}
                         {% endfor %}
                     {% else %}
                     <div class="text-center py-5">
