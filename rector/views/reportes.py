@@ -39,8 +39,12 @@ class ReportesRectorView(RoleRequiredMixin, TemplateView):
         # Sedes disponibles
         context['sedes'] = Sede.objects.filter(estado=True)
         
-        # Grados disponibles
-        context['grados'] = Grado.objects.all()
+        # Grados y niveles disponibles
+        context['grados'] = Grado.objects.select_related('nivel_escolar').all()
+        context['niveles'] = NivelEscolar.objects.all().order_by('id')
+
+        # Año actual: se usa cuando el filtro de año está en "Año actual"
+        context['año_actual'] = AñoLectivo.objects.filter(estado=True).first()
         
         # Tipos de reporte
         context['tipos_reporte'] = [
@@ -622,125 +626,191 @@ class ReportePuestosExcelView(RoleRequiredMixin, View):
         return response
 
 class ReporteMejores10ExcelView(RoleRequiredMixin, View):
-    """Reporte Excel de los 10 mejores estudiantes de todo el colegio por periodo"""
-    allowed_roles = ['Rector']
-    
+    """
+    Excel con los 10 mejores estudiantes.
+    Filtros (GET): año_id, sede_id, nivel_id (Preescolar / Primaria / todos),
+    grado_id y periodo_id.
+    - Con un período: ranking por el promedio de ese período.
+    - Con "todos": hoja "General" con el promedio de todos los períodos
+      calificados del año, y una hoja por cada período.
+    Los empates comparten puesto.
+    """
+    allowed_roles = ['Rector', 'Rector(a)']
+    TOP = 10
+
     def get(self, request):
-        # Parámetros de filtro
         año_id = request.GET.get('año_id')
         sede_id = request.GET.get('sede_id')
+        nivel_id = request.GET.get('nivel_id')
+        grado_id = request.GET.get('grado_id')
         periodo_id = request.GET.get('periodo_id')
-        
-        if not año_id or año_id == 'todos':
-            año_actual = AñoLectivo.objects.filter(estado=True).first()
-            if año_actual:
-                año_id = año_actual.id
-            else:
-                return HttpResponse("No hay año lectivo activo", status=400)
-        
-        # Obtener período
-        if periodo_id and periodo_id != 'todos':
-            periodos = [PeriodoAcademico.objects.get(id=periodo_id)]
+
+        if año_id and año_id != 'todos':
+            año = get_object_or_404(AñoLectivo, id=año_id)
         else:
-            periodos = PeriodoAcademico.objects.filter(año_lectivo_id=año_id)
-        
-        # Crear DataFrame para cada período
+            año = AñoLectivo.objects.filter(estado=True).first()
+            if not año:
+                return HttpResponse("No hay año lectivo activo", status=400)
+
+        periodos = list(PeriodoAcademico.objects.filter(
+            año_lectivo=año
+        ).select_related('periodo').order_by('fecha_inicio'))
+        periodo_sel = None
+        if periodo_id and periodo_id != 'todos':
+            periodo_sel = get_object_or_404(PeriodoAcademico, id=periodo_id, año_lectivo=año)
+
+        # Estudiantes con matrícula activa según los filtros
+        matriculas = Matricula.objects.filter(
+            año_lectivo=año, estado='ACT'
+        ).select_related(
+            'estudiante__usuario', 'grado_año_lectivo__grado__nivel_escolar', 'sede'
+        )
+        if sede_id and sede_id != 'todas':
+            matriculas = matriculas.filter(sede_id=sede_id)
+        if nivel_id and nivel_id != 'todos':
+            matriculas = matriculas.filter(grado_año_lectivo__grado__nivel_escolar_id=nivel_id)
+        if grado_id and grado_id != 'todos':
+            matriculas = matriculas.filter(grado_año_lectivo__grado_id=grado_id)
+        matriculas = {m.estudiante_id: m for m in matriculas}
+
+        # Promedio y cantidad de notas por estudiante y período (una sola consulta)
+        promedios = {}  # {estudiante_id: {periodo_id: (promedio, cantidad)}}
+        filas = Nota.objects.filter(
+            estudiante_id__in=matriculas.keys(),
+            periodo_academico__in=[periodo_sel] if periodo_sel else periodos,
+        ).values('estudiante_id', 'periodo_academico_id').annotate(
+            promedio=Avg('calificacion'), cantidad=Count('id')
+        )
+        for fila in filas:
+            if fila['promedio'] is not None:
+                promedios.setdefault(fila['estudiante_id'], {})[fila['periodo_academico_id']] = (
+                    float(fila['promedio']), fila['cantidad']
+                )
+
+        filtros_texto = self._describir_filtros(año, sede_id, nivel_id, grado_id, periodo_sel)
+
         output = BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            for periodo in periodos:
-                data = []
-                
-                # Obtener todos los estudiantes con matrícula activa
-                matriculas = Matricula.objects.filter(
-                    año_lectivo_id=año_id,
-                    estado='ACT'
-                ).select_related('estudiante__usuario', 'grado_año_lectivo__grado', 'sede')
-                
-                if sede_id and sede_id != 'todas':
-                    matriculas = matriculas.filter(sede_id=sede_id)
-                
-                # Calcular promedios por estudiante
-                estudiantes_con_promedio = []
-                for matricula in matriculas:
-                    estudiante = matricula.estudiante
-                    
-                    # Obtener todas las notas del estudiante en el período
-                    notas = Nota.objects.filter(
-                        estudiante=estudiante,
-                        periodo_academico=periodo
-                    )
-                    
-                    if notas.exists():
-                        promedio = notas.aggregate(avg=Avg('calificacion'))['avg']
-                        if promedio is not None and promedio > 0:  # Solo si tiene notas
-                            estudiantes_con_promedio.append({
-                                'estudiante': estudiante,
-                                'promedio': promedio,
-                                'matricula': matricula,
-                                'notas_count': notas.count()
-                            })
-                
-                # Ordenar por promedio descendente y tomar top 10
-                estudiantes_con_promedio.sort(key=lambda x: x['promedio'], reverse=True)
-                
-                for puesto, estudiante_data in enumerate(estudiantes_con_promedio[:10], 1):
-                    estudiante = estudiante_data['estudiante']
-                    matricula = estudiante_data['matricula']
-                    
-                    # Obtener información adicional
-                    edad = estudiante.usuario.edad
-                    sexo = estudiante.usuario.get_sexo_display() if estudiante.usuario.sexo else ''
-                    
-                    row = {
-                        'PUESTO': puesto,
-                        'DOCUMENTO': estudiante.usuario.numero_documento,
-                        'ESTUDIANTE': estudiante.usuario.get_full_name(),
-                        'EDAD': edad,
-                        'SEXO': sexo,
-                        'GRADO': matricula.grado_año_lectivo.grado.nombre,
-                        'NIVEL': matricula.grado_año_lectivo.grado.nivel_escolar.nombre,
-                        'SEDE': matricula.sede.nombre,
-                        'PROMEDIO GENERAL': round(estudiante_data['promedio'], 2),
-                        'PERIODO': periodo.periodo.nombre,
-                        'AÑO LECTIVO': matricula.año_lectivo.anho,
-                        'TOTAL ASIGNATURAS': estudiante_data['notas_count'],
+            if periodo_sel:
+                hojas = [(f"Top10_{periodo_sel.periodo.nombre}", periodo_sel.periodo.nombre, [periodo_sel])]
+            else:
+                hojas = [("Top10_General", "General (promedio de los períodos calificados)", periodos)]
+                hojas += [(f"Top10_{p.periodo.nombre}", p.periodo.nombre, [p]) for p in periodos]
+
+            for nombre_hoja, titulo_periodo, periodos_hoja in hojas:
+                ranking = self._ranking(matriculas, promedios, periodos_hoja)
+                general = len(periodos_hoja) > 1
+                filas_excel = []
+                for item in ranking:
+                    m = item['matricula']
+                    usuario = m.estudiante.usuario
+                    fila = {
+                        'PUESTO': item['puesto'],
+                        'DOCUMENTO': usuario.numero_documento,
+                        'ESTUDIANTE': usuario.get_full_name(),
+                        'EDAD': usuario.edad,
+                        'SEXO': usuario.get_sexo_display() if usuario.sexo else '',
+                        'GRADO': m.grado_año_lectivo.grado.nombre,
+                        'NIVEL': m.grado_año_lectivo.grado.nivel_escolar.nombre,
+                        'SEDE': m.sede.nombre,
                     }
-                    data.append(row)
-                
-                if data:
-                    df = pd.DataFrame(data)
-                    
-                    # Guardar en hoja del período
-                    sheet_name = f"Top10_{periodo.periodo.nombre}"
-                    if len(sheet_name) > 31:
-                        sheet_name = sheet_name[:31]
-                    
-                    df.to_excel(writer, sheet_name=sheet_name, index=False)
-                    
-                    # Ajustar ancho de columnas
-                    worksheet = writer.sheets[sheet_name]
-                    for column in worksheet.columns:
-                        max_length = 0
-                        column_letter = column[0].column_letter
-                        for cell in column:
-                            try:
-                                if len(str(cell.value)) > max_length:
-                                    max_length = len(str(cell.value))
-                            except:
-                                pass
-                        adjusted_width = min(max_length + 2, 50)
-                        worksheet.column_dimensions[column_letter].width = adjusted_width
-        
+                    if general:
+                        for p in periodos_hoja:
+                            dato = promedios.get(m.estudiante_id, {}).get(p.id)
+                            fila[f'PROM. {p.periodo.nombre.upper()}'] = round(dato[0], 2) if dato else None
+                        fila['PERÍODOS CALIFICADOS'] = item['periodos']
+                        fila['PROMEDIO GENERAL'] = round(item['promedio'], 2)
+                    else:
+                        fila['PROMEDIO'] = round(item['promedio'], 2)
+                        fila['NOTAS REGISTRADAS'] = item['cantidad']
+                    filas_excel.append(fila)
+
+                self._escribir_hoja(writer, nombre_hoja[:31], titulo_periodo, filtros_texto, filas_excel)
+
         output.seek(0)
-        
-        fecha = datetime.now().strftime('%Y%m%d_%H%M%S')
+        partes = ['top10']
+        if nivel_id and nivel_id != 'todos':
+            nivel = NivelEscolar.objects.filter(id=nivel_id).first()
+            partes.append(nivel.nombre.lower() if nivel else 'nivel')
+        partes.append(periodo_sel.periodo.nombre.lower() if periodo_sel else 'general')
+        partes.append(datetime.now().strftime('%Y%m%d_%H%M'))
         response = HttpResponse(
             output.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = f'attachment; filename=reporte_top10_{fecha}.xlsx'
-        
+        response['Content-Disposition'] = f'attachment; filename={"_".join(partes)}.xlsx'
         return response
+
+    def _ranking(self, matriculas, promedios, periodos_hoja):
+        """
+        Top 10 por promedio. Con varios períodos se promedian los períodos ya
+        calificados, y solo entran los estudiantes con notas en todos ellos
+        (así nadie queda arriba por tener nota en un solo período).
+        """
+        calificados = {p.id for p in periodos_hoja
+                       if any(p.id in datos for datos in promedios.values())}
+        candidatos = []
+        for estudiante_id, matricula in matriculas.items():
+            datos = [promedios[estudiante_id][p.id] for p in periodos_hoja
+                     if p.id in promedios.get(estudiante_id, {})]
+            if not datos or len(datos) < len(calificados):
+                continue
+            promedio = sum(d[0] for d in datos) / len(datos)
+            candidatos.append({
+                'matricula': matricula,
+                'promedio': promedio,
+                'periodos': len(datos),
+                'cantidad': sum(d[1] for d in datos),
+            })
+
+        candidatos.sort(key=lambda x: (-round(x['promedio'], 2), x['matricula'].estudiante.usuario.get_full_name()))
+
+        # Empates comparten puesto (1, 2, 2, 4...); se incluyen todos los empatados en el puesto 10
+        ranking = []
+        for posicion, item in enumerate(candidatos, 1):
+            if ranking and round(item['promedio'], 2) == round(ranking[-1]['promedio'], 2):
+                item['puesto'] = ranking[-1]['puesto']
+            else:
+                item['puesto'] = posicion
+            if item['puesto'] > self.TOP:
+                break
+            ranking.append(item)
+        return ranking
+
+    def _describir_filtros(self, año, sede_id, nivel_id, grado_id, periodo_sel):
+        sede = Sede.objects.filter(id=sede_id).first() if sede_id and sede_id != 'todas' else None
+        nivel = NivelEscolar.objects.filter(id=nivel_id).first() if nivel_id and nivel_id != 'todos' else None
+        grado = Grado.objects.filter(id=grado_id).first() if grado_id and grado_id != 'todos' else None
+        return (
+            f"Año lectivo: {año.anho}  |  Sede: {sede.nombre if sede else 'Todas'}  |  "
+            f"Nivel: {nivel.nombre if nivel else 'Todos (general)'}  |  "
+            f"Grado: {grado.nombre if grado else 'Todos'}  |  "
+            f"Período: {periodo_sel.periodo.nombre if periodo_sel else 'Todos'}"
+        )
+
+    def _escribir_hoja(self, writer, nombre_hoja, titulo_periodo, filtros_texto, filas):
+        """Escribe título, filtros aplicados y la tabla (o un aviso si no hay datos)."""
+        from openpyxl.styles import Font
+        inicio = 4
+        if filas:
+            pd.DataFrame(filas).to_excel(writer, sheet_name=nombre_hoja, index=False, startrow=inicio)
+        else:
+            pd.DataFrame({'AVISO': ['No hay estudiantes con notas para estos filtros.']}).to_excel(
+                writer, sheet_name=nombre_hoja, index=False, startrow=inicio)
+
+        ws = writer.sheets[nombre_hoja]
+        ws['A1'] = f"TOP 10 - {titulo_periodo}"
+        ws['A1'].font = Font(bold=True, size=14)
+        ws['A2'] = filtros_texto
+        ws['A3'] = f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+        ws['A3'].font = Font(italic=True, color='666666')
+        for celda in ws[inicio + 1]:
+            celda.font = Font(bold=True)
+
+        # Ancho de columnas según el contenido de la tabla
+        for column in ws.iter_cols(min_row=inicio + 1):
+            largo = max((len(str(c.value)) for c in column if c.value is not None), default=0)
+            ws.column_dimensions[column[0].column_letter].width = min(largo + 2, 50)
 
 class ReporteAsistenciasExcelView(RoleRequiredMixin, View):
     """Reporte Excel de asistencias e inasistencias"""

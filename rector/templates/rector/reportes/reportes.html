@@ -81,7 +81,7 @@
     </div>
 
     <!-- Filtros -->
-    <div class="row mb-4" id="filtrosSection" style="display: none;">
+    <div class="row mb-4" id="filtrosSection" style="display: block;">
         <div class="col-12">
             <div class="card shadow">
                 <div class="card-body filter-section">
@@ -93,7 +93,7 @@
                                     <i class="bi bi-calendar me-1"></i>Año Lectivo
                                 </label>
                                 <select name="año_id" class="form-select" id="añoSelect">
-                                    <option value="todos">Todos los años</option>
+                                    <option value="todos">Año actual{% if año_actual %} ({{ año_actual.anho }}){% endif %}</option>
                                     {% for año in años_lectivos %}
                                     <option value="{{ año.id }}">{{ año.anho }} - {{ año.sede.nombre }}</option>
                                     {% endfor %}
@@ -121,7 +121,7 @@
                                 <select name="grado_id" class="form-select" id="gradoSelect">
                                     <option value="todos">Todos los grados</option>
                                     {% for grado in grados %}
-                                    <option value="{{ grado.id }}">{{ grado.nombre }} - {{ grado.nivel_escolar.nombre }}</option>
+                                    <option value="{{ grado.id }}" data-nivel="{{ grado.nivel_escolar_id }}">{{ grado.nombre }} - {{ grado.nivel_escolar.nombre }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -131,10 +131,11 @@
                                 <label class="form-label">
                                     <i class="bi bi-layers me-1"></i>Nivel Escolar
                                 </label>
-                                <select name="nivel_id" class="form-select">
-                                    <option value="todos">Todos los niveles</option>
-                                    <option value="1">Preescolar</option>
-                                    <option value="2">Primaria</option>
+                                <select name="nivel_id" class="form-select" id="nivelSelect">
+                                    <option value="todos">Todos los niveles (general)</option>
+                                    {% for nivel in niveles %}
+                                    <option value="{{ nivel.id }}">{{ nivel.nombre }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             
@@ -144,7 +145,7 @@
                                     <i class="bi bi-calendar-week me-1"></i>Periodo Académico
                                 </label>
                                 <select name="periodo_id" class="form-select" id="periodoSelect">
-                                    <option value="todos">Todos los periodos</option>
+                                    <option value="todos">Todos los periodos (general del año)</option>
                                     <!-- Se llenará con JavaScript -->
                                 </select>
                             </div>
@@ -262,7 +263,11 @@
                     </div>
                     <h5 class="card-title">Top 10 del Colegio</h5>
                     <p class="card-text text-muted">
-                        Los 10 mejores estudiantes de todo el colegio según periodo.
+                        Los 10 mejores del colegio, de Primaria o de Preescolar, por período
+                        o del año completo (promedio de todos los períodos).
+                    </p>
+                    <p class="small mb-3">
+                        <span class="badge bg-light text-dark border" id="resumenFiltrosTop10"></span>
                     </p>
                     <button class="btn btn-danger" onclick="generarReporte('mejores10')">
                         <i class="bi bi-download me-1"></i>Generar Excel
@@ -432,19 +437,49 @@ function ocultarLoading() {
     document.getElementById('loadingOverlay').style.display = 'none';
 }
 
+// Filtros actuales del formulario (se guardan para la próxima visita)
+function obtenerFiltros() {
+    const filtros = {};
+    for (const [key, value] of new FormData(document.getElementById('filtrosForm')).entries()) {
+        filtros[key] = value;
+    }
+    localStorage.setItem('reporteFiltros', JSON.stringify(filtros));
+    return filtros;
+}
+
+// Resumen de filtros en la tarjeta Top 10
+function actualizarResumenTop10() {
+    const texto = (id) => {
+        const sel = document.getElementById(id);
+        return sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : '';
+    };
+    const resumen = document.getElementById('resumenFiltrosTop10');
+    if (resumen) {
+        resumen.textContent = `${texto('nivelSelect')} · ${texto('periodoSelect')}`;
+    }
+}
+
+// Mostrar solo los grados del nivel elegido
+function filtrarGradosPorNivel() {
+    const nivel = document.getElementById('nivelSelect').value;
+    const gradoSelect = document.getElementById('gradoSelect');
+    Array.from(gradoSelect.options).forEach(option => {
+        if (option.value === 'todos') return;
+        option.hidden = nivel !== 'todos' && option.dataset.nivel !== nivel;
+    });
+    const actual = gradoSelect.options[gradoSelect.selectedIndex];
+    if (actual && actual.hidden) {
+        gradoSelect.value = 'todos';
+    }
+}
+
 // Generar reporte específico
 function generarReporte(tipo) {
     mostrarLoading();
     
-    // Obtener filtros
-    const filtrosGuardados = localStorage.getItem('reporteFiltros');
-    let url = reportUrls[tipo];
-    
-    if (filtrosGuardados) {
-        const filtros = JSON.parse(filtrosGuardados);
-        const params = new URLSearchParams(filtros);
-        url += '?' + params.toString();
-    }
+    // Usar los filtros que se ven en pantalla (no hace falta pulsar "Aplicar Filtros")
+    const filtros = obtenerFiltros();
+    let url = reportUrls[tipo] + '?' + new URLSearchParams(filtros).toString();
     
     // Crear enlace para descarga
     const link = document.createElement('a');
@@ -464,14 +499,7 @@ function generarReporte(tipo) {
 function generarConsolidado() {
     mostrarLoading();
     
-    const filtrosGuardados = localStorage.getItem('reporteFiltros');
-    let url = reportUrls.consolidado;
-    
-    if (filtrosGuardados) {
-        const filtros = JSON.parse(filtrosGuardados);
-        const params = new URLSearchParams(filtros);
-        url += '?' + params.toString();
-    }
+    let url = reportUrls.consolidado + '?' + new URLSearchParams(obtenerFiltros()).toString();
     
     const link = document.createElement('a');
     link.href = url;
@@ -516,42 +544,57 @@ function showToast(message, type = 'info') {
     });
 }
 
-// Cargar periodos según año seleccionado
-function cargarPeriodos(añoId) {
-    if (añoId && añoId !== 'todos') {
-        fetch(`/rector/ajax/institucional/periodos-por-anho/?año_lectivo_id=${añoId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const select = document.getElementById('periodoSelect');
-                    select.innerHTML = '<option value="todos">Todos los periodos</option>';
-                    
-                    data.periodos.forEach(periodo => {
-                        const option = document.createElement('option');
-                        option.value = periodo.id;
-                        option.textContent = `${periodo.periodo_nombre} (${periodo.estado_actual})`;
-                        select.appendChild(option);
-                    });
+// Cargar periodos según año seleccionado ("Año actual" usa el año activo)
+const AÑO_ACTUAL_ID = "{{ año_actual.id|default:'' }}";
+const ESTADOS_PERIODO = {finalizado: 'finalizado', en_curso: 'en curso', pendiente: 'pendiente'};
+
+function cargarPeriodos(añoId, periodoSeleccionado) {
+    const id = (añoId && añoId !== 'todos') ? añoId : AÑO_ACTUAL_ID;
+    const select = document.getElementById('periodoSelect');
+    select.innerHTML = '<option value="todos">Todos los periodos (general del año)</option>';
+    if (!id) { actualizarResumenTop10(); return; }
+
+    fetch(`{% url 'rector:ajax_periodos_por_año' %}?año_lectivo_id=${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                data.periodos.forEach(periodo => {
+                    const option = document.createElement('option');
+                    option.value = periodo.id;
+                    option.textContent = `${periodo.periodo_nombre} (${ESTADOS_PERIODO[periodo.estado_actual] || periodo.estado_actual})`;
+                    select.appendChild(option);
+                });
+                if (periodoSeleccionado && select.querySelector(`option[value="${periodoSeleccionado}"]`)) {
+                    select.value = periodoSeleccionado;
                 }
-            });
-    }
+            }
+            actualizarResumenTop10();
+        });
 }
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
     // Cargar filtros guardados
     cargarFiltros();
+    filtrarGradosPorNivel();
     
-    // Cargar periodos del año seleccionado
+    // Cargar periodos del año seleccionado (y recuperar el período guardado)
     const añoSelect = document.getElementById('añoSelect');
-    if (añoSelect.value !== 'todos') {
-        cargarPeriodos(añoSelect.value);
-    }
+    let periodoGuardado = null;
+    try { periodoGuardado = (JSON.parse(localStorage.getItem('reporteFiltros')) || {}).periodo_id; } catch (e) {}
+    cargarPeriodos(añoSelect.value, periodoGuardado);
     
     // Cambiar año -> cargar periodos
     añoSelect.addEventListener('change', function() {
         cargarPeriodos(this.value);
     });
+
+    // Cambiar nivel -> mostrar solo sus grados
+    document.getElementById('nivelSelect').addEventListener('change', function() {
+        filtrarGradosPorNivel();
+        actualizarResumenTop10();
+    });
+    document.getElementById('periodoSelect').addEventListener('change', actualizarResumenTop10);
     
     // Cambiar sede -> actualizar grados (opcional)
     const sedeSelect = document.getElementById('sedeSelect');
