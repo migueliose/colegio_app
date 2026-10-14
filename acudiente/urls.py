@@ -32,7 +32,15 @@ urlpatterns = [
          name='boletin_pdf'),
 
     # Vista para seleccionar año para documentos históricos
-    path('estudiante/<int:estudiante_id>/seleccionar-año/', 
+    path('estudiante/<int:estudiante_id>/seleccionar-anio/', 
          views.SeleccionarAñoDocumentosView.as_view(), 
          name='seleccionar_año'),
+]
+
+# Compatibilidad con enlaces antiguos que llevaban "ñ" en la ruta ("año").
+# Las rutas principales usan "anio" porque algunos servidores (Passenger en
+# cPanel) no entregan bien los caracteres no ASCII y Django responde 404.
+urlpatterns += [
+    path(str(p.pattern).replace('anio/', 'año/'), p.callback, p.default_args)
+    for p in list(urlpatterns) if 'anio/' in str(p.pattern)
 ]

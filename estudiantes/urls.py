@@ -35,7 +35,7 @@ urlpatterns = [
     # ============================
     path('constancia/pdf/', views.ConstanciaEstudioPDFView.as_view(), name='estudiante_constancia_pdf'),
     path('<int:estudiante_id>/constancia/pdf/', views.ConstanciaEstudioPDFView.as_view(), name='estudiante_constancia_pdf_admin'),
-    path('estudiante/<int:estudiante_id>/constancia/año/<int:año_lectivo_id>/',
+    path('estudiante/<int:estudiante_id>/constancia/anio/<int:año_lectivo_id>/',
          views.ConstanciaEstudioPDFView.as_view(),
          name='estudiante_constancia_año_admin'),
 
@@ -46,7 +46,7 @@ urlpatterns = [
     path('<int:estudiante_id>/constancia-conducta/pdf/',
          views.ConstanciaConductaPDFView.as_view(),
          name='estudiante_constancia_conducta_pdf_admin'),
-    path('estudiante/<int:estudiante_id>/constancia-conducta/año/<int:año_lectivo_id>/',
+    path('estudiante/<int:estudiante_id>/constancia-conducta/anio/<int:año_lectivo_id>/',
          views.ConstanciaConductaPDFView.as_view(),
          name='estudiante_constancia_conducta_año_admin'),
 
@@ -66,11 +66,11 @@ urlpatterns = [
     path('<int:estudiante_id>/reporte-notas/pdf/periodo/<int:periodo_id>/',
          views.ReporteNotasPDFView.as_view(),
          name='estudiante_reporte_notas_pdf_periodo_admin'),
-    path('<int:estudiante_id>/reporte-notas/año/<int:año_lectivo_id>/',
+    path('<int:estudiante_id>/reporte-notas/anio/<int:año_lectivo_id>/',
          views.ReporteNotasPDFView.as_view(),
          {'tipo': 'notas'},
          name='estudiante_reporte_notas_año_admin'),
-    path('<int:estudiante_id>/boletin-final/año/<int:año_lectivo_id>/',
+    path('<int:estudiante_id>/boletin-final/anio/<int:año_lectivo_id>/',
          views.ReporteNotasPDFView.as_view(),
          {'tipo': 'final'},
          name='estudiante_boletin_final_año_admin'),
@@ -93,15 +93,15 @@ urlpatterns = [
     # OBSERVADOR / COMPORTAMIENTO
     # ============================
     path('observador/pdf/', views.ObservadorEstudiantePDFView.as_view(), name='estudiante_observador_pdf'),
-    path('observador/pdf/año/<int:año_lectivo_id>/', views.ObservadorEstudiantePDFView.as_view(), name='estudiante_observador_pdf_año'),
-    path('observador-final/pdf/año/<int:año_lectivo_id>/', views.ObservadorEstudiantePDFView.as_view(), name='estudiante_observador_final_pdf'),
+    path('observador/pdf/anio/<int:año_lectivo_id>/', views.ObservadorEstudiantePDFView.as_view(), name='estudiante_observador_pdf_año'),
+    path('observador-final/pdf/anio/<int:año_lectivo_id>/', views.ObservadorEstudiantePDFView.as_view(), name='estudiante_observador_final_pdf'),
 
     # Admin/Docente
     path('<int:estudiante_id>/observador/pdf/', views.ObservadorEstudiantePDFView.as_view(), name='estudiante_observador_pdf_admin'),
-    path('<int:estudiante_id>/observador/año/<int:año_lectivo_id>/',
+    path('<int:estudiante_id>/observador/anio/<int:año_lectivo_id>/',
          views.ObservadorEstudiantePDFView.as_view(),
          name='estudiante_observador_año_admin'),
-    path('<int:estudiante_id>/observador-final/año/<int:año_lectivo_id>/',
+    path('<int:estudiante_id>/observador-final/anio/<int:año_lectivo_id>/',
          views.ObservadorEstudiantePDFView.as_view(),
          {'tipo': 'boletin_final'},
          name='estudiante_observador_final_año_admin'),
@@ -114,4 +114,12 @@ urlpatterns = [
     
     
     path('cuenta-inactiva/', views.CuentaInactivaView.as_view(), name='cuenta_inactiva'),
+]
+
+# Compatibilidad con enlaces antiguos que llevaban "ñ" en la ruta ("año").
+# Las rutas principales usan "anio" porque algunos servidores (Passenger en
+# cPanel) no entregan bien los caracteres no ASCII y Django responde 404.
+urlpatterns += [
+    path(str(p.pattern).replace('anio/', 'año/'), p.callback, p.default_args)
+    for p in list(urlpatterns) if 'anio/' in str(p.pattern)
 ]
